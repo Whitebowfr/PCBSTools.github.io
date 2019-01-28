@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="w3.css">
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+<script src='js/calc.js'></script>
+
+<body>
+    <!-- Navigation -->
+    <nav class="w3-bar w3-gray">
+        <a href="../en/index.html" class="w3-button w3-bar-item"><b><font face="Open Sans">Home</font></b></a>
+        <a href="../en/partsranking.html" class="w3-button w3-bar-item"><b><font face="Open Sans">Parts Ranking</font></b></a>
+        <a href="../en/3dmarkcalc.html" class="w3-button w3-bar-item"><b><font face="Open Sans">3DMark™ Calculator</font></b></a>
+        <a href="../en/buildmaker.html" class="w3-button w3-bar-item"><b><font face="Open Sans">Build Maker</font></b></a>
+        <a href="../en/buildupgrader.html" class="w3-button w3-bar-item"><b><font face="Open Sans">Build Upgrader</font></b></a>
+        <a href="../en/support.html" class="w3-button w3-bar-item"><b><font face="Open Sans">Support</font></b></a>
+        <a href="../ko/buildmaker.html" class="w3-button w3-bar-item"><b><font face="Arial">한국어</font></b></a>
+    </nav>
+
+    <!-- PCBS Image -->
+    <section>
+        <div align="center"><img src="img/img_buildmaker.jpg" style="width:100%"></div>
+    </section>
+
+    <!-- Description -->
+    <section class="w3-container w3-center w3-content" style="max-width:600px">
+        <h2 class="w3-wide">Build Maker</h2>
+        <p class="w3-opacity"><i>Build Maker for making builds for you</i></p>
+    </section>
+
+    <!-- Build Maker -->
+    <section class="w3-row-padding w3-center w3-light-grey">
+    <table cellpadding="0" cellspacing="0" border="0" width="30%" align="center">
+        <tr>
+            <td valign="top">
+                <table class="tablebg" cellspacing="1" width="100%">
+                    <tr>
+                        <th>
+                            <span style="float: center">Build Maker</span>
+                        </th>
+                    </tr>
+                </table>
+                <table class="tablebg" cellspacing="1" width="100%" height="100%" align="center">
+                    <tr class="row1">
+                        <td>
+                            <form id="buildSetting" target="#" method="GET">
+                                <table class="tableBench" cellspacing="1" width="100%" height="100%">
+                                    <tr>
+                                        <td style="width: 200px;">Budget</td>
+                                        <td>
+                                            <input style="width: 350px;" name="budgetforbuild" required></input>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="width: 200px;">Budget for Other Parts</td>
+                                        <td>
+                                            <input style="width: 350px;" name="reservedbudgetforbuild" placeholder="Defaults to $500 if not inputted,400 if include motherboard"></input>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="width: 200px;">Target Score</td>
+                                        <td>
+                                            <input style="width: 350px;" name="scoreforbuild" required></input>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="width: 200px;">Target Score Offset</td>
+                                        <td>
+                                            <input style="width: 350px;" name="scoreoffset" placeholder="Defaults to 200"></input>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="width: 200px;">Current Level</td>
+                                        <td>
+                                            <input style="width: 350px;" name="levelforbuild" required></input>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="width: 200px;">Number of Result</td>
+                                        <td>
+                                            <input style="width: 350px;" name="numberofresult" placeholder="Defaults to 10 if not inputted"></input>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="width: 200px;">CPU Socket</td>
+                                        <td>
+                                            <select id="architecturetype">
+                                                <option value="any" selected>Any</option>
+                                                <option value="skylake">LGA 1151(Skylake)</option>
+                                                <option value="kabylake">LGA 1151(Kabylake)</option>
+                                                <option value="coffeelake">LGA 1151(Coffeelake)</option>
+                                                <option value="ryzen">AM4(Ryzen)</option>
+                                                <option value="threadripper">TR4(Threadripper)</option>
+                                                <option value="r4">LGA 2066(R4))</option>
+                                            </select>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="width: 200px;">Include Motherboard?</td>
+                                        <td>
+                                            <input name="includemotherboard" type="checkbox"></input>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="width: 200px;">Include RAM?</td>
+                                        <td>
+                                            <input name="includeram" type="checkbox"></input>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="width: 200px;">Need Overclock?</td>
+                                        <td>
+                                            <input name="needoverclock" type="checkbox"></input>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Build Randomness?</td>
+                                        <td>
+                                            <input name="buildrandomness" type="checkbox"></input>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <br /><button class="bmbutton" type="button" onclick="generateBuild(document.getElementById('buildSetting').budgetforbuild.value,document.getElementById('buildSetting').reservedbudgetforbuild.value,document.getElementById('buildSetting').scoreforbuild.value,document.getElementById('buildSetting').scoreoffset.value,document.getElementById('buildSetting').levelforbuild.value,document.getElementById('buildSetting').numberofresult.value,document.getElementById('buildSetting').architecturetype.value,document.getElementById('buildSetting').includemotherboard.checked,document.getElementById('buildSetting').includeram.checked,document.getElementById('buildSetting').needoverclock.checked,document.getElementById('buildSetting').buildrandomness.checked)">Generate
+                                                Build!</button><br /><br />
+                                        </td>
+                                    </tr>
+                                </table>
+                            </form><br />
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+    
+    <table cellpadding="0" cellspacing="0" border="0" width="75%" align="center">
+        <tr>
+            <td valign="top">
+                <table class="tablebg" cellspacing="0" width="100%">
+                    <tr>
+                        <th>
+                            <span style="float: center">Build Maker Results</span>
+                        </th>
+                    </tr>
+                </table>
+    
+                <table class="tableMaker" id="buildMakerResult" cellspacing="0" width="100%" height="100%">
+                    <tr class="row1">
+                        <td>CPU</td>
+                        <td>RAM Speed</td>
+                        <td>RAM Channel</td>
+                        <td>Graphics Card</td>
+                        <td>Number of GPU</td>
+                        <td>Motherboard</td>
+                        <td>RAM</td>
+                        <td>Score</td>
+                        <td>Wattage</td>
+                        <td>Cost</td>
+                        <td>Budget Left</td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+    </section>
+
+    <!-- Footer -->
+    <footer class="w3-container w3-padding-64 w3-center w3-black w3-xlarge">
+        <span class="copyright"><font size="3">
+            Site created by <a href="https://steamcommunity.com/id/AhRoonPlayz" title="Steam Profile Ah_Roon" onclick="window.open('https://steamcommunity.com/id/AhRoonPlayz'); return false;">Ah_Roon</a>
+            &copy; 2018 - 2019<br />
+            Original Benchmark Calculator Script Author - <a href="https://steamcommunity.com/id/kawaiinvshen" title="Steam Profile biubiu"
+                onclick="window.open('https://steamcommunity.com/id/kawaiinvshen'); return false;">biubiu</a> &copy;
+            2018 - 2019 <br />
+            Original Parts Ranking Script Author - <a href="https://steamcommunity.com/id/skbeyondpower" title="Steam Profile BeyondPower"
+                onclick="window.open('https://steamcommunity.com/id/skbeyondpower'); return false;">BeyondPower</a>
+            &copy; 2018 - 2019 <br />
+            Source Code Provided by <a href="https://www.w3schools.com/" title="w3schools Website" onclick="window.open('https://www.w3schools.com/'); return false;">w3schools</a>
+            and <a href="https://steamcommunity.com/id/shona1337" title="Steam Profile Shona" onclick="window.open('https://steamcommunity.com/id/shona1337'); return false;">Shona</a>
+            &copy; 2019<br />
+            </p>
+        </font></span>
+    </footer>
+</body>
+
+</html>
