@@ -5,6 +5,43 @@
 <link rel="stylesheet" href="w3.css">
 <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
 <script src='js/calc.js'></script>
+<style>
+    table {
+        border: 1px solid;
+        padding: 10px 15px;
+        display: inline-block;
+    }
+
+    .tableTitle {
+        font-weight: bold;
+        font-size: 150%;
+    }
+
+    #bmResult {
+        font-size: 20px;
+        font-weight: bold;
+    }
+
+    #buildMaker {
+        left: 50%;
+    }
+
+    #buildMakerResult td {
+        border: 1px solid;
+        padding: 8px;
+    }
+
+    #buildMakerResult {
+        border: none;
+        padding: 8px;
+        border-collapse: collapse;
+        display: none;
+    }
+
+    input {
+        min-width: 350px;
+    }
+</style>
 
 <body>
     <!-- Navigation -->
@@ -31,139 +68,109 @@
 
     <!-- Build Maker -->
     <section class="w3-row-padding w3-center w3-light-grey">
-    <table cellpadding="0" cellspacing="0" border="0" width="30%" align="center">
-        <tr>
-            <td valign="top">
-                <table class="tablebg" cellspacing="1" width="100%">
+        <div id="buildMaker">
+            <form id="buildSetting" target="#" method="GET">
+                <table>
+                    <caption class="tableTitle">Build Maker</caption>
                     <tr>
-                        <th>
-                            <span style="float: center">Build Maker</span>
-                        </th>
-                    </tr>
-                </table>
-                <table class="tablebg" cellspacing="1" width="100%" height="100%" align="center">
-                    <tr class="row1">
+                        <td>Budget</td>
                         <td>
-                            <form id="buildSetting" target="#" method="GET">
-                                <table class="tableBench" cellspacing="1" width="100%" height="100%">
-                                    <tr>
-                                        <td style="width: 200px;">Budget</td>
-                                        <td>
-                                            <input style="width: 350px;" name="budgetforbuild" required></input>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width: 200px;">Budget for Other Parts</td>
-                                        <td>
-                                            <input style="width: 350px;" name="reservedbudgetforbuild" placeholder="Defaults to $500 if not inputted,400 if include motherboard"></input>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width: 200px;">Target Score</td>
-                                        <td>
-                                            <input style="width: 350px;" name="scoreforbuild" required></input>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width: 200px;">Target Score Offset</td>
-                                        <td>
-                                            <input style="width: 350px;" name="scoreoffset" placeholder="Defaults to 200"></input>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width: 200px;">Current Level</td>
-                                        <td>
-                                            <input style="width: 350px;" name="levelforbuild" required></input>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width: 200px;">Number of Result</td>
-                                        <td>
-                                            <input style="width: 350px;" name="numberofresult" placeholder="Defaults to 10 if not inputted"></input>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width: 200px;">CPU Socket</td>
-                                        <td>
-                                            <select id="architecturetype">
-                                                <option value="any" selected>Any</option>
-                                                <option value="skylake">LGA 1151(Skylake)</option>
-                                                <option value="kabylake">LGA 1151(Kabylake)</option>
-                                                <option value="coffeelake">LGA 1151(Coffeelake)</option>
-                                                <option value="ryzen">AM4(Ryzen)</option>
-                                                <option value="threadripper">TR4(Threadripper)</option>
-                                                <option value="r4">LGA 2066(R4))</option>
-                                            </select>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width: 200px;">Include Motherboard?</td>
-                                        <td>
-                                            <input name="includemotherboard" type="checkbox"></input>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width: 200px;">Include RAM?</td>
-                                        <td>
-                                            <input name="includeram" type="checkbox"></input>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width: 200px;">Need Overclock?</td>
-                                        <td>
-                                            <input name="needoverclock" type="checkbox"></input>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Build Randomness?</td>
-                                        <td>
-                                            <input name="buildrandomness" type="checkbox"></input>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <br /><button class="bmbutton" type="button" onclick="generateBuild(document.getElementById('buildSetting').budgetforbuild.value,document.getElementById('buildSetting').reservedbudgetforbuild.value,document.getElementById('buildSetting').scoreforbuild.value,document.getElementById('buildSetting').scoreoffset.value,document.getElementById('buildSetting').levelforbuild.value,document.getElementById('buildSetting').numberofresult.value,document.getElementById('buildSetting').architecturetype.value,document.getElementById('buildSetting').includemotherboard.checked,document.getElementById('buildSetting').includeram.checked,document.getElementById('buildSetting').needoverclock.checked,document.getElementById('buildSetting').buildrandomness.checked)">Generate
-                                                Build!</button><br /><br />
-                                        </td>
-                                    </tr>
-                                </table>
-                            </form><br />
+                            <input name="budgetforbuild" required></input>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Budget For Other Parts</td>
+                        <td>
+                            <input name="reservedbudgetforbuild" placeholder="Defaults to $500 if not inputted,400 if include motherboard"></input>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Target Score</td>
+                        <td>
+                            <input name="scoreforbuild" required></input>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Target Score Offset</td>
+                        <td>
+                            <input name="scoreoffset" placeholder="Defaults to 200"></input>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Current Level</td>
+                        <td>
+                            <input name="levelforbuild" required></input>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Number of Result</td>
+                        <td>
+                            <input name="numberofresult" placeholder="Defaults to 10 if not inputted"></input>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>CPU Sockets</td>
+                        <td>
+                            <select id="architecturetype">
+                                <option value="any" selected>Any</option>
+                                <option value="skylake">LGA 1151(Skylake)</option>
+                                <option value="kabylake">LGA 1151(Kabylake)</option>
+                                <option value="coffeelake">LGA 1151(Coffeelake)</option>
+                                <option value="ryzen">AM4(Ryzen)</option>
+                                <option value="threadripper">TR4(Threadripper)</option>
+                                <option value="r4">LGA 2066(R4))</option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Include Motherboard?</td>
+                        <td>
+                            <input name="includemotherboard" type="checkbox"></input>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Include RAM?</td>
+                        <td>
+                            <input name="includeram" type="checkbox"></input>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Need Overclock?</td>
+                        <td>
+                            <input name="needoverclock" type="checkbox"></input>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Build Randomness?</td>
+                        <td>
+                            <input name="buildrandomness" type="checkbox"></input>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <button type="button" onclick="generateBuild(document.getElementById('buildSetting').budgetforbuild.value,document.getElementById('buildSetting').reservedbudgetforbuild.value,document.getElementById('buildSetting').scoreforbuild.value,document.getElementById('buildSetting').scoreoffset.value,document.getElementById('buildSetting').levelforbuild.value,document.getElementById('buildSetting').numberofresult.value,document.getElementById('buildSetting').architecturetype.value,document.getElementById('buildSetting').includemotherboard.checked,document.getElementById('buildSetting').includeram.checked,document.getElementById('buildSetting').needoverclock.checked,document.getElementById('buildSetting').buildrandomness.checked)">Generate
+                                Build!</button>
                         </td>
                     </tr>
                 </table>
-            </td>
-        </tr>
-    </table>
-    
-    <table cellpadding="0" cellspacing="0" border="0" width="75%" align="center">
-        <tr>
-            <td valign="top">
-                <table class="tablebg" cellspacing="0" width="100%">
-                    <tr>
-                        <th>
-                            <span style="float: center">Build Maker Results</span>
-                        </th>
-                    </tr>
-                </table>
-    
-                <table class="tableMaker" id="buildMakerResult" cellspacing="0" width="100%" height="100%">
-                    <tr class="row1">
-                        <td>CPU</td>
-                        <td>RAM Speed</td>
-                        <td>RAM Channel</td>
-                        <td>Graphics Card</td>
-                        <td>Number of GPU</td>
-                        <td>Motherboard</td>
-                        <td>RAM</td>
-                        <td>Score</td>
-                        <td>Wattage</td>
-                        <td>Cost</td>
-                        <td>Budget Left</td>
-                    </tr>
-                </table>
-            </td>
-        </tr>
-    </table>
+            </form>
+        </div>
+        <table id="buildMakerResult">
+            <caption class="tableTitle">Build Maker Results</caption>
+            <tr>
+                <td>CPU</td>
+                <td>RAM <br />Speed</td>
+                <td>RAM <br />Channel</td>
+                <td>GPU</td>
+                <td>Number <br />Of <br />GPU</td>
+                <td>Motherboard</td>
+                <td>RAM</td>
+                <td>Score</td>
+                <td>Wattage</td>
+                <td>Cost</td>
+                <td>Budget <br />Left</td>
+            </tr>
+        </table>
     </section>
 
     <!-- Footer -->

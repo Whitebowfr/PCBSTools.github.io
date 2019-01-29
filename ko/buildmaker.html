@@ -5,7 +5,43 @@
 <link rel="stylesheet" href="w3.css">
 <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
 <script src='js/calc.js'></script>
+<style>
+    table {
+        border: 1px solid;
+        padding: 10px 15px;
+        display: inline-block;
+    }
 
+    .tableTitle {
+        font-weight: bold;
+        font-size: 150%;
+    }
+
+    #bmResult {
+        font-size: 20px;
+        font-weight: bold;
+    }
+
+    #buildMaker {
+        left: 50%;
+    }
+
+    #buildMakerResult td {
+        border: 1px solid;
+        padding: 8px;
+    }
+
+    #buildMakerResult {
+        border: none;
+        padding: 8px;
+        border-collapse: collapse;
+        display: none;
+    }
+
+    input {
+        min-width: 350px;
+    }
+</style>
 <body>
     <!-- Navigation -->
     <nav class="w3-bar w3-gray">
@@ -31,136 +67,106 @@
 
     <!-- Build Maker -->
     <section class="w3-row-padding w3-center w3-light-grey">
-    <table cellpadding="0" cellspacing="0" border="0" width="30%" align="center">
+    <div id="buildMaker">
+        <form id="buildSetting" target="#" method="GET">
+            <table>
+                <caption class="tableTitle">조립PC 만들기</caption>
+                <tr>
+                    <td>자금(Budgets)</td>
+                    <td>
+                        <input name="budgetforbuild" required></input>
+                    </td>
+                </tr>
+                <tr>
+                    <td>다른 부품을 위한 자금(Budget For Other Parts)</td>
+                    <td>
+                        <input name="reservedbudgetforbuild" placeholder="입력이 없으면 기본값 $500 ,메인보드도 포함하려면 400 입력"></input>
+                    </td>
+                </tr>
+                <tr>
+                    <td>목표 점수</td>
+                    <td>
+                        <input name="scoreforbuild" required></input>
+                    </td>
+                </tr>
+                <tr>
+                    <td>목표 점수 오프셋</td>
+                    <td>
+                        <input name="scoreoffset" placeholder="기본값 200"></input>
+                    </td>
+                </tr>
+                <tr>
+                    <td>현재 레벨</td>
+                    <td>
+                        <input name="levelforbuild" required></input>
+                    </td>
+                </tr>
+                <tr>
+                    <td>결과 표시 수</td>
+                    <td>
+                        <input name="numberofresult" placeholder="입력이 없으면 기본값 10"></input>
+                    </td>
+                </tr>
+                <tr>
+                    <td>CPU 소켓</td>
+                    <td>
+                        <select id="architecturetype">
+                            <option value="any" selected>아무거나</option>
+                            <option value="skylake">LGA 1151(스카이레이크)</option>
+                            <option value="kabylake">LGA 1151(카비레이크)</option>
+                            <option value="coffeelake">LGA 1151(커피레이크)</option>
+                            <option value="ryzen">AM4(Ryzen)</option>
+                            <option value="threadripper">TR4(스레드리퍼)</option>
+                            <option value="r4">LGA 2066(R4)</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td>마더보드도 포함할까요?</td>
+                    <td>
+                        <input name="includemotherboard" type="checkbox"></input>
+                    </td>
+                </tr>
+                <tr>
+                    <td>RAM도 포함할까요?</td>
+                    <td>
+                        <input name="includeram" type="checkbox"></input>
+                    </td>
+                </tr>
+                <tr>
+                    <td>오버클럭이 필요한가요?</td>
+                    <td>
+                        <input name="needoverclock" type="checkbox"></input>
+                    </td>
+                </tr>
+                <tr>
+                    <td>무작위로 조립PC를 생성할까요?</td>
+                    <td>
+                        <input name="buildrandomness" type="checkbox"></input>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <button type="button" onclick="generateBuild(document.getElementById('buildSetting').budgetforbuild.value,document.getElementById('buildSetting').reservedbudgetforbuild.value,document.getElementById('buildSetting').scoreforbuild.value,document.getElementById('buildSetting').scoreoffset.value,document.getElementById('buildSetting').levelforbuild.value,document.getElementById('buildSetting').numberofresult.value,document.getElementById('buildSetting').architecturetype.value,document.getElementById('buildSetting').includemotherboard.checked,document.getElementById('buildSetting').includeram.checked,document.getElementById('buildSetting').needoverclock.checked,document.getElementById('buildSetting').buildrandomness.checked)">조립PC 생성하기!</button>
+                    </td>
+                </tr>
+            </table>
+        </form>
+    </div>
+    <table id="buildMakerResult">
+        <caption class="tableTitle">조립PC 결과</caption>
         <tr>
-            <td valign="top">
-                <table class="tablebg" cellspacing="1" width="100%">
-                    <tr>
-                        <th>
-                            <span style="float: center">조립PC 만들기</span>
-                        </th>
-                    </tr>
-                </table>
-                <table class="tablebg" cellspacing="1" width="100%" height="100%" align="center">
-                    <tr class="row1">
-                        <td>
-                            <form id="buildSetting" target="#" method="GET">
-                                <table class="tableBench" cellspacing="1" width="100%" height="100%">
-                                    <tr>
-                                        <td style="width: 200px;">자금(Budget)</td>
-                                        <td>
-                                            <input style="width: 350px;" name="budgetforbuild" required></input>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width: 200px;">다른 부품을 위한 자금(Budget for Other Parts)</td>
-                                        <td>
-                                            <input style="width: 350px;" name="reservedbudgetforbuild" placeholder="Defaults to $500 if not inputted,400 if include motherboard"></input>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width: 200px;">목표 점수</td>
-                                        <td>
-                                            <input style="width: 350px;" name="scoreforbuild" required></input>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width: 200px;">목표 점수 오프셋</td>
-                                        <td>
-                                            <input style="width: 350px;" name="scoreoffset" placeholder="Defaults to 200"></input>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width: 200px;">현재 레벨</td>
-                                        <td>
-                                            <input style="width: 350px;" name="levelforbuild" required></input>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width: 200px;">결과 표시 수</td>
-                                        <td>
-                                            <input style="width: 350px;" name="numberofresult" placeholder="Defaults to 10 if not inputted"></input>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width: 200px;">CPU 소켓</td>
-                                        <td>
-                                            <select id="architecturetype">
-                                                <option value="any" selected>아무거나</option>
-                                                <option value="skylake">LGA 1151(스카이레이크)</option>
-                                                <option value="kabylake">LGA 1151(카비레이크)</option>
-                                                <option value="coffeelake">LGA 1151(커피레이크)</option>
-                                                <option value="ryzen">AM4(라이젠)</option>
-                                                <option value="threadripper">TR4(스레드리퍼)</option>
-                                                <option value="r4">LGA 2066(R4))</option>
-                                            </select>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width: 200px;">메인보드를 포함할까요?</td>
-                                        <td>
-                                            <input name="includemotherboard" type="checkbox"></input>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width: 200px;">RAM을 포함할까요?</td>
-                                        <td>
-                                            <input name="includeram" type="checkbox"></input>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width: 200px;">오버클럭이 필요한가요?</td>
-                                        <td>
-                                            <input name="needoverclock" type="checkbox"></input>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>무작위로 조립PC를 생성할까요?</td>
-                                        <td>
-                                            <input name="buildrandomness" type="checkbox"></input>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <br /><button class="bmbutton" type="button" onclick="generateBuild(document.getElementById('buildSetting').budgetforbuild.value,document.getElementById('buildSetting').reservedbudgetforbuild.value,document.getElementById('buildSetting').scoreforbuild.value,document.getElementById('buildSetting').scoreoffset.value,document.getElementById('buildSetting').levelforbuild.value,document.getElementById('buildSetting').numberofresult.value,document.getElementById('buildSetting').architecturetype.value,document.getElementById('buildSetting').includemotherboard.checked,document.getElementById('buildSetting').includeram.checked,document.getElementById('buildSetting').needoverclock.checked,document.getElementById('buildSetting').buildrandomness.checked)">조립PC 생성하기!</button><br /><br />
-                                        </td>
-                                    </tr>
-                                </table>
-                            </form><br />
-                        </td>
-                    </tr>
-                </table>
-            </td>
-        </tr>
-    </table>
-    
-    <table cellpadding="0" cellspacing="0" border="0" width="75%" align="center">
-        <tr>
-            <td valign="top">
-                <table class="tablebg" cellspacing="0" width="100%">
-                    <tr>
-                        <th>
-                            <span style="float: center">Build Maker Results</span>
-                        </th>
-                    </tr>
-                </table>
-    
-                <table class="tableMaker" id="buildMakerResult" cellspacing="0" width="100%" height="100%">
-                    <tr class="row1">
-                        <td>CPU</td>
-                        <td>RAM 속도</td>
-                        <td>RAM 채널</td>
-                        <td>그래픽 카드</td>
-                        <td>GPU 갯수</td>
-                        <td>메인보드</td>
-                        <td>RAM</td>
-                        <td>점수</td>
-                        <td>전력량</td>
-                        <td>가격</td>
-                        <td>남은 자금(Budget Left)</td>
-                    </tr>
-                </table>
-            </td>
+            <td>CPU</td>
+            <td>RAM <br />속도</td>
+            <td>RAM <br />채널</td>
+            <td>GPU</td>
+            <td>GPU <br />개수</td>
+            <td>메인보드</td>
+            <td>RAM</td>
+            <td>점수</td>
+            <td>전력량</td>
+            <td>가격</td>
+            <td>남은 <br />자금 <br />(Budget <br />Left)</td>
         </tr>
     </table>
     </section>
