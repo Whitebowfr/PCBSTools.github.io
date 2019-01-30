@@ -7724,6 +7724,224 @@ var data = {
 			"maxcclock": 2012,
 			"maxmemclock": 2300,
 			"multigpu": "sli"
+		},
+		"NVIDIA GeForce GTX 1060 Founders Edition": {
+			"1": {
+				"price": 340,
+				"wattage": 120,
+				"score": 3719,
+				"m_cclock1": 0.012399,
+				"m_memclock1": 0.0033,
+				"adjustment1": -3.41774,
+				"m_cclock2": 0.011958,
+				"m_memclock2": 0.002489,
+				"adjustment2": -4.21902
+			},
+			"size": 6,
+			"maxtemperature": 95,
+			"level": 6,
+			"maxcclock": 2130,
+			"maxmemclock": 2300,
+			"multigpu": null
+		},
+		"NVIDIA GeForce GTX 1070 Founders Edition": {
+			"1": {
+				"price": 530,
+				"wattage": 150,
+				"score": 5366,
+				"m_cclock1": 0.01523,
+				"m_memclock1": 0.006421,
+				"adjustment1": -3.37279,
+				"m_cclock2": 0.01535,
+				"m_memclock2": 0.004705,
+				"adjustment2": -4.61795
+			},
+			"2": {
+				"price": 1060,
+				"wattage": 300,
+				"score": 10484,
+				"m_cclock1": 0.03006,
+				"m_memclock1": 0.015907,
+				"adjustment1": -13.1503,
+				"m_cclock2": 0.031696,
+				"m_memclock2": 0.011842,
+				"adjustment2": -17.7116
+			},
+			"size": 8,
+			"maxtemperature": 95,
+			"level": 11,
+			"maxcclock": 2050,
+			"maxmemclock": 2200,
+			"multigpu": "sli"
+		},
+		"NVIDIA GeForce GTX 1070 Ti Founders Edition": {
+			"1": {
+				"price": 640,
+				"wattage": 180,
+				"score": 6380,
+				"m_cclock1": 0.012341,
+				"m_memclock1": 0.009107,
+				"adjustment1": 2.382808,
+				"m_cclock2": 0.012517,
+				"m_memclock2": 0.007293,
+				"adjustment2": 1.036967
+			},
+			"2": {
+				"price": 1280,
+				"wattage": 360,
+				"score": 12011,
+				"m_cclock1": 0.029835,
+				"m_memclock1": 0.008625,
+				"adjustment1": 12.33832,
+				"m_cclock2": 0.036084,
+				"m_memclock2": 0.000323,
+				"adjustment2": 6.288826
+			},
+			"size": 8,
+			"maxtemperature": 95,
+			"level": 19,
+			"maxcclock": 2050,
+			"maxmemclock": 2200,
+			"multigpu": "sli"
+		},
+		"NVIDIA GeForce GTX 1080 Founders Edition": {
+			"1": {
+				"price": 690,
+				"wattage": 180,
+				"score": 6896,
+				"m_cclock1": 0.016172,
+				"m_memclock1": 0.012984,
+				"adjustment1": 0.4788,
+				"m_cclock2": 0.016296,
+				"m_memclock2": 0.01078,
+				"adjustment2": -2.06271
+			},
+			"2": {
+				"price": 1380,
+				"wattage": 360,
+				"score": 12837,
+				"m_cclock1": 0.047004,
+				"m_memclock1": 0.01229,
+				"adjustment1": -12.7896,
+				"m_cclock2": 0.047961,
+				"m_memclock2": 0.003139,
+				"adjustment2": -13.7882
+			},
+			"size": 8,
+			"maxtemperature": 95,
+			"level": 13,
+			"maxcclock": 2030,
+			"maxmemclock": 2200,
+			"multigpu": "sli"
+		},
+		"NVIDIA GeForce GTX 1080 Ti Founders Edition": {
+			"1": {
+				"price": 870,
+				"wattage": 250,
+				"score": 8266,
+				"m_cclock1": 0.02549,
+				"m_memclock1": 0.01673,
+				"adjustment1": -9.4038,
+				"m_cclock2": 0.02617,
+				"m_memclock2": 0.01563,
+				"adjustment2": -15.604
+			},
+			"2": {
+				"price": 1740,
+				"wattage": 500,
+				"score": 16213,
+				"m_cclock1": 0.04548,
+				"m_memclock1": 0.03498,
+				"adjustment1": -15.202,
+				"m_cclock2": 0.04295,
+				"m_memclock2": 0.04657,
+				"adjustment2": -38.5277
+			},
+			"size": 11,
+			"maxtemperature": 95,
+			"level": 21,
+			"maxcclock": 2012,
+			"maxmemclock": 2300,
+			"multigpu": "sli"
+		},
+		"NVIDIA GeForce RTX 2070 Founders Edition": {
+			"1": {
+				"price": 730,
+				"wattage": 175,
+				"score": 7359,
+				"m_cclock1": 0.032361,
+				"m_memclock1": 0.00444,
+				"adjustment1": -12.2516,
+				"m_cclock2": 0.030916,
+				"m_memclock2": 0.002867,
+				"adjustment2": -12.9272
+			},
+			"size": 8,
+			"maxtemperature": 95,
+			"level": 23,
+			"maxcclock": 1960,
+			"maxmemclock": 1900,
+			"multigpu": null
+		},
+		"NVIDIA GeForce RTX 2080 Founders Edition": {
+			"1": {
+				"price": 950,
+				"wattage": 215,
+				"score": 9459,
+				"m_cclock1": 0.033804,
+				"m_memclock1": 0.01013,
+				"adjustment1": -14.5626,
+				"m_cclock2": 0.032748,
+				"m_memclock2": 0.009282,
+				"adjustment2": -17.5168
+			},
+			"2": {
+				"price": 1900,
+				"wattage": 430,
+				"score": 16411,
+				"m_cclock1": 0.089011,
+				"m_memclock1": 0.014456,
+				"adjustment1": -72.7506,
+				"m_cclock2": 0.080905,
+				"m_memclock2": 0.006465,
+				"adjustment2": -53.8782
+			},
+			"size": 8,
+			"maxtemperature": 95,
+			"level": 25,
+			"maxcclock": 1960,
+			"maxmemclock": 2000,
+			"multigpu": "sli"
+		},
+		"NVIDIA GeForce RTX 2080 Ti Founders Edition": {
+			"1": {
+				"price": 1130,
+				"wattage": 250,
+				"score": 10685,
+				"m_cclock1": 0.049184,
+				"m_memclock1": 0.008357,
+				"adjustment1": -21.5075,
+				"m_cclock2": 0.045342,
+				"m_memclock2": 0.007908,
+				"adjustment2": -22.257
+			},
+			"2": {
+				"price": 2260,
+				"wattage": 500,
+				"score": 19039,
+				"m_cclock1": 0.05971,
+				"m_memclock1": 0.084504,
+				"adjustment1": -117.921,
+				"m_cclock2": 0.058653,
+				"m_memclock2": 0.082351,
+				"adjustment2": -124.174
+			},
+			"size": 11,
+			"maxtemperature": 95,
+			"level": 27,
+			"maxcclock": 1960,
+			"maxmemclock": 1950,
+			"multigpu": "sli"
 		}
 	},
 	"motherboards": {
@@ -7756,6 +7974,28 @@ var data = {
 			"price": 110,
 			"resellprice": 37,
 			"level": 7,
+			"overclock": "Yes",
+			"multigpu": null,
+			"socket": "AM4"
+		},
+		"EVGA X299 Micro": {
+			"name": "EVGA X299 Micro",
+			"memorysteps": ["2400", "2600", "2800", "3000", "3200", "3600", "3800", "4000"],
+			"maxramspeed": "4000",
+			"price": 120,
+			"resellprice": 40,
+			"level": 30,
+			"overclock": "Yes",
+			"multigpu": "slicf",
+			"socket": "2066"
+		},
+		"MSI B450 TOMAHAWK": {
+			"name": "MSI B450 TOMAHAWK",
+			"memorysteps": ["1866", "2133", "2400", "2666", "2800", "2933", "3000", "3066", "3200", "3466"],
+			"maxramspeed": "3466",
+			"price": 150,
+			"resellprice": 50,
+			"level": 19,
 			"overclock": "Yes",
 			"multigpu": null,
 			"socket": "AM4"
@@ -7826,6 +8066,17 @@ var data = {
 			"multigpu": "slicf",
 			"socket": "1151V2"
 		},
+		"GIGABYTE GA-B250M-Gaming 5": {
+			"name": "GIGABYTE GA-B250M-Gaming 5",
+			"memorysteps": ["2133", "2400"],
+			"maxramspeed": "2400",
+			"price": 170,
+			"resellprice": 57,
+			"level": 4,
+			"overclock": "No",
+			"multigpu": null,
+			"socket": "1151V1"
+		},
 		"GIGABYTE Z370 AORUS Ultra Gaming": {
 			"name": "GIGABYTE Z370 AORUS Ultra Gaming",
 			"memorysteps": ["2133", "2400", "2666", "2800", "3000", "3200", "3300", "3333", "3400", "3466", "3600", "3666", "3733", "3800", "3866", "4000"],
@@ -7848,7 +8099,18 @@ var data = {
 			"multigpu": "slicf",
 			"socket": "1151V1"
 		},
-		"ASUS ROG Strix Z370-G Gaming (Wi-Fi AC)": {
+		"MSI B450I GAMING PLUS AC": {
+			"name": "MSI B450I GAMING PLUS AC",
+			"memorysteps": ["1866", "2133", "2400", "2666", "2800", "2933", "3000", "3066", "3200", "3466"],
+			"maxramspeed": "3466",
+			"price": 180,
+			"resellprice": 60,
+			"level": 20,
+			"overclock": "Yes",
+			"multigpu": null,
+			"socket": "AM4"
+		},
+		"ASUS ROG Strix Z370-G Gaming (Wi-Fi AC": {
 			"name": "ASUS ROG Strix Z370-G Gaming (Wi-Fi AC",
 			"memorysteps": ["2133", "2400", "2666", "2800", "3000", "3200", "3300", "3333", "3400", "3466", "3600", "3733", "3866", "4000"],
 			"maxramspeed": "4000",
@@ -7936,6 +8198,17 @@ var data = {
 			"multigpu": "slicf",
 			"socket": "1151V2"
 		},
+		"EVGA X299 FTW K": {
+			"name": "EVGA X299 FTW K",
+			"memorysteps": ["2400", "2600", "2800", "3000", "3200", "3600", "3800", "4000"],
+			"maxramspeed": "4000",
+			"price": 200,
+			"resellprice": 67,
+			"level": 30,
+			"overclock": "Yes",
+			"multigpu": "slicf",
+			"socket": "2066"
+		},
 		"ASUS ROG Strix X470-I Gaming": {
 			"name": "ASUS ROG Strix X470-I Gaming",
 			"memorysteps": ["2133", "2400", "2666", "2800", "2933", "3000", "3200", "3400", "3466", "3600"],
@@ -7991,8 +8264,8 @@ var data = {
 			"multigpu": "slicf",
 			"socket": "AM4"
 		},
-		"NZXT N7 Z370 (White)": {
-			"name": "NZXT N7 Z370 (White)",
+		"NZXT N7 Z370 (White": {
+			"name": "NZXT N7 Z370 (White",
 			"memorysteps": ["2133", "2400", "2666", "2800", "3000", "3200", "3300", "3333", "3400", "3466", "3600", "3733", "3866"],
 			"maxramspeed": "3866",
 			"price": 240,
@@ -8002,8 +8275,8 @@ var data = {
 			"multigpu": "slicf",
 			"socket": "1151V2"
 		},
-		"NZXT N7 Z370 (Black)": {
-			"name": "NZXT N7 Z370 (Black)",
+		"NZXT N7 Z370 (Black": {
+			"name": "NZXT N7 Z370 (Black",
 			"memorysteps": ["2133", "2400", "2666", "2800", "3000", "3200", "3300", "3333", "3400", "3466", "3600", "3733", "3866"],
 			"maxramspeed": "3866",
 			"price": 240,
@@ -8024,8 +8297,8 @@ var data = {
 			"multigpu": "slicf",
 			"socket": "1151V2"
 		},
-		"ASUS ROG Maximus X Hero (Wi-Fi AC)": {
-			"name": "ASUS ROG Maximus X Hero (Wi-Fi AC)",
+		"ASUS ROG Maximus X Hero (Wi-Fi AC": {
+			"name": "ASUS ROG Maximus X Hero (Wi-Fi AC",
 			"memorysteps": ["2133", "2400", "2666", "2800", "3000", "3200", "3300", "3333", "3400", "3466", "3600", "3733", "3866", "4000", "4133"],
 			"maxramspeed": "4133",
 			"price": 260,
@@ -8035,8 +8308,8 @@ var data = {
 			"multigpu": "slicf",
 			"socket": "1151V2"
 		},
-		"ASUS ROG Crosshair VII Hero (WI-FI)": {
-			"name": "ASUS ROG Crosshair VII Hero (WI-FI)",
+		"ASUS ROG Crosshair VII Hero (WI-FI": {
+			"name": "ASUS ROG Crosshair VII Hero (WI-FI",
 			"memorysteps": ["2133", "2400", "2666", "2800", "2933", "3000", "3200", "3400", "3466", "3600"],
 			"maxramspeed": "3600",
 			"price": 275,
@@ -8045,6 +8318,28 @@ var data = {
 			"overclock": "Yes",
 			"multigpu": "slicf",
 			"socket": "AM4"
+		},
+		"NZXT N7 Z390 (White": {
+			"name": "NZXT N7 Z390 (White",
+			"memorysteps": ["2133", "2400", "2666", "2800", "3000", "3200", "3300", "3333", "3400", "3466", "3600", "3733", "3866"],
+			"maxramspeed": "3866",
+			"price": 275,
+			"resellprice": 92,
+			"level": 20,
+			"overclock": "Yes",
+			"multigpu": null,
+			"socket": "1151V2"
+		},
+		"NZXT N7 Z390 (Black": {
+			"name": "NZXT N7 Z390 (Black",
+			"memorysteps": ["2133", "2400", "2666", "2800", "3000", "3200", "3300", "3333", "3400", "3466", "3600", "3733", "3866"],
+			"maxramspeed": "3866",
+			"price": 275,
+			"resellprice": 92,
+			"level": 20,
+			"overclock": "Yes",
+			"multigpu": null,
+			"socket": "1151V2"
 		},
 		"ASUS ROG Maximus X Code": {
 			"name": "ASUS ROG Maximus X Code",
@@ -8089,6 +8384,17 @@ var data = {
 			"overclock": "Yes",
 			"multigpu": "slicf",
 			"socket": "TR4"
+		},
+		"GIGABYTE X299 DESIGNARE EX": {
+			"name": "GIGABYTE X299 DESIGNARE EX",
+			"memorysteps": ["2133", "2400", "2666", "2800", "3000", "3200", "3300", "3333", "3400", "3466", "3600", "3666", "3733", "3800", "3866", "4000", "4133", "4266", "4333", "4400"],
+			"maxramspeed": "4400",
+			"price": 330,
+			"resellprice": 110,
+			"level": 29,
+			"overclock": "Yes",
+			"multigpu": "slicf",
+			"socket": "2066"
 		},
 		"ASUS TUF X299 MARK 1": {
 			"name": "ASUS TUF X299 MARK 1",
@@ -8155,6 +8461,17 @@ var data = {
 			"overclock": "Yes",
 			"multigpu": "slicf",
 			"socket": "TR4"
+		},
+		"GIGABYTE X299 AORUS Gaming 9": {
+			"name": "GIGABYTE X299 AORUS Gaming 9",
+			"memorysteps": ["2133", "2400", "2666", "2800", "3000", "3200", "3300", "3333", "3400", "3466", "3600", "3666", "3733", "3800", "3866", "4000", "4133", "4266", "4333", "4400"],
+			"maxramspeed": "4400",
+			"price": 400,
+			"resellprice": 133,
+			"level": 28,
+			"overclock": "Yes",
+			"multigpu": "slicf",
+			"socket": "2066"
 		},
 		"GIGABYTE GA-Z270X-Gaming 8": {
 			"name": "GIGABYTE GA-Z270X-Gaming 8",
@@ -9028,6 +9345,16 @@ var data = {
 			"price": 120,
 			"resellprice": 40,
 			"level": 22,
+			"size": 8,
+			"frequency": 3200,
+			"maxvoltage": 1.65,
+			"maxfrequency": 3424
+		},
+		"GIGABYTE AORUS RGB 8GB 3200 MHz": {
+			"name": "CORSAIR VENGEANCE RGB PRO (White) 8GB 3200 MHz",
+			"price": 120,
+			"resellprice": 40,
+			"level": 14,
 			"size": 8,
 			"frequency": 3200,
 			"maxvoltage": 1.65,
@@ -10308,7 +10635,7 @@ function upgradeBuild(currentproc,currentramchannel,currentramspeed,currentgpu,c
 		var indexOfCProc = cpuinlist.indexOf(currentproc)
 		for(cpu in data.procs){
 			if(data.motherboards[currentmotherboard].socket == data.procs[cpu].socket){
-				//DO NOT DOWNGRADE MY FUCKING PROC
+				//DO NOT DOWNGRADE MY PROC!
 				if(cpuinlist.indexOf(cpu) > indexOfCProc){
 					for(gpu in data.gpus){
 						if((data.procs[cpu].level <= currentlevel) && (data.gpus[gpu].level <= currentlevel)){
