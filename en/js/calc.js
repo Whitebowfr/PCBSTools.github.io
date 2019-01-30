@@ -7724,6 +7724,66 @@ var data = {
 			"maxcclock": 2012,
 			"maxmemclock": 2300,
 			"multigpu": "sli"
+		},
+		"NVIDIA GeForce RTX 2080 Founders Edition": {
+			"1": {
+				"price": 910,
+				"wattage": 250,
+				"score": 9110,
+				"m_cclock1": 0.02549,
+				"m_memclock1": 0.01673,
+				"adjustment1": -9.4038,
+				"m_cclock2": 0.02617,
+				"m_memclock2": 0.01563,
+				"adjustment2": -15.604
+			},
+			"2": {
+				"price": 1820,
+				"wattage": 500,
+				"score": 17777,
+				"m_cclock1": 0.04548,
+				"m_memclock1": 0.03498,
+				"adjustment1": -15.202,
+				"m_cclock2": 0.04295,
+				"m_memclock2": 0.04657,
+				"adjustment2": -38.5277
+			},
+			"size": 11,
+			"maxtemperature": 95,
+			"level": 21,
+			"maxcclock": 2012,
+			"maxmemclock": 2300,
+			"multigpu": "sli"
+		},
+		"NVIDIA GeForce RTX 2080 Ti Founders Edition": {
+			"1": {
+				"price": 1130,
+				"wattage": 250,
+				"score": 10685,
+				"m_cclock1": 0.049184,
+				"m_memclock1": 0.008357,
+				"adjustment1": 21.5075,
+				"m_cclock2": 0.045342,
+				"m_memclock2": 0.007908,
+				"adjustment2": -22.257
+			},
+			"2": {
+				"price": 2260,
+				"wattage": 500,
+				"score": 19039,
+				"m_cclock1": 0.05971,
+				"m_memclock1": 0.084504,
+				"adjustment1": -117.921,
+				"m_cclock2": 0.058653,
+				"m_memclock2": 0.082351,
+				"adjustment2": -124.174
+			},
+			"size": 11,
+			"maxtemperature": 95,
+			"level": 21,
+			"maxcclock": 2012,
+			"maxmemclock": 2300,
+			"multigpu": "sli"
 		}
 	},
 	"motherboards": {
@@ -10308,7 +10368,7 @@ function upgradeBuild(currentproc,currentramchannel,currentramspeed,currentgpu,c
 		var indexOfCProc = cpuinlist.indexOf(currentproc)
 		for(cpu in data.procs){
 			if(data.motherboards[currentmotherboard].socket == data.procs[cpu].socket){
-				//DO NOT DOWNGRADE MY FUCKING PROC
+				//DO NOT DOWNGRADE MY PROC!
 				if(cpuinlist.indexOf(cpu) > indexOfCProc){
 					for(gpu in data.gpus){
 						if((data.procs[cpu].level <= currentlevel) && (data.gpus[gpu].level <= currentlevel)){

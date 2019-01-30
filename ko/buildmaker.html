@@ -5,6 +5,7 @@
 <link rel="stylesheet" href="w3.css">
 <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
 <script src='js/calc.js'></script>
+<title>PCBS Tools - 조립 PC 제조 계산기</title>
 <style>
     table {
         border: 1px solid;
@@ -48,8 +49,8 @@
         <a href="../ko/index.html" class="w3-button w3-bar-item"><b><font face="Arial">홈</font></b></a>
         <a href="../ko/partsranking.html" class="w3-button w3-bar-item"><b><font face="Arial">부품 순위</font></b></a>
         <a href="../ko/3dmarkcalc.html" class="w3-button w3-bar-item"><b><font face="Arial">3DMark™ 계산기</font></b></a>
-        <a href="../ko/buildmaker.html" class="w3-button w3-bar-item"><b><font face="Arial">조립PC 만들기</font></b></a>
-        <a href="../ko/buildupgrader.html" class="w3-button w3-bar-item"><b><font face="Arial">조립PC 업그레이드</font></b></a>
+        <a href="../ko/buildmaker.html" class="w3-button w3-bar-item"><b><font face="Arial">조립PC 제조 계산기</font></b></a>
+        <a href="../ko/buildupgrader.html" class="w3-button w3-bar-item"><b><font face="Arial">조립PC 업그레이드 계산기</font></b></a>
         <a href="../ko/support.html" class="w3-button w3-bar-item"><b><font face="Arial">지원</font></b></a>
         <a href="../en/buildmaker.html" class="w3-button w3-bar-item"><b><font face="Arial">English</font></b></a>
     </nav>
@@ -61,8 +62,8 @@
 
     <!-- Description -->
     <section class="w3-container w3-center w3-content" style="max-width:600px">
-        <h2 class="w3-wide">조립PC 만들기</h2>
-        <p class="w3-opacity"><i>조립PC를 만들기 위한 조립PC 만들기입니다.</i></p>
+        <h2 class="w3-wide">조립PC 제작 계산기</h2>
+        <p class="w3-opacity"><i>조립PC를 만들기 위한 조립PC 제작 계산기입니다.</i></p>
     </section>
 
     <!-- Build Maker -->
@@ -72,13 +73,13 @@
             <table>
                 <caption class="tableTitle">조립PC 만들기</caption>
                 <tr>
-                    <td>자금(Budgets)</td>
+                    <td>예산</td>
                     <td>
                         <input name="budgetforbuild" required></input>
                     </td>
                 </tr>
                 <tr>
-                    <td>다른 부품을 위한 자금(Budget For Other Parts)</td>
+                    <td>다른 부품을 위한 예산</td>
                     <td>
                         <input name="reservedbudgetforbuild" placeholder="입력이 없으면 기본값 $500 ,메인보드도 포함하려면 400 입력"></input>
                     </td>
@@ -166,7 +167,7 @@
             <td>점수</td>
             <td>전력량</td>
             <td>가격</td>
-            <td>남은 <br />자금 <br />(Budget <br />Left)</td>
+            <td>남은 <br />예산</td>
         </tr>
     </table>
     </section>
