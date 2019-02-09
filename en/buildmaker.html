@@ -82,7 +82,7 @@
                     <tr>
                         <td>Budget For Other Parts</td>
                         <td>
-                            <input name="reservedbudgetforbuild" placeholder="Defaults to $500 if not inputted,400 if include motherboard"></input>
+                            <input name="reservedbudgetforbuild" placeholder="Defaults to $500 if not inputted, 400 if include motherboard, 300 if include Motherboard and RAM"></input>
                         </td>
                     </tr>
                     <tr>
@@ -149,8 +149,7 @@
                     </tr>
                     <tr>
                         <td>
-                            <button type="button" onclick="generateBuild(document.getElementById('buildSetting').budgetforbuild.value,document.getElementById('buildSetting').reservedbudgetforbuild.value,document.getElementById('buildSetting').scoreforbuild.value,document.getElementById('buildSetting').scoreoffset.value,document.getElementById('buildSetting').levelforbuild.value,document.getElementById('buildSetting').numberofresult.value,document.getElementById('buildSetting').architecturetype.value,document.getElementById('buildSetting').includemotherboard.checked,document.getElementById('buildSetting').includeram.checked,document.getElementById('buildSetting').needoverclock.checked,document.getElementById('buildSetting').buildrandomness.checked)">Generate
-                                Build!</button>
+                            <button type="button" onclick="generateBuild(document.getElementById('buildSetting').budgetforbuild.value,document.getElementById('buildSetting').reservedbudgetforbuild.value,document.getElementById('buildSetting').scoreforbuild.value,document.getElementById('buildSetting').scoreoffset.value,document.getElementById('buildSetting').levelforbuild.value,document.getElementById('buildSetting').numberofresult.value,document.getElementById('buildSetting').architecturetype.value,document.getElementById('buildSetting').includemotherboard.checked,document.getElementById('buildSetting').includeram.checked,document.getElementById('buildSetting').needoverclock.checked,document.getElementById('buildSetting').buildrandomness.checked)">Generate Build!</button>
                         </td>
                     </tr>
                 </table>
