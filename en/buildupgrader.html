@@ -420,8 +420,14 @@ input {
                         </td>
                     </tr>
                     <tr>
+                        <td>Hard Mode?</td>
                         <td>
-                            <button type="button" onclick="upgradeBuild(document.getElementById('upgraderInput').currentprocessor.value,document.getElementById('upgraderInput').currentchannel.value,document.getElementById('upgraderInput').currentramspeed.value,document.getElementById('upgraderInput').currentgpu.value,document.getElementById('upgraderInput').currentslicf.value,document.getElementById('upgraderInput').currentmotherboard.value,document.getElementById('upgraderInput').upgradebudget.value,document.getElementById('upgraderInput').upgradebudgetforotherparts.value,document.getElementById('upgraderInput').upgradetargetscore.value,document.getElementById('upgraderInput').upgradescoreoffset.value,document.getElementById('upgraderInput').currentlevel.value,document.getElementById('upgraderInput').numberofresult.value)">Upgrade!</button>
+                            <input name="hardmode" type="checkbox"></input>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <button type="button" onclick="upgradeBuild(document.getElementById('upgraderInput').currentprocessor.value,document.getElementById('upgraderInput').currentchannel.value,document.getElementById('upgraderInput').currentramspeed.value,document.getElementById('upgraderInput').currentgpu.value,document.getElementById('upgraderInput').currentslicf.value,document.getElementById('upgraderInput').currentmotherboard.value,document.getElementById('upgraderInput').upgradebudget.value,document.getElementById('upgraderInput').upgradebudgetforotherparts.value,document.getElementById('upgraderInput').upgradetargetscore.value,document.getElementById('upgraderInput').upgradescoreoffset.value,document.getElementById('upgraderInput').currentlevel.value,document.getElementById('upgraderInput').numberofresult.value,document.getElementById('upgraderInput').hardmode.checked)">Upgrade!</button>
                         </td>
                     </tr>
                 </table>

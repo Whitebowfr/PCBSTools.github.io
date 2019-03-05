@@ -148,8 +148,14 @@
                         </td>
                     </tr>
                     <tr>
+                        <td>Hard Mode?</td>
                         <td>
-                            <button type="button" onclick="generateBuild(document.getElementById('buildSetting').budgetforbuild.value,document.getElementById('buildSetting').reservedbudgetforbuild.value,document.getElementById('buildSetting').scoreforbuild.value,document.getElementById('buildSetting').scoreoffset.value,document.getElementById('buildSetting').levelforbuild.value,document.getElementById('buildSetting').numberofresult.value,document.getElementById('buildSetting').architecturetype.value,document.getElementById('buildSetting').includemotherboard.checked,document.getElementById('buildSetting').includeram.checked,document.getElementById('buildSetting').needoverclock.checked,document.getElementById('buildSetting').buildrandomness.checked)">Generate Build!</button>
+                            <input name="hardmode" type="checkbox"></input>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <button type="button" onclick="generateBuild(document.getElementById('buildSetting').budgetforbuild.value,document.getElementById('buildSetting').reservedbudgetforbuild.value,document.getElementById('buildSetting').scoreforbuild.value,document.getElementById('buildSetting').scoreoffset.value,document.getElementById('buildSetting').levelforbuild.value,document.getElementById('buildSetting').numberofresult.value,document.getElementById('buildSetting').architecturetype.value,document.getElementById('buildSetting').includemotherboard.checked,document.getElementById('buildSetting').includeram.checked,document.getElementById('buildSetting').needoverclock.checked,document.getElementById('buildSetting').buildrandomness.checked,document.getElementById('buildSetting').hardmode.checked)">Generate Build!</button>
                         </td>
                     </tr>
                 </table>

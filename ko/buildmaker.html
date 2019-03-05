@@ -147,8 +147,14 @@
                     </td>
                 </tr>
                 <tr>
+                    <td>하드 모드인가요?</td>
                     <td>
-                        <button type="button" onclick="generateBuild(document.getElementById('buildSetting').budgetforbuild.value,document.getElementById('buildSetting').reservedbudgetforbuild.value,document.getElementById('buildSetting').scoreforbuild.value,document.getElementById('buildSetting').scoreoffset.value,document.getElementById('buildSetting').levelforbuild.value,document.getElementById('buildSetting').numberofresult.value,document.getElementById('buildSetting').architecturetype.value,document.getElementById('buildSetting').includemotherboard.checked,document.getElementById('buildSetting').includeram.checked,document.getElementById('buildSetting').needoverclock.checked,document.getElementById('buildSetting').buildrandomness.checked)">조립PC 생성하기!</button>
+                        <input name="hardmode" type="checkbox"></input>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <button type="button" onclick="generateBuild(document.getElementById('buildSetting').budgetforbuild.value,document.getElementById('buildSetting').reservedbudgetforbuild.value,document.getElementById('buildSetting').scoreforbuild.value,document.getElementById('buildSetting').scoreoffset.value,document.getElementById('buildSetting').levelforbuild.value,document.getElementById('buildSetting').numberofresult.value,document.getElementById('buildSetting').architecturetype.value,document.getElementById('buildSetting').includemotherboard.checked,document.getElementById('buildSetting').includeram.checked,document.getElementById('buildSetting').needoverclock.checked,document.getElementById('buildSetting').buildrandomness.checked,document.getElementById('buildSetting').hardmode.checked)">조립 PC 생성하기!</button>
                     </td>
                 </tr>
             </table>
