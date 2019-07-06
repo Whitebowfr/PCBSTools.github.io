@@ -1,8 +1,7 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="ko">
-<title>PCBSTools - 조립PC 만들기</title>
+<title>PCBSTools - 출시 예정 기능</title>
 <meta charset="UTF-8">
-<script src='../ko/js/calc.js'></script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
 <link rel="stylesheet" href="https://www.w3schools.com/lib/w3-theme-black.css">
@@ -27,45 +26,10 @@
         bottom: 0;
         height: inherit;
     }
-
-    table {
-        border: 1px solid;
-        padding: 10px 15px;
-        display: inline-block;
-    }
-
-    .tableTitle {
-        font-weight: bold;
-        font-size: 150%;
-    }
-
-    #bmResult {
-        font-size: 20px;
-        font-weight: bold;
-    }
-
-    #buildMaker {
-        left: 50%;
-    }
-
-    #buildMakerResult td {
-        border: 1px solid;
-        padding: 8px;
-    }
-
-    #buildMakerResult {
-        border: none;
-        padding: 8px;
-        border-collapse: collapse;
-        display: none;
-    }
-
-    input {
-        min-width: 350px;
-    }
 </style>
 
 <body>
+
     <!-- Navbar -->
     <div class="w3-top">
         <div class="w3-bar w3-theme w3-large">
@@ -87,8 +51,8 @@
             <div class="w3-dropdown-hover">
                 <button class="w3-button">Language</button>
                 <div class="w3-dropdown-content w3-bar-block w3-card-4">
-                    <a href="../ko/buildmaker.html" class="w3-bar-item w3-button">한국어</a>
-                    <a href="../en/buildmaker.html" class="w3-bar-item w3-button">English</a>
+                    <a href="../ko/support.html" class="w3-bar-item w3-button">한국어</a>
+                    <a href="../en/support.html" class="w3-bar-item w3-button">English</a>
                 </div>
             </div>
         </div>
@@ -96,129 +60,20 @@
 
     <!-- PCBS Image -->
     <section>
-        <div align="center"><img src="img/img_buildmaker.jpg" style="width:100%"></div>
+        <div align="center"><img src="img/img_upcomingfeatures.jpg" style="width:100%"></div>
     </section>
 
     <!-- Main content: shift it to the right by 250 pixels when the sidebar is visible -->
     <div class="w3-main w3-center w3-content" style="max-width:1200px">
         <div class="w3-row w3-padding-64">
             <div class="w3-container">
-                <h1 class="w3-text-teal">조립PC 만들기</h1>
-                <p>조립PC 만들기는 당신을 위해 조립PC를 추천해줍니다!</p>
+                <h1 class="w3-text-teal">출시 예정 기능 - 마지막 업데이트: 2019년 7월 6일</h1>
+                <p>오버클럭 계산기 출시</p>
+                <p>더 많은 번역 (기여하고 싶으시면 <a href="https://steamcommunity.com/groups/PCBSTools#discussions" title="PCBSTools Discussion" onclick="window.open('https://steamcommunity.com/groups/PCBSTools#discussions'); return false;">스팀 그룹 토론장</a>에 저한테 연락해주세요)</p>
+                <p>수냉 GPU 추가</p>
+                <p>등등....</p>
             </div>
         </div>
-
-        <section class="w3-row-padding w3-center w3-light-grey">
-            <script src='../ko/js/calc.js'></script>
-            <div id="buildMaker">
-			<form id="buildSetting" target="#" method="GET">
-				<table>
-					<caption class="tableTitle">조립PC 만들기</caption>
-					<tr>
-						<td>예산</td>
-						<td>
-							<input name="budgetforbuild" required></input>
-						</td>
-					</tr>
-					<tr>
-						<td>저축 예산</td>
-						<td>
-							<input name="reservedbudgetforbuild" placeholder="입력하지 않으면 기본값 $500, 메인보드를 포함하려면 400"></input>
-						</td>
-					</tr>
-					<tr>
-						<td>목표 점수</td>
-						<td>
-							<input name="scoreforbuild" required></input>
-						</td>
-					</tr>
-					<tr>
-						<td>목표 점수 오프셋</td>
-						<td>
-							<input name="scoreoffset" placeholder="기본값 200"></input>
-						</td>
-					</tr>
-					<tr>
-						<td>현재 커리어 레벨</td>
-						<td>
-							<input name="levelforbuild" required></input>
-						</td>
-					</tr>
-					<tr>
-						<td>결과 표시 수</td>
-						<td>
-							<input name="numberofresult" placeholder="입력되지 않으면 기본값 10" ></input>
-						</td>
-					</tr>
-					<tr>
-						<td>조립 아키텍처</td>
-						<td>
-							<select id="architecturetype">
-								<option value="any" selected>아무거나</option>
-								<option value="skylake">스카이레이크 (LGA 1151)</option>
-								<option value="kabylake">카비레이크 (LGA 1151)</option>
-								<option value="coffeelake">커피레이크 (LGA 1151)</option>
-								<option value="ryzen">라이젠 (AM4)</option>
-								<option value="threadripper">스레드리퍼 (TR4)</option>
-								<option value="xseries">X-시리즈 (LGA 2066)</option>
-							</select>
-						</td>
-					</tr>
-					<tr>
-						<td>마더보드 포함?</td>
-						<td>
-							<input name="includemotherboard" type="checkbox"></input>
-						</td>
-					</tr>
-					<tr>
-						<td>RAM 포함?</td>
-						<td>
-							<input name="includeram" type="checkbox"></input>
-						</td>
-					</tr>
-					<tr>
-						<td>오버클럭이 필요한가요?</td>
-						<td>
-							<input name="needoverclock" type="checkbox"></input>
-						</td>
-					</tr>
-					<tr>
-						<td>무작위로 조립PC를 생성할까요?</td>
-						<td>
-							<input name="buildrandomness" type="checkbox"></input>
-						</td>
-					</tr>
-					<tr>
-						<td>하드 모드인가요?</td>
-						<td>
-							<input name="hardmode" type="checkbox"></input>
-						</td>
-					</tr>
-					<tr>
-						<td>
-							<button type="button" onclick="generateBuild(document.getElementById('buildSetting').budgetforbuild.value,document.getElementById('buildSetting').reservedbudgetforbuild.value,document.getElementById('buildSetting').scoreforbuild.value,document.getElementById('buildSetting').scoreoffset.value,document.getElementById('buildSetting').levelforbuild.value,document.getElementById('buildSetting').numberofresult.value,document.getElementById('buildSetting').architecturetype.value,document.getElementById('buildSetting').includemotherboard.checked,document.getElementById('buildSetting').includeram.checked,document.getElementById('buildSetting').needoverclock.checked,document.getElementById('buildSetting').buildrandomness.checked,document.getElementById('buildSetting').hardmode.checked)">Generate Build!</button>
-						</td>
-					</tr>
-				</table>
-			</form>
-		</div>
-		<table id="buildMakerResult">
-			<caption class="tableTitle">조립PC 결과</caption>
-			<tr>
-				<td>CPU</td>
-				<td>RAM <br/>속도</td>
-				<td>RAM <br/>채널</td>
-				<td>GPU</td>
-				<td>GPU <br />개수</td>
-				<td>메인보드</td>
-				<td>RAM</td>
-				<td>점수</td>
-				<td>전력</td>
-				<td>비용</td>
-				<td>남은 <br />예산</td>
-			</tr>
-		</table>
-        </section>
         <footer id="myFooter">
             <div class="w3-container w3-theme-l2 w3-padding-32">
                 <h4><a href="https://steamcommunity.com/groups/PCBSTools" title="PCBSTools 공식 스팀 그룹"
@@ -230,7 +85,6 @@
                         onclick="window.open('https://steamcommunity.com/groups/PCBSTools/discussions'); return false;">토론</a>
                 </h4>
             </div>
-        
             <div class="w3-container w3-theme-l1">
                 <p>사이트 제작 - <a href="https://steamcommunity.com/id/AhRoonPlayz" title="Steam Profile Ah_Roon"
                         onclick="window.open('https://steamcommunity.com/id/AhRoonPlayz'); return false;">Ah_Roon(아룬)</a>

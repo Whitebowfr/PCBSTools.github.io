@@ -1,3 +1,777 @@
+function getScore(gpuscore, cpuscore) {
+	return Math.floor(1 / ((0.85 / gpuscore) + (0.15 / cpuscore)))
+}
+
+function getWattage(gpuwattage, cpuwattage, offset) {
+	return gpuwattage + cpuwattage + (offset || 0)
+}
+
+function buildParts(proc, ramspeed, channel, gpu, slicf, mobo, ram, score, wattage, cost, budgetleft) {
+	var build = {
+		"processor": proc,
+		"ramspeed": ramspeed,
+		"channel": channel,
+		"gpu": gpu,
+		"slicf": slicf,
+		"mobo": mobo,
+		"ram": ram,
+		"score": score,
+		"wattage": wattage,
+		"cost": cost,
+		"budgetleft": budgetleft
+	}
+	return build
+}
+
+function moboram(mobo, ram) {
+	if ((mobo == true) && (ram == true)) {
+		return "fullcost"
+	}
+	else if ((mobo == true) && (ram == false)) {
+		return "withmobocost"
+	}
+	else if ((mobo == false) && (ram == true)) {
+		return "withramcost"
+	}
+	else if ((mobo == false) && (ram == false)) {
+		return "cost"
+	}
+	return "cost"
+}
+
+function showAvailableRamSpeedRamChannel(procId, selectionOfSpeed, ramchannel) {
+	var arrayOfSpeedsOfProc = []
+
+	for (speed in data.procs[procId]['1']) {
+		arrayOfSpeedsOfProc.push(speed)
+	}
+
+	for (i = 0; i < 28; i++) {
+		if (data.procs[procId]["1"][selectionOfSpeed[i].value] !== undefined) {
+			selectionOfSpeed[i].style.display = 'block'
+		} else {
+			selectionOfSpeed[i].style.display = 'none'
+		}
+	}
+
+	for (i = 1; i < 5; i++) {
+		if (data.procs[procId][i.toString()] !== undefined) {
+			ramchannel[i - 1].style.display = 'block'
+		} else {
+			ramchannel[i - 1].style.display = 'none'
+		}
+	}
+}
+
+function showAvailableMotherboard(cpuid, gpuid, slicf, motherboardlist) {
+	for (mobo in motherboardlist) {
+		if (mobo !== "length" && mobo !== "item" && mobo !== "namedItem" && mobo !== "selectedIndex" && mobo !== "add" && mobo !== "remove") {
+			if (cpuid !== "") {
+				if (data.procs[cpuid].socket == data.motherboards[motherboardlist[mobo].innerHTML].socket) {
+					if (slicf == "1") {
+						motherboardlist[mobo].style.display = "block"
+					} else {
+						if (data.motherboards[motherboardlist[mobo].innerHTML].multigpu != null && (data.motherboards[motherboardlist[mobo].innerHTML].multigpu).includes(data.gpus[gpuid].multigpu)) {
+							motherboardlist[mobo].style.display = "block"
+						} else {
+							motherboardlist[mobo].style.display = "none"
+						}
+					}
+				} else {
+					motherboardlist[mobo].style.display = "none"
+				}
+			}
+		}
+	}
+}
+
+function calculateScore(proc, channel, ramspeed, gpu, slicf) {
+	if (!data.procs[proc] || data.procs[proc][channel][ramspeed] == "") {
+		alert("CPU를 찾을 수 없습니다. 가능한 CPU가 검색되면 나타날 것입니다.")
+	} else if (!data.gpus[gpu]) {
+		alert("GPU를 찾을 수 없습니다. 가능한 GPU가 검색되면 나타날 것입니다.")
+	} else if (!data.gpus[gpu][slicf]) {
+		alert("선택된 GPU는 SLI/CrossFire를 지원하지 않습니다!")
+	} else {
+		var score = getScore(data.gpus[gpu][slicf].score, data.procs[proc][channel][ramspeed])
+		var wattage = getWattage(data.gpus[gpu][slicf].wattage, data.procs[proc].wattage, 50)
+		document.getElementById('scoreresult').innerHTML = score
+		document.getElementById('cpuresult').innerHTML = data.procs[proc][channel][ramspeed]
+		document.getElementById('gpuresult').innerHTML = data.gpus[gpu][slicf].score
+		document.getElementById('wattageresult').innerHTML = wattage
+
+	}
+}
+
+function getRandom(min, max) {
+	return Math.round(Math.random() * (max - min) + min);
+}
+
+function generateBuild(budget, reservedbudget, targetscore, scoreoffset, levelforbuild, numberofresult, buildtype, includemotherboard, includeram, overclock, randomness, hardmode) {
+	var builds = []
+	var randomBuilds = []
+	var sortedBuilds = []
+	var sortedByPrice = []
+	var sortedByScore = []
+
+	budget = Number(budget)
+	reservedbudget = Number(reservedbudget)
+	targetscore = Number(targetscore)
+	levelforbuild = Number(levelforbuild)
+	numberofresult = Number(numberofresult)
+
+	if (reservedbudget == "") {
+		if (includemotherboard == true) {
+			reservedbudget = 400
+			if (includeram == true) {
+				reservedbudget = 300
+			}
+		} else {
+			reservedbudget = 500
+			if (includeram == true) {
+				reservedbudget = 300
+			}
+		}
+	}
+	if (scoreoffset == "") {
+		scoreoffset = 200
+	} else {
+		scoreoffset = Number(scoreoffset)
+	}
+	if (numberofresult == "") {
+		numberofresult = 10
+	}
+	if (hardmode) {
+		budget = Math.round(((budget * 100) / 66)) + 1
+	}
+
+	for (cpu in data.procs) {
+		for (gpu in data.gpus) {
+			if ((data.procs[cpu].level <= levelforbuild) && (data.gpus[gpu].level <= levelforbuild)) {
+				for (ramchannels in data.procs[cpu]) {
+					if (ramchannels == "1" || ramchannels == "2" || ramchannels == "3" || ramchannels == "4") {
+						if (data.procs[cpu][ramchannels] !== undefined) {
+							for (ramspeeds in data.procs[cpu][ramchannels]) {
+								for (numberofgpu in data.gpus[gpu]) {
+									if (numberofgpu == "1" || numberofgpu == "2") {
+										var score = getScore(data.gpus[gpu][numberofgpu].score, data.procs[cpu][ramchannels][ramspeeds])
+										if ((score >= targetscore) && (score <= (targetscore + scoreoffset))) {
+											var settings = moboram(includemotherboard, includeram)
+
+											switch (settings) {
+												case "fullcost":
+													for (mobo in data.motherboards) {
+														for (ramms in data.ram) {
+															if ((data.motherboards[mobo].level <= levelforbuild) && (data.ram[ramms].level <= levelforbuild) && Number(data.ram[ramms].frequency) >= ramspeeds) {
+																if (data.motherboards[mobo].socket == data.procs[cpu].socket) {
+																	if (overclock == true) {
+																		if (data.motherboards[mobo].oc == "Yes" && data.procs[cpu].oc == "Yes") {
+																			if (data.motherboards[mobo].speeds.includes(ramspeeds)) {
+																				if (data.ram[ramms].frequency >= data.motherboards[mobo].maxspeed) {
+																					var fullcost = data.procs[cpu].price + data.gpus[gpu][numberofgpu].price + data.motherboards[mobo].price + Number(data.ram[ramms].price * ramchannels)
+																					if ((budget >= fullcost) && (fullcost <= (budget - reservedbudget))) {
+																						if (numberofgpu == "1") {
+																							var wattage = getWattage(data.procs[cpu].wattage, data.gpus[gpu][numberofgpu].wattage)
+																							if (buildtype == "any") {
+																								builds.push(buildParts(cpu, ramspeeds, ramchannels, gpu, numberofgpu, mobo, ramms, score, wattage, fullcost, (budget - fullcost)))
+																							} else {
+																								if (data.procs[cpu].type == buildtype) {
+																									builds.push(buildParts(cpu, ramspeeds, ramchannels, gpu, numberofgpu, mobo, ramms, score, wattage, fullcost, (budget - fullcost)))
+																								}
+																							}
+																						} else {
+																							var wattage = getWattage(data.procs[cpu].wattage, data.gpus[gpu][numberofgpu].wattage)
+																							if ((data.motherboards[mobo].multigpu !== null) && (data.motherboards[mobo].multigpu.includes(data.gpus[gpu].multigpu))) {
+																								if (buildtype == "any") {
+																									builds.push(buildParts(cpu, ramspeeds, ramchannels, gpu, numberofgpu, mobo, ramms, score, wattage, fullcost, (budget - fullcost)))
+																								} else {
+																									if (data.procs[cpu].type == buildtype) {
+																										builds.push(buildParts(cpu, ramspeeds, ramchannels, gpu, numberofgpu, mobo, ramms, score, wattage, fullcost, (budget - fullcost)))
+																									}
+																								}
+																							}
+																						}
+																					}
+																				}
+																			}
+																		}
+																	} else {
+																		if (data.motherboards[mobo].speeds.includes(ramspeeds)) {
+																			if (data.ram[ramms].frequency >= data.motherboards[mobo].maxspeed) {
+																				var fullcost = data.procs[cpu].price + data.gpus[gpu][numberofgpu].price + data.motherboards[mobo].price + Number(data.ram[ramms].price * ramchannels)
+																				if ((budget >= fullcost) && (fullcost <= (budget - reservedbudget))) {
+																					if (numberofgpu == "1") {
+																						var wattage = getWattage(data.procs[cpu].wattage, data.gpus[gpu][numberofgpu].wattage)
+																						if (buildtype == "any") {
+																							builds.push(buildParts(cpu, ramspeeds, ramchannels, gpu, numberofgpu, mobo, ramms, score, wattage, fullcost, (budget - fullcost)))
+																						} else {
+																							if (data.procs[cpu].type == buildtype) {
+																								builds.push(buildParts(cpu, ramspeeds, ramchannels, gpu, numberofgpu, mobo, ramms, score, wattage, fullcost, (budget - fullcost)))
+																							}
+																						}
+																					} else {
+																						var wattage = getWattage(data.procs[cpu].wattage, data.gpus[gpu][numberofgpu].wattage)
+																						if ((data.motherboards[mobo].multigpu !== null) && (data.motherboards[mobo].multigpu.includes(data.gpus[gpu].multigpu))) {
+																							if (buildtype == "any") {
+																								builds.push(buildParts(cpu, ramspeeds, ramchannels, gpu, numberofgpu, mobo, ramms, score, wattage, fullcost, (budget - fullcost)))
+																							} else {
+																								if (data.procs[cpu].type == buildtype) {
+																									builds.push(buildParts(cpu, ramspeeds, ramchannels, gpu, numberofgpu, mobo, ramms, score, wattage, fullcost, (budget - fullcost)))
+																								}
+																							}
+																						}
+																					}
+																				}
+																			}
+																		}
+																	}
+																}
+															}
+														}
+													}
+													break;
+												case "withmobocost":
+													for (mobo in data.motherboards) {
+														if ((data.motherboards[mobo].level <= levelforbuild)) {
+															if (data.motherboards[mobo].socket == data.procs[cpu].socket) {
+																if (overclock == true) {
+																	if (data.motherboards[mobo].oc == "Yes" && data.procs[cpu].oc == "Yes") {
+																		if (data.motherboards[mobo].speeds.includes(ramspeeds)) {
+																			var withmobocost = data.procs[cpu].price + data.gpus[gpu][numberofgpu].price + data.motherboards[mobo].price
+																			if ((budget >= withmobocost) && (withmobocost <= (budget - reservedbudget))) {
+																				if (numberofgpu == "1") {
+																					var wattage = getWattage(data.procs[cpu].wattage, data.gpus[gpu][numberofgpu].wattage)
+																					if (buildtype == "any") {
+																						builds.push(buildParts(cpu, ramspeeds, ramchannels, gpu, numberofgpu, mobo, "-", score, wattage, withmobocost, (budget - withmobocost)))
+																					} else {
+																						if (data.procs[cpu].type == buildtype) {
+																							builds.push(buildParts(cpu, ramspeeds, ramchannels, gpu, numberofgpu, mobo, "-", score, wattage, withmobocost, (budget - withmobocost)))
+																						}
+																					}
+																				} else {
+																					var wattage = getWattage(data.procs[cpu].wattage, data.gpus[gpu][numberofgpu].wattage)
+																					if ((data.motherboards[mobo].multigpu !== null) && (data.motherboards[mobo].multigpu.includes(data.gpus[gpu].multigpu))) {
+																						if (buildtype == "any") {
+																							builds.push(buildParts(cpu, ramspeeds, ramchannels, gpu, numberofgpu, mobo, "-", score, wattage, withmobocost, (budget - withmobocost)))
+																						} else {
+																							if (data.procs[cpu].type == buildtype) {
+																								builds.push(buildParts(cpu, ramspeeds, ramchannels, gpu, numberofgpu, mobo, "-", score, wattage, withmobocost, (budget - withmobocost)))
+																							}
+																						}
+																					}
+																				}
+																			}
+																		}
+																	}
+																} else {
+																	if (data.motherboards[mobo].speeds.includes(ramspeeds)) {
+																		var withmobocost = data.procs[cpu].price + data.gpus[gpu][numberofgpu].price + data.motherboards[mobo].price
+																		if ((budget >= withmobocost) && (withmobocost <= (budget - reservedbudget))) {
+																			if (numberofgpu == "1") {
+																				var wattage = getWattage(data.procs[cpu].wattage, data.gpus[gpu][numberofgpu].wattage)
+																				if (buildtype == "any") {
+																					builds.push(buildParts(cpu, ramspeeds, ramchannels, gpu, numberofgpu, mobo, "-", score, wattage, withmobocost, (budget - withmobocost)))
+																				} else {
+																					if (data.procs[cpu].type == buildtype) {
+																						builds.push(buildParts(cpu, ramspeeds, ramchannels, gpu, numberofgpu, mobo, "-", score, wattage, withmobocost, (budget - withmobocost)))
+																					}
+																				}
+																			} else {
+																				var wattage = getWattage(data.procs[cpu].wattage, data.gpus[gpu][numberofgpu].wattage)
+																				if ((data.motherboards[mobo].multigpu !== null) && (data.motherboards[mobo].multigpu.includes(data.gpus[gpu].multigpu))) {
+																					if (buildtype == "any") {
+																						builds.push(buildParts(cpu, ramspeeds, ramchannels, gpu, numberofgpu, mobo, "-", score, wattage, withmobocost, (budget - withmobocost)))
+																					} else {
+																						if (data.procs[cpu].type == buildtype) {
+																							builds.push(buildParts(cpu, ramspeeds, ramchannels, gpu, numberofgpu, mobo, "-", score, wattage, withmobocost, (budget - withmobocost)))
+																						}
+																					}
+																				}
+																			}
+																		}
+
+																	}
+																}
+															}
+														}
+													}
+													break;
+												case "withramcost":
+													if (overclock == true) {
+														if (data.procs[cpu].oc == "Yes") {
+															for (ramms in data.ram) {
+																if ((data.ram[ramms].level <= levelforbuild) && Number(data.ram[ramms].frequency) >= ramspeeds) {
+																	var withramcost = data.procs[cpu].price + data.gpus[gpu][numberofgpu].price + Number(data.ram[ramms].price * ramchannels)
+																	if ((budget >= withramcost) && (withramcost <= (budget - reservedbudget))) {
+																		if (numberofgpu == "1") {
+																			var wattage = getWattage(data.procs[cpu].wattage, data.gpus[gpu][numberofgpu].wattage)
+																			if (buildtype == "any") {
+																				builds.push(buildParts(cpu, ramspeeds, ramchannels, gpu, numberofgpu, "-", ramms, score, wattage, withramcost, (budget - withramcost)))
+																			} else {
+																				if (data.procs[cpu].type == buildtype) {
+																					builds.push(buildParts(cpu, ramspeeds, ramchannels, gpu, numberofgpu, "-", ramms, score, wattage, withramcost, (budget - withramcost)))
+																				}
+																			}
+																		} else {
+																			var wattage = getWattage(data.procs[cpu].wattage, data.gpus[gpu][numberofgpu].wattage)
+																			if (buildtype == "any") {
+																				builds.push(buildParts(cpu, ramspeeds, ramchannels, gpu, numberofgpu, "-", ramms, score, wattage, withramcost, (budget - withramcost)))
+																			} else {
+																				if (data.procs[cpu].type == buildtype) {
+																					builds.push(buildParts(cpu, ramspeeds, ramchannels, gpu, numberofgpu, "-", ramms, score, wattage, withramcost, (budget - withramcost)))
+																				}
+																			}
+																		}
+																	}
+																}
+															}
+														}
+													} else {
+														for (ramms in data.ram) {
+															if ((data.ram[ramms].level <= levelforbuild) && Number(data.ram[ramms].frequency) >= ramspeeds) {
+																var withramcost = data.procs[cpu].price + data.gpus[gpu][numberofgpu].price + Number(data.ram[ramms].price * ramchannels)
+																if ((budget >= withramcost) && (withramcost <= (budget - reservedbudget))) {
+																	if (numberofgpu == "1") {
+																		var wattage = getWattage(data.procs[cpu].wattage, data.gpus[gpu][numberofgpu].wattage)
+																		if (buildtype == "any") {
+																			builds.push(buildParts(cpu, ramspeeds, ramchannels, gpu, numberofgpu, "-", ramms, score, wattage, withramcost, (budget - withramcost)))
+																		} else {
+																			if (data.procs[cpu].type == buildtype) {
+																				builds.push(buildParts(cpu, ramspeeds, ramchannels, gpu, numberofgpu, "-", ramms, score, wattage, withramcost, (budget - withramcost)))
+																			}
+																		}
+																	} else {
+																		var wattage = getWattage(data.procs[cpu].wattage, data.gpus[gpu][numberofgpu].wattage)
+																		if (buildtype == "any") {
+																			builds.push(buildParts(cpu, ramspeeds, ramchannels, gpu, numberofgpu, "-", ramms, score, wattage, withramcost, (budget - withramcost)))
+																		} else {
+																			if (data.procs[cpu].type == buildtype) {
+																				builds.push(buildParts(cpu, ramspeeds, ramchannels, gpu, numberofgpu, "-", ramms, score, wattage, withramcost, (budget - withramcost)))
+																			}
+																		}
+																	}
+																}
+															}
+														}
+													}
+													break;
+												case "cost":
+													if (overclock == true) {
+														if (data.procs[cpu].oc == "Yes") {
+															var cost = data.procs[cpu].price + data.gpus[gpu][numberofgpu].price
+															if ((budget >= cost) && (cost <= (budget - reservedbudget))) {
+																if (numberofgpu == "1") {
+																	var wattage = getWattage(data.procs[cpu].wattage, data.gpus[gpu][numberofgpu].wattage)
+																	if (buildtype == "any") {
+																		builds.push(buildParts(cpu, ramspeeds, ramchannels, gpu, numberofgpu, "-", "-", score, wattage, cost, (budget - cost)))
+																	} else {
+																		if (data.procs[cpu].type == buildtype) {
+																			builds.push(buildParts(cpu, ramspeeds, ramchannels, gpu, numberofgpu, "-", "-", score, wattage, cost, (budget - cost)))
+																		}
+																	}
+																} else {
+																	var wattage = getWattage(data.procs[cpu].wattage, data.gpus[gpu][numberofgpu].wattage)
+																	if (buildtype == "any") {
+																		builds.push(buildParts(cpu, ramspeeds, ramchannels, gpu, numberofgpu, "-", "-", score, wattage, cost, (budget - cost)))
+																	} else {
+																		if (data.procs[cpu].type == buildtype) {
+																			builds.push(buildParts(cpu, ramspeeds, ramchannels, gpu, numberofgpu, "-", "-", score, wattage, cost, (budget - cost)))
+																		}
+																	}
+																}
+															}
+
+														}
+													} else {
+														var cost = data.procs[cpu].price + data.gpus[gpu][numberofgpu].price
+														if ((budget >= cost) && (cost <= (budget - reservedbudget))) {
+															if (numberofgpu == "1") {
+																var wattage = getWattage(data.procs[cpu].wattage, data.gpus[gpu][numberofgpu].wattage)
+																if (buildtype == "any") {
+																	builds.push(buildParts(cpu, ramspeeds, ramchannels, gpu, numberofgpu, "-", "-", score, wattage, cost, (budget - cost)))
+																} else {
+																	if (data.procs[cpu].type == buildtype) {
+																		builds.push(buildParts(cpu, ramspeeds, ramchannels, gpu, numberofgpu, "-", "-", score, wattage, cost, (budget - cost)))
+																	}
+																}
+															} else {
+																var wattage = getWattage(data.procs[cpu].wattage, data.gpus[gpu][numberofgpu].wattage)
+																if (buildtype == "any") {
+																	builds.push(buildParts(cpu, ramspeeds, ramchannels, gpu, numberofgpu, "-", "-", score, wattage, cost, (budget - cost)))
+																} else {
+																	if (data.procs[cpu].type == buildtype) {
+																		builds.push(buildParts(cpu, ramspeeds, ramchannels, gpu, numberofgpu, "-", "-", score, wattage, cost, (budget - cost)))
+																	}
+																}
+															}
+														}
+
+													}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	console.log(builds)
+
+	sortedByPrice = builds.sort(sortByCost)
+	sortedByScore = builds.sort(sortByScore)
+	if (builds.length <= Number(numberofresult)) {
+		numberofresult = builds.length
+		sortedBuilds = builds
+		randomBuilds = builds
+	} else {
+		for (a = 0; a < numberofresult; a++) {
+			var randomNumber1 = getRandom(0, builds.length - 1)
+			randomBuilds.push(builds[randomNumber1])
+			builds.splice(randomNumber1, 1)
+		}
+		sortedBuilds.push(sortedByPrice[0])
+		sortedBuilds.push(sortedByPrice[sortedByPrice.length - 1])
+		sortedBuilds.push(sortedByScore[0])
+		sortedBuilds.push(sortedByScore[sortedByScore.length - 1])
+		for (a = 0; a < numberofresult - 4; a++) {
+			var randomNumber2 = getRandom(0, builds.length - 1)
+			sortedBuilds.push(builds[randomNumber2])
+			builds.splice(randomNumber2, 1)
+		}
+	}
+	randomBuilds.sort(sortByCost)
+	sortedBuilds.sort(sortByCost)
+	if (builds.length == 0) {
+		alert("아무 조립PC를 생각해 낼 수 없었습니다!")
+	} else {
+		var table = document.getElementById("buildMakerResult")
+		for (i = table.rows.length - 1; i >= 1; i--) {
+			table.deleteRow(i)
+		}
+		for (i = 1; i < numberofresult + 1; i++) {
+			table.insertRow(i)
+			for (a = 0; a < 11; a++) {
+				table.rows[i].insertCell(a)
+			}
+		}
+		if (randomness == true) {
+			for (b = 1; b < randomBuilds.length + 1; b++) {
+				table.rows[b].cells[0].innerHTML = randomBuilds[b - 1].processor
+				table.rows[b].cells[1].innerHTML = randomBuilds[b - 1].ramspeed
+				table.rows[b].cells[2].innerHTML = randomBuilds[b - 1].channel
+				table.rows[b].cells[3].innerHTML = randomBuilds[b - 1].gpu
+				table.rows[b].cells[4].innerHTML = randomBuilds[b - 1].slicf
+				table.rows[b].cells[5].innerHTML = randomBuilds[b - 1].mobo
+				table.rows[b].cells[6].innerHTML = randomBuilds[b - 1].ram
+				table.rows[b].cells[7].innerHTML = randomBuilds[b - 1].score
+				table.rows[b].cells[8].innerHTML = randomBuilds[b - 1].wattage
+				table.rows[b].cells[9].innerHTML = randomBuilds[b - 1].cost
+				table.rows[b].cells[10].innerHTML = randomBuilds[b - 1].budgetleft
+			}
+		} else {
+			for (b = 1; b < randomBuilds.length + 1; b++) {
+				table.rows[b].cells[0].innerHTML = sortedBuilds[b - 1].processor
+				table.rows[b].cells[1].innerHTML = sortedBuilds[b - 1].ramspeed
+				table.rows[b].cells[2].innerHTML = sortedBuilds[b - 1].channel
+				table.rows[b].cells[3].innerHTML = sortedBuilds[b - 1].gpu
+				table.rows[b].cells[4].innerHTML = sortedBuilds[b - 1].slicf
+				table.rows[b].cells[5].innerHTML = sortedBuilds[b - 1].mobo
+				table.rows[b].cells[6].innerHTML = sortedBuilds[b - 1].ram
+				table.rows[b].cells[7].innerHTML = sortedBuilds[b - 1].score
+				table.rows[b].cells[8].innerHTML = sortedBuilds[b - 1].wattage
+				table.rows[b].cells[9].innerHTML = sortedBuilds[b - 1].cost
+				table.rows[b].cells[10].innerHTML = sortedBuilds[b - 1].budgetleft
+			}
+		}
+	}
+	document.getElementById('buildMakerResult').style.display = "inline-block"
+}
+
+
+function sortByScore(a, b) {
+	if (a.score < b.score) {
+		return -1;
+	}
+	if (a.score > b.score) {
+		return 1;
+	}
+	return 0;
+}
+
+function sortByCost(a, b) {
+	if (a.cost < b.cost) {
+		return -1;
+	}
+	if (a.cost > b.cost) {
+		return 1;
+	}
+	return 0;
+}
+
+function upgradeBuild(currentproc, currentramchannel, currentramspeed, currentgpu, currentslicf, currentmotherboard, upgradebudget, upgradebudgetforotherparts, upgradetargetscore, scoreoffset, currentlevel, numberofresult, hardmode) {
+	var currentscore = Math.round(1 / ((0.85 / data.gpus[currentgpu][currentslicf].score) + (0.15 / data.procs[currentproc][currentramchannel][currentramspeed])))
+	var cpuinlist = Object.keys(data.procs)
+	var gpuinlist = Object.keys(data.gpus)
+	var upgrades = []
+	var randomupgrades = []
+	var currentscore = Math.round((1 / ((0.85 / data.gpus[currentgpu][currentslicf].score) + (0.15 / data.procs[currentproc][currentramchannel][currentramspeed]))))
+
+	if (scoreoffset == "") {
+		scoreoffset = 200
+	} else {
+		scoreoffset = Number(scoreoffset)
+	}
+	if (hardmode) {
+		upgradebudget = Math.round(((upgradebudget * 100) / 95)) + 1
+	}
+
+	if (currentscore >= upgradetargetscore) {
+		alert("업그레이드를 할 수 없습니다.")
+	} else {
+		if (numberofresult == "") {
+			numberofresult = 10
+		}
+		if (upgradebudgetforotherparts == "") {
+			upgradebudgetforotherparts = 0
+		}
+		//Check cpu upgrade first
+		for (cpu in data.procs) {
+			//only same socket to prevent motherboard changing
+			if (data.procs[currentproc].socket == data.procs[cpu].socket) {
+				var upgradescore = Math.round((1 / ((0.85 / data.gpus[currentgpu][currentslicf].score) + (0.15 / data.procs[cpu][currentramchannel][currentramspeed]))))
+				if ((upgradescore >= upgradetargetscore) && (upgradescore <= (Number(upgradetargetscore) + scoreoffset))) {
+					if (data.procs[cpu].level <= currentlevel) {
+						var cost = data.procs[cpu].price
+						if ((cost <= upgradebudget) && (cost <= (upgradebudget - (upgradebudgetforotherparts)))) {
+							var partsToUpgrade = {
+								"proc": cpu,
+								"ramchannel": currentramchannel,
+								"ramspeed": currentramspeed,
+								"gpu": "-",
+								"slicf": currentslicf,
+								"cost": cost,
+								"budgetleft": upgradebudget - cost,
+								"wattage": Number(data.procs[cpu].wattage) + Number(data.gpus[currentgpu][currentslicf].wattage),
+								"score": upgradescore
+							}
+							upgrades.push(partsToUpgrade)
+						}
+					}
+				}
+			}
+		}
+		//Check for gpu upgrade
+		for (gpu in data.gpus) {
+			for (slicf in data.gpus[gpu]) {
+				if (slicf == "1" || slicf == "2") {
+					if (slicf == "1") {
+						var upgradescore = Math.round((1 / ((0.85 / data.gpus[gpu][slicf].score) + (0.15 / data.procs[currentproc][currentramchannel][currentramspeed]))))
+						if ((upgradescore >= upgradetargetscore) && (upgradescore <= (Number(upgradetargetscore) + scoreoffset))) {
+							if (data.gpus[gpu].level <= currentlevel) {
+								var cost = data.gpus[gpu][slicf].price
+								if ((cost <= upgradebudget) && (cost <= (upgradebudget - (upgradebudgetforotherparts)))) {
+									var partsToUpgrade = {
+										"proc": "-",
+										"ramchannel": currentramchannel,
+										"ramspeed": currentramspeed,
+										"gpu": gpu,
+										"slicf": slicf,
+										"cost": cost,
+										"budgetleft": upgradebudget - cost,
+										"wattage": Number(data.procs[currentproc].wattage) + Number(data.gpus[gpu][slicf].wattage),
+										"score": upgradescore
+									}
+									upgrades.push(partsToUpgrade)
+								}
+							}
+						}
+					} else {
+						if ((data.motherboards[currentmotherboard].multigpu != null) && ((data.motherboards[currentmotherboard].multigpu).includes(data.gpus[gpu].multigpu))) {
+							var upgradescore = Math.round((1 / ((0.85 / data.gpus[gpu][slicf].score) + (0.15 / data.procs[currentproc][currentramchannel][currentramspeed]))))
+							if ((upgradescore >= upgradetargetscore) && (upgradescore <= (Number(upgradetargetscore) + scoreoffset))) {
+								if (data.gpus[gpu].level <= currentlevel) {
+									var cost = data.gpus[gpu][slicf].price
+									if ((cost <= upgradebudget) && (cost <= (upgradebudget - (upgradebudgetforotherparts)))) {
+										var partsToUpgrade = {
+											"proc": "-",
+											"ramchannel": currentramchannel,
+											"ramspeed": currentramspeed,
+											"gpu": gpu,
+											"slicf": slicf,
+											"cost": cost,
+											"budgetleft": upgradebudget - cost,
+											"wattage": Number(data.procs[currentproc].wattage) + Number(data.gpus[gpu][slicf].wattage),
+											"score": upgradescore
+										}
+										upgrades.push(partsToUpgrade)
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		//Check if i could just sli/cf it
+		if (data.gpus[currentgpu]["2"] !== undefined) {
+			if (currentslicf != "2") {
+				var slicfedscore = Math.round((1 / ((0.85 / data.gpus[currentgpu]["2"].score) + (0.15 / data.procs[currentproc][currentramchannel][currentramspeed]))))
+				if (slicfedscore >= upgradetargetscore) {
+					var cost = Number(data.gpus[currentgpu]["1"].price)
+					if ((cost <= upgradebudget) && (cost <= (upgradebudget - upgradebudgetforotherparts))) {
+						if ((data.motherboards[currentmotherboard].multigpu != null) && ((data.motherboards[currentmotherboard].multigpu).includes(data.gpus[currentgpu].multigpu))) {
+							var partsToUpgrade = {
+								"proc": "-",
+								"ramchannel": currentramchannel,
+								"ramspeed": currentramspeed,
+								"gpu": currentgpu,
+								"slicf": "2",
+								"cost": cost,
+								"budgetleft": upgradebudget - cost,
+								"wattage": Number(data.procs[currentproc].wattage) + Number(data.gpus[currentgpu]["2"].wattage),
+								"score": slicfedscore
+							}
+							upgrades.push(partsToUpgrade)
+						}
+					}
+				}
+			}
+		}
+
+
+		//Check for both upgrades
+		var indexOfCProc = cpuinlist.indexOf(currentproc)
+		for (cpu in data.procs) {
+			if (data.motherboards[currentmotherboard].socket == data.procs[cpu].socket) {
+				//DO NOT DOWNGRADE MY FUCKING PROC
+				if (cpuinlist.indexOf(cpu) > indexOfCProc) {
+					for (gpu in data.gpus) {
+						if ((data.procs[cpu].level <= currentlevel) && (data.gpus[gpu].level <= currentlevel)) {
+							for (slicf in data.gpus[gpu]) {
+								if (slicf == "1" || slicf == "2") {
+									if (slicf == "1") {
+										var upgradescore = Math.round((1 / ((0.85 / data.gpus[gpu][slicf].score) + (0.15 / data.procs[cpu][currentramchannel][currentramspeed]))))
+										if ((upgradescore >= upgradetargetscore) && (upgradescore <= (Number(upgradetargetscore) + scoreoffset))) {
+											var cost = Number(data.procs[cpu].price) + Number(data.gpus[gpu][slicf].price)
+											if ((cost <= upgradebudget) && (cost <= (upgradebudget - (upgradebudgetforotherparts)))) {
+												var partsToUpgrade = {
+													"proc": cpu,
+													"ramchannel": currentramchannel,
+													"ramspeed": currentramspeed,
+													"gpu": gpu,
+													"slicf": slicf,
+													"cost": cost,
+													"budgetleft": upgradebudget - cost,
+													"wattage": Number(data.procs[cpu].wattage) + Number(data.gpus[gpu][slicf].wattage),
+													"score": upgradescore
+												}
+												upgrades.push(partsToUpgrade)
+											}
+										}
+									} else {
+										var upgradescore = Math.round((1 / ((0.85 / data.gpus[gpu][slicf].score) + (0.15 / data.procs[cpu][currentramchannel][currentramspeed]))))
+										if ((upgradescore >= upgradetargetscore) && (upgradescore <= (Number(upgradetargetscore) + scoreoffset))) {
+											if (data.motherboards[currentmotherboard].multigpu != null && ((data.motherboards[currentmotherboard].multigpu).includes(data.gpus[gpu].multigpu))) {
+												var cost = Number(data.procs[cpu].price) + Number(data.gpus[gpu][slicf].price)
+												if ((cost <= upgradebudget) && (cost <= (upgradebudget - (upgradebudgetforotherparts)))) {
+													var partsToUpgrade = {
+														"proc": cpu,
+														"ramchannel": currentramchannel,
+														"ramspeed": currentramspeed,
+														"gpu": gpu,
+														"slicf": slicf,
+														"cost": cost,
+														"budgetleft": upgradebudget - cost,
+														"wattage": Number(data.procs[cpu].wattage) + Number(data.gpus[gpu][slicf].wattage),
+														"score": upgradescore
+													}
+													upgrades.push(partsToUpgrade)
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		if (upgrades.length == 0) {
+			alert("No upgrades could be done")
+		}
+		if (upgrades.length <= numberofresult) {
+			numberofresult = upgrades.length
+			randomupgrades = upgrades
+		} else {
+			for (i = 0; i < numberofresult; i++) {
+				var abc = getRandom(0, upgrades.length)
+				randomupgrades.push(upgrades[abc])
+				upgrades.splice(abc, 0)
+			}
+		}
+
+		randomupgrades.sort(sortByCost)
+		var table = document.getElementById('upgraderResult')
+		for (i = table.rows.length - 1; i >= 1; i--) {
+			table.deleteRow(i)
+		}
+		for (i = 1; i <= numberofresult; i++) {
+			table.insertRow(i)
+			for (a = 0; a < 9; a++) {
+				table.rows[i].insertCell(a)
+				switch (a) {
+					case 0:
+						table.rows[i].cells[a].id = "upproc" + i;
+						break;
+					case 1:
+						table.rows[i].cells[a].id = "upramchannel" + i;
+						break;
+					case 2:
+						table.rows[i].cells[a].id = "upramspeed" + i;
+						break;
+					case 3:
+						table.rows[i].cells[a].id = "upgpu" + i;
+						break;
+					case 4:
+						table.rows[i].cells[a].id = "upslicf" + i;
+						break;
+					case 5:
+						table.rows[i].cells[a].id = "upcost" + i;
+						break;
+					case 6:
+						table.rows[i].cells[a].id = "upbudgetleft" + i;
+						break;
+					case 7:
+						table.rows[i].cells[a].id = "upwattage" + i;
+						break;
+					case 8:
+						table.rows[i].cells[a].id = "upscore" + i;
+						break;
+				}
+			}
+		}
+		for (i = 0; i < numberofresult; i++) {
+			document.getElementById("upproc" + (i + 1)).innerHTML = randomupgrades[i].proc
+			document.getElementById("upramspeed" + (i + 1)).innerHTML = randomupgrades[i].ramspeed
+			document.getElementById("upramchannel" + (i + 1)).innerHTML = randomupgrades[i].ramchannel
+			document.getElementById("upgpu" + (i + 1)).innerHTML = randomupgrades[i].gpu
+			document.getElementById("upslicf" + (i + 1)).innerHTML = randomupgrades[i].slicf
+			document.getElementById("upscore" + (i + 1)).innerHTML = randomupgrades[i].score
+			document.getElementById("upwattage" + (i + 1)).innerHTML = randomupgrades[i].wattage
+			document.getElementById("upcost" + (i + 1)).innerHTML = randomupgrades[i].cost
+			document.getElementById("upbudgetleft" + (i + 1)).innerHTML = randomupgrades[i].budgetleft
+		}
+
+		table.style.display = "inline-block"
+	}
+}
+
 var data = {
 	"CaseFan": {
 		"Mortoni Heat Away 90": {
@@ -789,44 +1563,44 @@ var data = {
 		},
 		"Intel Celeron G3930": {
 			"1": {
-				"2133": 1392,
-				"2400": 1413,
-				"2600": 1429,
-				"2666": 1434,
-				"2800": 1444,
-				"3000": 1460,
-				"3200": 1476,
-				"3300": 1484,
-				"3333": 1487,
-				"3400": 1492,
-				"3466": 1497,
-				"3600": 1508,
-				"3666": 1513,
-				"3733": 1518,
-				"3800": 1524,
-				"3866": 1529,
-				"4000": 1540,
-				"4133": 1550
+				"2133": 1375,
+				"2400": 1396,
+				"2600": 1412,
+				"2666": 1417,
+				"2800": 1428,
+				"3000": 1444,
+				"3200": 1460,
+				"3300": 1468,
+				"3333": 1470,
+				"3400": 1476,
+				"3466": 1481,
+				"3600": 1491,
+				"3666": 1497,
+				"3733": 1502,
+				"3800": 1507,
+				"3866": 1513,
+				"4000": 1523,
+				"4133": 1534
 			},
 			"2": {
-				"2133": 1440,
-				"2400": 1462,
-				"2600": 1477,
-				"2666": 1483,
-				"2800": 1493,
-				"3000": 1509,
-				"3200": 1525,
-				"3300": 1533,
-				"3333": 1536,
-				"3400": 1541,
-				"3466": 1546,
-				"3600": 1557,
-				"3666": 1562,
-				"3733": 1567,
-				"3800": 1573,
-				"3866": 1578,
-				"4000": 1588,
-				"4133": 1599
+				"2133": 1424,
+				"2400": 1445,
+				"2600": 1461,
+				"2666": 1466,
+				"2800": 1477,
+				"3000": 1493,
+				"3200": 1509,
+				"3300": 1517,
+				"3333": 1519,
+				"3400": 1524,
+				"3466": 1530,
+				"3600": 1540,
+				"3666": 1546,
+				"3733": 1551,
+				"3800": 1556,
+				"3866": 1561,
+				"4000": 1572,
+				"4133": 1583
 			},
 			"fullName": "Intel Celeron G3930",
 			"partName": "Celeron G3930",
@@ -854,44 +1628,44 @@ var data = {
 		},
 		"Intel Celeron G3950": {
 			"1": {
-				"2133": 1408,
-				"2400": 1429,
-				"2600": 1445,
-				"2666": 1450,
-				"2800": 1461,
-				"3000": 1477,
-				"3200": 1493,
-				"3300": 1500,
-				"3333": 1503,
-				"3400": 1508,
-				"3466": 1514,
-				"3600": 1524,
-				"3666": 1530,
-				"3733": 1535,
-				"3800": 1540,
-				"3866": 1545,
-				"4000": 1556,
-				"4133": 1567
+				"2133": 1375,
+				"2400": 1396,
+				"2600": 1412,
+				"2666": 1417,
+				"2800": 1428,
+				"3000": 1444,
+				"3200": 1460,
+				"3300": 1468,
+				"3333": 1470,
+				"3400": 1476,
+				"3466": 1481,
+				"3600": 1491,
+				"3666": 1497,
+				"3733": 1502,
+				"3800": 1507,
+				"3866": 1513,
+				"4000": 1523,
+				"4133": 1534
 			},
 			"2": {
-				"2133": 1457,
-				"2400": 1478,
-				"2600": 1494,
-				"2666": 1499,
-				"2800": 1510,
-				"3000": 1526,
-				"3200": 1541,
-				"3300": 1549,
-				"3333": 1552,
-				"3400": 1557,
-				"3466": 1562,
-				"3600": 1573,
-				"3666": 1578,
-				"3733": 1584,
-				"3800": 1589,
-				"3866": 1594,
-				"4000": 1605,
-				"4133": 1615
+				"2133": 1424,
+				"2400": 1445,
+				"2600": 1461,
+				"2666": 1466,
+				"2800": 1477,
+				"3000": 1493,
+				"3200": 1509,
+				"3300": 1517,
+				"3333": 1519,
+				"3400": 1524,
+				"3466": 1530,
+				"3600": 1540,
+				"3666": 1546,
+				"3733": 1551,
+				"3800": 1556,
+				"3866": 1561,
+				"4000": 1572,
+				"4133": 1583
 			},
 			"fullName": "Intel Celeron G3950",
 			"partName": "Celeron G3950",
@@ -919,44 +1693,44 @@ var data = {
 		},
 		"Intel Pentium G4400": {
 			"1": {
-				"2133": 1558,
-				"2400": 1590,
-				"2600": 1614,
-				"2666": 1622,
-				"2800": 1638,
-				"3000": 1662,
-				"3200": 1686,
-				"3300": 1698,
-				"3333": 1702,
-				"3400": 1710,
-				"3466": 1718,
-				"3600": 1734,
-				"3666": 1742,
-				"3733": 1750,
-				"3800": 1758,
-				"3866": 1766,
-				"4000": 1782,
-				"4133": 1797
+				"2133": 1312,
+				"2400": 1344,
+				"2600": 1368,
+				"2666": 1376,
+				"2800": 1392,
+				"3000": 1416,
+				"3200": 1440,
+				"3300": 1452,
+				"3333": 1456,
+				"3400": 1464,
+				"3466": 1472,
+				"3600": 1488,
+				"3666": 1496,
+				"3733": 1504,
+				"3800": 1512,
+				"3866": 1520,
+				"4000": 1536,
+				"4133": 1551
 			},
 			"2": {
-				"2133": 1613,
-				"2400": 1645,
-				"2600": 1669,
-				"2666": 1676,
-				"2800": 1693,
-				"3000": 1716,
-				"3200": 1740,
-				"3300": 1752,
-				"3333": 1756,
-				"3400": 1764,
-				"3466": 1772,
-				"3600": 1788,
-				"3666": 1796,
-				"3733": 1804,
-				"3800": 1812,
-				"3866": 1820,
-				"4000": 1836,
-				"4133": 1852
+				"2133": 1367,
+				"2400": 1399,
+				"2600": 1423,
+				"2666": 1430,
+				"2800": 1447,
+				"3000": 1470,
+				"3200": 1494,
+				"3300": 1506,
+				"3333": 1510,
+				"3400": 1518,
+				"3466": 1526,
+				"3600": 1542,
+				"3666": 1550,
+				"3733": 1558,
+				"3800": 1566,
+				"3866": 1574,
+				"4000": 1590,
+				"4133": 1606
 			},
 			"fullName": "Intel Pentium G4400",
 			"partName": "Pentium G4400",
@@ -984,44 +1758,44 @@ var data = {
 		},
 		"Intel Pentium G4500": {
 			"1": {
-				"2133": 1656,
-				"2400": 1688,
-				"2600": 1712,
-				"2666": 1720,
-				"2800": 1736,
-				"3000": 1760,
-				"3200": 1784,
-				"3300": 1796,
-				"3333": 1800,
-				"3400": 1808,
-				"3466": 1816,
-				"3600": 1832,
-				"3666": 1840,
-				"3733": 1848,
-				"3800": 1856,
-				"3866": 1864,
-				"4000": 1880,
-				"4133": 1896
+				"2133": 1312,
+				"2400": 1344,
+				"2600": 1368,
+				"2666": 1376,
+				"2800": 1392,
+				"3000": 1416,
+				"3200": 1440,
+				"3300": 1452,
+				"3333": 1456,
+				"3400": 1464,
+				"3466": 1472,
+				"3600": 1488,
+				"3666": 1496,
+				"3733": 1504,
+				"3800": 1512,
+				"3866": 1520,
+				"4000": 1536,
+				"4133": 1551
 			},
 			"2": {
-				"2133": 1711,
-				"2400": 1743,
-				"2600": 1767,
-				"2666": 1775,
-				"2800": 1791,
-				"3000": 1815,
-				"3200": 1839,
-				"3300": 1851,
-				"3333": 1855,
-				"3400": 1863,
-				"3466": 1871,
-				"3600": 1887,
-				"3666": 1895,
-				"3733": 1903,
-				"3800": 1911,
-				"3866": 1919,
-				"4000": 1935,
-				"4133": 1951
+				"2133": 1367,
+				"2400": 1399,
+				"2600": 1423,
+				"2666": 1430,
+				"2800": 1447,
+				"3000": 1470,
+				"3200": 1494,
+				"3300": 1506,
+				"3333": 1510,
+				"3400": 1518,
+				"3466": 1526,
+				"3600": 1542,
+				"3666": 1550,
+				"3733": 1558,
+				"3800": 1566,
+				"3866": 1574,
+				"4000": 1590,
+				"4133": 1606
 			},
 			"fullName": "Intel Pentium G4500",
 			"partName": "Pentium G4500",
@@ -1049,44 +1823,44 @@ var data = {
 		},
 		"Intel Pentium G4520": {
 			"1": {
-				"2133": 1705,
-				"2400": 1737,
-				"2600": 1761,
-				"2666": 1769,
-				"2800": 1785,
-				"3000": 1809,
-				"3200": 1833,
-				"3300": 1845,
-				"3333": 1849,
-				"3400": 1857,
-				"3466": 1865,
-				"3600": 1881,
-				"3666": 1889,
-				"3733": 1897,
-				"3800": 1905,
-				"3866": 1913,
-				"4000": 1929,
-				"4133": 1945
+				"2133": 1312,
+				"2400": 1344,
+				"2600": 1368,
+				"2666": 1376,
+				"2800": 1392,
+				"3000": 1416,
+				"3200": 1440,
+				"3300": 1452,
+				"3333": 1456,
+				"3400": 1464,
+				"3466": 1472,
+				"3600": 1488,
+				"3666": 1496,
+				"3733": 1504,
+				"3800": 1512,
+				"3866": 1520,
+				"4000": 1536,
+				"4133": 1551
 			},
 			"2": {
-				"2133": 1760,
-				"2400": 1792,
-				"2600": 1816,
-				"2666": 1824,
-				"2800": 1840,
-				"3000": 1864,
-				"3200": 1888,
-				"3300": 1900,
-				"3333": 1904,
-				"3400": 1912,
-				"3466": 1920,
-				"3600": 1936,
-				"3666": 1944,
-				"3733": 1952,
-				"3800": 1960,
-				"3866": 1968,
-				"4000": 1984,
-				"4133": 2000
+				"2133": 1367,
+				"2400": 1399,
+				"2600": 1423,
+				"2666": 1430,
+				"2800": 1447,
+				"3000": 1470,
+				"3200": 1494,
+				"3300": 1506,
+				"3333": 1510,
+				"3400": 1518,
+				"3466": 1526,
+				"3600": 1542,
+				"3666": 1550,
+				"3733": 1558,
+				"3800": 1566,
+				"3866": 1574,
+				"4000": 1590,
+				"4133": 1606
 			},
 			"fullName": "Intel Pentium G4520",
 			"partName": "Pentium G4520",
@@ -1114,44 +1888,44 @@ var data = {
 		},
 		"Intel Core i3-6100T": {
 			"1": {
-				"2133": 2101,
-				"2400": 2129,
-				"2600": 2149,
-				"2666": 2156,
-				"2800": 2170,
-				"3000": 2190,
-				"3200": 2211,
-				"3300": 2221,
-				"3333": 2225,
-				"3400": 2232,
-				"3466": 2238,
-				"3600": 2252,
-				"3666": 2259,
-				"3733": 2266,
-				"3800": 2273,
-				"3866": 2280,
-				"4000": 2294,
-				"4133": 2307
+				"2133": 1989,
+				"2400": 2016,
+				"2600": 2037,
+				"2666": 2044,
+				"2800": 2058,
+				"3000": 2078,
+				"3200": 2099,
+				"3300": 2109,
+				"3333": 2113,
+				"3400": 2120,
+				"3466": 2126,
+				"3600": 2140,
+				"3666": 2147,
+				"3733": 2154,
+				"3800": 2161,
+				"3866": 2168,
+				"4000": 2181,
+				"4133": 2195
 			},
 			"2": {
-				"2133": 2222,
-				"2400": 2249,
-				"2600": 2270,
-				"2666": 2277,
-				"2800": 2290,
-				"3000": 2311,
-				"3200": 2332,
-				"3300": 2342,
-				"3333": 2345,
-				"3400": 2352,
-				"3466": 2359,
-				"3600": 2373,
-				"3666": 2380,
-				"3733": 2387,
-				"3800": 2394,
-				"3866": 2400,
-				"4000": 2414,
-				"4133": 2428
+				"2133": 2110,
+				"2400": 2137,
+				"2600": 2158,
+				"2666": 2165,
+				"2800": 2178,
+				"3000": 2199,
+				"3200": 2220,
+				"3300": 2230,
+				"3333": 2233,
+				"3400": 2240,
+				"3466": 2247,
+				"3600": 2261,
+				"3666": 2268,
+				"3733": 2275,
+				"3800": 2281,
+				"3866": 2288,
+				"4000": 2302,
+				"4133": 2316
 			},
 			"fullName": "Intel Core i3-6100T",
 			"partName": "Core i3-6100T",
@@ -1179,44 +1953,44 @@ var data = {
 		},
 		"Intel Pentium G4560": {
 			"1": {
-				"2133": 2146,
-				"2400": 2165,
-				"2600": 2179,
-				"2666": 2184,
-				"2800": 2194,
-				"3000": 2208,
-				"3200": 2222,
-				"3300": 2229,
-				"3333": 2232,
-				"3400": 2236,
-				"3466": 2241,
-				"3600": 2251,
-				"3666": 2255,
-				"3733": 2260,
-				"3800": 2265,
-				"3866": 2270,
-				"4000": 2279,
-				"4133": 2289
+				"2133": 1616,
+				"2400": 1635,
+				"2600": 1650,
+				"2666": 1654,
+				"2800": 1664,
+				"3000": 1678,
+				"3200": 1693,
+				"3300": 1700,
+				"3333": 1702,
+				"3400": 1707,
+				"3466": 1712,
+				"3600": 1721,
+				"3666": 1726,
+				"3733": 1731,
+				"3800": 1735,
+				"3866": 1740,
+				"4000": 1750,
+				"4133": 1759
 			},
 			"2": {
-				"2133": 2240,
-				"2400": 2259,
-				"2600": 2273,
-				"2666": 2278,
-				"2800": 2288,
-				"3000": 2302,
-				"3200": 2316,
-				"3300": 2323,
-				"3333": 2326,
-				"3400": 2331,
-				"3466": 2335,
-				"3600": 2345,
-				"3666": 2350,
-				"3733": 2354,
-				"3800": 2359,
-				"3866": 2364,
-				"4000": 2374,
-				"4133": 2383
+				"2133": 1710,
+				"2400": 1729,
+				"2600": 1744,
+				"2666": 1748,
+				"2800": 1758,
+				"3000": 1772,
+				"3200": 1787,
+				"3300": 1794,
+				"3333": 1796,
+				"3400": 1801,
+				"3466": 1806,
+				"3600": 1815,
+				"3666": 1820,
+				"3733": 1825,
+				"3800": 1830,
+				"3866": 1834,
+				"4000": 1844,
+				"4133": 1853
 			},
 			"fullName": "Intel Pentium G4560",
 			"partName": "Pentium G4560",
@@ -1244,44 +2018,44 @@ var data = {
 		},
 		"Intel Pentium G4600": {
 			"1": {
-				"2133": 2222,
-				"2400": 2241,
-				"2600": 2255,
-				"2666": 2260,
-				"2800": 2269,
-				"3000": 2284,
-				"3200": 2298,
-				"3300": 2305,
-				"3333": 2307,
-				"3400": 2312,
-				"3466": 2317,
-				"3600": 2326,
-				"3666": 2331,
-				"3733": 2336,
-				"3800": 2341,
-				"3866": 2345,
-				"4000": 2355,
-				"4133": 2365
+				"2133": 1616,
+				"2400": 1635,
+				"2600": 1650,
+				"2666": 1654,
+				"2800": 1664,
+				"3000": 1678,
+				"3200": 1693,
+				"3300": 1700,
+				"3333": 1702,
+				"3400": 1707,
+				"3466": 1712,
+				"3600": 1721,
+				"3666": 1726,
+				"3733": 1731,
+				"3800": 1735,
+				"3866": 1740,
+				"4000": 1750,
+				"4133": 1759
 			},
 			"2": {
-				"2133": 2316,
-				"2400": 2335,
-				"2600": 2349,
-				"2666": 2354,
-				"2800": 2363,
-				"3000": 2378,
-				"3200": 2392,
-				"3300": 2399,
-				"3333": 2401,
-				"3400": 2406,
-				"3466": 2411,
-				"3600": 2421,
-				"3666": 2425,
-				"3733": 2430,
-				"3800": 2435,
-				"3866": 2440,
-				"4000": 2449,
-				"4133": 2459
+				"2133": 1710,
+				"2400": 1729,
+				"2600": 1744,
+				"2666": 1748,
+				"2800": 1758,
+				"3000": 1772,
+				"3200": 1787,
+				"3300": 1794,
+				"3333": 1796,
+				"3400": 1801,
+				"3466": 1806,
+				"3600": 1815,
+				"3666": 1820,
+				"3733": 1825,
+				"3800": 1830,
+				"3866": 1834,
+				"4000": 1844,
+				"4133": 1853
 			},
 			"fullName": "Intel Pentium G4600",
 			"partName": "Pentium G4600",
@@ -1309,44 +2083,44 @@ var data = {
 		},
 		"Intel Core i3-6100": {
 			"1": {
-				"2133": 2241,
-				"2400": 2269,
-				"2600": 2289,
-				"2666": 2296,
-				"2800": 2310,
-				"3000": 2330,
-				"3200": 2351,
-				"3300": 2361,
-				"3333": 2365,
-				"3400": 2372,
-				"3466": 2379,
-				"3600": 2392,
-				"3666": 2399,
-				"3733": 2406,
-				"3800": 2413,
-				"3866": 2420,
-				"4000": 2434,
-				"4133": 2447
+				"2133": 1989,
+				"2400": 2016,
+				"2600": 2037,
+				"2666": 2044,
+				"2800": 2058,
+				"3000": 2078,
+				"3200": 2099,
+				"3300": 2109,
+				"3333": 2113,
+				"3400": 2120,
+				"3466": 2126,
+				"3600": 2140,
+				"3666": 2147,
+				"3733": 2154,
+				"3800": 2161,
+				"3866": 2168,
+				"4000": 2181,
+				"4133": 2195
 			},
 			"2": {
-				"2133": 2362,
-				"2400": 2389,
-				"2600": 2410,
-				"2666": 2417,
-				"2800": 2430,
-				"3000": 2451,
-				"3200": 2472,
-				"3300": 2482,
-				"3333": 2485,
-				"3400": 2492,
-				"3466": 2499,
-				"3600": 2513,
-				"3666": 2520,
-				"3733": 2527,
-				"3800": 2534,
-				"3866": 2540,
-				"4000": 2554,
-				"4133": 2568
+				"2133": 2110,
+				"2400": 2137,
+				"2600": 2158,
+				"2666": 2165,
+				"2800": 2178,
+				"3000": 2199,
+				"3200": 2220,
+				"3300": 2230,
+				"3333": 2233,
+				"3400": 2240,
+				"3466": 2247,
+				"3600": 2261,
+				"3666": 2268,
+				"3733": 2275,
+				"3800": 2281,
+				"3866": 2288,
+				"4000": 2302,
+				"4133": 2316
 			},
 			"fullName": "Intel Core i3-6100",
 			"partName": "Core i3-6100",
@@ -1374,44 +2148,44 @@ var data = {
 		},
 		"Intel Core i3-6300": {
 			"1": {
-				"2133": 2269,
-				"2400": 2297,
-				"2600": 2317,
-				"2666": 2324,
-				"2800": 2338,
-				"3000": 2358,
-				"3200": 2379,
-				"3300": 2389,
-				"3333": 2393,
-				"3400": 2400,
-				"3466": 2407,
-				"3600": 2420,
-				"3666": 2427,
-				"3733": 2434,
-				"3800": 2441,
-				"3866": 2448,
-				"4000": 2462,
-				"4133": 2475
+				"2133": 1989,
+				"2400": 2016,
+				"2600": 2037,
+				"2666": 2044,
+				"2800": 2058,
+				"3000": 2078,
+				"3200": 2099,
+				"3300": 2109,
+				"3333": 2113,
+				"3400": 2120,
+				"3466": 2126,
+				"3600": 2140,
+				"3666": 2147,
+				"3733": 2154,
+				"3800": 2161,
+				"3866": 2168,
+				"4000": 2181,
+				"4133": 2195
 			},
 			"2": {
-				"2133": 2390,
-				"2400": 2417,
-				"2600": 2438,
-				"2666": 2445,
-				"2800": 2458,
-				"3000": 2479,
-				"3200": 2500,
-				"3300": 2510,
-				"3333": 2513,
-				"3400": 2520,
-				"3466": 2527,
-				"3600": 2541,
-				"3666": 2548,
-				"3733": 2555,
-				"3800": 2562,
-				"3866": 2568,
-				"4000": 2582,
-				"4133": 2596
+				"2133": 2110,
+				"2400": 2137,
+				"2600": 2158,
+				"2666": 2165,
+				"2800": 2178,
+				"3000": 2199,
+				"3200": 2220,
+				"3300": 2230,
+				"3333": 2233,
+				"3400": 2240,
+				"3466": 2247,
+				"3600": 2261,
+				"3666": 2268,
+				"3733": 2275,
+				"3800": 2281,
+				"3866": 2288,
+				"4000": 2302,
+				"4133": 2316
 			},
 			"fullName": "Intel Core i3-6300",
 			"partName": "Core i3-6300",
@@ -1439,44 +2213,44 @@ var data = {
 		},
 		"Intel Pentium G4620": {
 			"1": {
-				"2133": 2297,
-				"2400": 2316,
-				"2600": 2331,
-				"2666": 2335,
-				"2800": 2345,
-				"3000": 2359,
-				"3200": 2373,
-				"3300": 2381,
-				"3333": 2383,
-				"3400": 2388,
-				"3466": 2393,
-				"3600": 2402,
-				"3666": 2407,
-				"3733": 2412,
-				"3800": 2416,
-				"3866": 2421,
-				"4000": 2431,
-				"4133": 2440
+				"2133": 1616,
+				"2400": 1635,
+				"2600": 1650,
+				"2666": 1654,
+				"2800": 1664,
+				"3000": 1678,
+				"3200": 1693,
+				"3300": 1700,
+				"3333": 1702,
+				"3400": 1707,
+				"3466": 1712,
+				"3600": 1721,
+				"3666": 1726,
+				"3733": 1731,
+				"3800": 1735,
+				"3866": 1740,
+				"4000": 1750,
+				"4133": 1759
 			},
 			"2": {
-				"2133": 2391,
-				"2400": 2410,
-				"2600": 2425,
-				"2666": 2429,
-				"2800": 2439,
-				"3000": 2453,
-				"3200": 2468,
-				"3300": 2475,
-				"3333": 2477,
-				"3400": 2482,
-				"3466": 2487,
-				"3600": 2496,
-				"3666": 2501,
-				"3733": 2506,
-				"3800": 2511,
-				"3866": 2515,
-				"4000": 2525,
-				"4133": 2534
+				"2133": 1710,
+				"2400": 1729,
+				"2600": 1744,
+				"2666": 1748,
+				"2800": 1758,
+				"3000": 1772,
+				"3200": 1787,
+				"3300": 1794,
+				"3333": 1796,
+				"3400": 1801,
+				"3466": 1806,
+				"3600": 1815,
+				"3666": 1820,
+				"3733": 1825,
+				"3800": 1830,
+				"3866": 1834,
+				"4000": 1844,
+				"4133": 1853
 			},
 			"fullName": "Intel Pentium G4620",
 			"partName": "Pentium G4620",
@@ -1504,44 +2278,44 @@ var data = {
 		},
 		"Intel Core i3-6320": {
 			"1": {
-				"2133": 2297,
-				"2400": 2325,
-				"2600": 2345,
-				"2666": 2352,
-				"2800": 2366,
-				"3000": 2386,
-				"3200": 2407,
-				"3300": 2417,
-				"3333": 2421,
-				"3400": 2428,
-				"3466": 2435,
-				"3600": 2448,
-				"3666": 2455,
-				"3733": 2462,
-				"3800": 2469,
-				"3866": 2476,
-				"4000": 2490,
-				"4133": 2503
+				"2133": 1989,
+				"2400": 2016,
+				"2600": 2037,
+				"2666": 2044,
+				"2800": 2058,
+				"3000": 2078,
+				"3200": 2099,
+				"3300": 2109,
+				"3333": 2113,
+				"3400": 2120,
+				"3466": 2126,
+				"3600": 2140,
+				"3666": 2147,
+				"3733": 2154,
+				"3800": 2161,
+				"3866": 2168,
+				"4000": 2181,
+				"4133": 2195
 			},
 			"2": {
-				"2133": 2418,
-				"2400": 2445,
-				"2600": 2466,
-				"2666": 2473,
-				"2800": 2486,
-				"3000": 2507,
-				"3200": 2528,
-				"3300": 2538,
-				"3333": 2541,
-				"3400": 2548,
-				"3466": 2555,
-				"3600": 2569,
-				"3666": 2576,
-				"3733": 2583,
-				"3800": 2590,
-				"3866": 2596,
-				"4000": 2610,
-				"4133": 2624
+				"2133": 2110,
+				"2400": 2137,
+				"2600": 2158,
+				"2666": 2165,
+				"2800": 2178,
+				"3000": 2199,
+				"3200": 2220,
+				"3300": 2230,
+				"3333": 2233,
+				"3400": 2240,
+				"3466": 2247,
+				"3600": 2261,
+				"3666": 2268,
+				"3733": 2275,
+				"3800": 2281,
+				"3866": 2288,
+				"4000": 2302,
+				"4133": 2316
 			},
 			"fullName": "Intel Core i3-6320",
 			"partName": "Core i3-6320",
@@ -1569,44 +2343,44 @@ var data = {
 		},
 		"Intel Core i3-7100": {
 			"1": {
-				"2133": 2295,
-				"2400": 2336,
-				"2600": 2366,
-				"2666": 2376,
-				"2800": 2396,
-				"3000": 2427,
-				"3200": 2457,
-				"3300": 2472,
-				"3333": 2477,
-				"3400": 2488,
-				"3466": 2498,
-				"3600": 2518,
-				"3666": 2528,
-				"3733": 2538,
-				"3800": 2548,
-				"3866": 2558,
-				"4000": 2579,
-				"4133": 2599
+				"2133": 1701,
+				"2400": 1741,
+				"2600": 1772,
+				"2666": 1782,
+				"2800": 1802,
+				"3000": 1832,
+				"3200": 1863,
+				"3300": 1878,
+				"3333": 1883,
+				"3400": 1893,
+				"3466": 1903,
+				"3600": 1923,
+				"3666": 1933,
+				"3733": 1943,
+				"3800": 1954,
+				"3866": 1964,
+				"4000": 1984,
+				"4133": 2004
 			},
 			"2": {
-				"2133": 2443,
-				"2400": 2483,
-				"2600": 2514,
-				"2666": 2524,
-				"2800": 2544,
-				"3000": 2574,
-				"3200": 2605,
-				"3300": 2620,
-				"3333": 2625,
-				"3400": 2635,
-				"3466": 2645,
-				"3600": 2665,
-				"3666": 2675,
-				"3733": 2686,
-				"3800": 2696,
-				"3866": 2706,
-				"4000": 2726,
-				"4133": 2746
+				"2133": 1848,
+				"2400": 1889,
+				"2600": 1919,
+				"2666": 1929,
+				"2800": 1949,
+				"3000": 1980,
+				"3200": 2010,
+				"3300": 2025,
+				"3333": 2030,
+				"3400": 2040,
+				"3466": 2050,
+				"3600": 2071,
+				"3666": 2081,
+				"3733": 2091,
+				"3800": 2101,
+				"3866": 2111,
+				"4000": 2131,
+				"4133": 2152
 			},
 			"fullName": "Intel Core i3-7100",
 			"partName": "Core i3-7100",
@@ -1634,44 +2408,44 @@ var data = {
 		},
 		"Intel Core i3-7300": {
 			"1": {
-				"2133": 2349,
-				"2400": 2390,
-				"2600": 2420,
-				"2666": 2430,
-				"2800": 2451,
-				"3000": 2481,
-				"3200": 2511,
-				"3300": 2526,
-				"3333": 2531,
-				"3400": 2542,
-				"3466": 2552,
-				"3600": 2572,
-				"3666": 2582,
-				"3733": 2592,
-				"3800": 2602,
-				"3866": 2612,
-				"4000": 2633,
-				"4133": 2653
+				"2133": 1701,
+				"2400": 1741,
+				"2600": 1772,
+				"2666": 1782,
+				"2800": 1802,
+				"3000": 1832,
+				"3200": 1863,
+				"3300": 1878,
+				"3333": 1883,
+				"3400": 1893,
+				"3466": 1903,
+				"3600": 1923,
+				"3666": 1933,
+				"3733": 1943,
+				"3800": 1954,
+				"3866": 1964,
+				"4000": 1984,
+				"4133": 2004
 			},
 			"2": {
-				"2133": 2497,
-				"2400": 2537,
-				"2600": 2568,
-				"2666": 2578,
-				"2800": 2598,
-				"3000": 2628,
-				"3200": 2659,
-				"3300": 2674,
-				"3333": 2679,
-				"3400": 2689,
-				"3466": 2699,
-				"3600": 2719,
-				"3666": 2729,
-				"3733": 2740,
-				"3800": 2750,
-				"3866": 2760,
-				"4000": 2780,
-				"4133": 2800
+				"2133": 1848,
+				"2400": 1889,
+				"2600": 1919,
+				"2666": 1929,
+				"2800": 1949,
+				"3000": 1980,
+				"3200": 2010,
+				"3300": 2025,
+				"3333": 2030,
+				"3400": 2040,
+				"3466": 2050,
+				"3600": 2071,
+				"3666": 2081,
+				"3733": 2091,
+				"3800": 2101,
+				"3866": 2111,
+				"4000": 2131,
+				"4133": 2152
 			},
 			"fullName": "Intel Core i3-7300",
 			"partName": "Core i3-7300",
@@ -1699,44 +2473,44 @@ var data = {
 		},
 		"Intel Core i3-7320": {
 			"1": {
-				"2133": 2403,
-				"2400": 2444,
-				"2600": 2474,
-				"2666": 2484,
-				"2800": 2505,
-				"3000": 2535,
-				"3200": 2565,
-				"3300": 2580,
-				"3333": 2585,
-				"3400": 2596,
-				"3466": 2606,
-				"3600": 2626,
-				"3666": 2636,
-				"3733": 2646,
-				"3800": 2656,
-				"3866": 2666,
-				"4000": 2687,
-				"4133": 2707
+				"2133": 1701,
+				"2400": 1741,
+				"2600": 1772,
+				"2666": 1782,
+				"2800": 1802,
+				"3000": 1832,
+				"3200": 1863,
+				"3300": 1878,
+				"3333": 1883,
+				"3400": 1893,
+				"3466": 1903,
+				"3600": 1923,
+				"3666": 1933,
+				"3733": 1943,
+				"3800": 1954,
+				"3866": 1964,
+				"4000": 1984,
+				"4133": 2004
 			},
 			"2": {
-				"2133": 2551,
-				"2400": 2591,
-				"2600": 2622,
-				"2666": 2632,
-				"2800": 2652,
-				"3000": 2682,
-				"3200": 2713,
-				"3300": 2728,
-				"3333": 2733,
-				"3400": 2743,
-				"3466": 2753,
-				"3600": 2773,
-				"3666": 2783,
-				"3733": 2794,
-				"3800": 2804,
-				"3866": 2814,
-				"4000": 2834,
-				"4133": 2854
+				"2133": 1848,
+				"2400": 1889,
+				"2600": 1919,
+				"2666": 1929,
+				"2800": 1949,
+				"3000": 1980,
+				"3200": 2010,
+				"3300": 2025,
+				"3333": 2030,
+				"3400": 2040,
+				"3466": 2050,
+				"3600": 2071,
+				"3666": 2081,
+				"3733": 2091,
+				"3800": 2101,
+				"3866": 2111,
+				"4000": 2131,
+				"4133": 2152
 			},
 			"fullName": "Intel Core i3-7320",
 			"partName": "Core i3-7320",
@@ -1764,44 +2538,44 @@ var data = {
 		},
 		"Intel Core i3-7350K": {
 			"1": {
-				"2133": 2457,
-				"2400": 2498,
-				"2600": 2528,
-				"2666": 2538,
-				"2800": 2559,
-				"3000": 2589,
-				"3200": 2619,
-				"3300": 2635,
-				"3333": 2640,
-				"3400": 2650,
-				"3466": 2660,
-				"3600": 2680,
-				"3666": 2690,
-				"3733": 2700,
-				"3800": 2710,
-				"3866": 2720,
-				"4000": 2741,
-				"4133": 2761
+				"2133": 1701,
+				"2400": 1741,
+				"2600": 1772,
+				"2666": 1782,
+				"2800": 1802,
+				"3000": 1832,
+				"3200": 1863,
+				"3300": 1878,
+				"3333": 1883,
+				"3400": 1893,
+				"3466": 1903,
+				"3600": 1923,
+				"3666": 1933,
+				"3733": 1943,
+				"3800": 1954,
+				"3866": 1964,
+				"4000": 1984,
+				"4133": 2004
 			},
 			"2": {
-				"2133": 2605,
-				"2400": 2645,
-				"2600": 2676,
-				"2666": 2686,
-				"2800": 2706,
-				"3000": 2736,
-				"3200": 2767,
-				"3300": 2782,
-				"3333": 2787,
-				"3400": 2797,
-				"3466": 2807,
-				"3600": 2827,
-				"3666": 2838,
-				"3733": 2848,
-				"3800": 2858,
-				"3866": 2868,
-				"4000": 2888,
-				"4133": 2908
+				"2133": 1848,
+				"2400": 1889,
+				"2600": 1919,
+				"2666": 1929,
+				"2800": 1949,
+				"3000": 1980,
+				"3200": 2010,
+				"3300": 2025,
+				"3333": 2030,
+				"3400": 2040,
+				"3466": 2050,
+				"3600": 2071,
+				"3666": 2081,
+				"3733": 2091,
+				"3800": 2101,
+				"3866": 2111,
+				"4000": 2131,
+				"4133": 2152
 			},
 			"fullName": "Intel Core i3-7350K",
 			"partName": "Core i3-7350K",
@@ -1829,34 +2603,38 @@ var data = {
 		},
 		"AMD Ryzen 3 Quad Core 1200": {
 			"1": {
-				"2133": 2645,
-				"2400": 2720,
-				"2666": 2795,
-				"2667": 2795,
-				"2800": 2832,
-				"2933": 2870,
-				"3000": 2889,
-				"3200": 2945,
-				"3300": 2973,
-				"3400": 3001,
-				"3466": 3020,
-				"3600": 3057,
-				"3733": 3095
+				"1866": 2163,
+				"2133": 2238,
+				"2400": 2313,
+				"2666": 2388,
+				"2667": 2388,
+				"2800": 2426,
+				"2933": 2463,
+				"3000": 2482,
+				"3066": 2500,
+				"3200": 2538,
+				"3300": 2566,
+				"3400": 2594,
+				"3466": 2613,
+				"3600": 2651,
+				"3733": 2688
 			},
 			"2": {
-				"2133": 2795,
-				"2400": 2870,
-				"2666": 2945,
-				"2667": 2945,
-				"2800": 2983,
-				"2933": 3020,
-				"3000": 3039,
-				"3200": 3095,
-				"3300": 3123,
-				"3400": 3152,
-				"3466": 3170,
-				"3600": 3208,
-				"3733": 3245
+				"1866": 2313,
+				"2133": 2388,
+				"2400": 2463,
+				"2666": 2538,
+				"2667": 2539,
+				"2800": 2576,
+				"2933": 2613,
+				"3000": 2632,
+				"3066": 2651,
+				"3200": 2689,
+				"3300": 2717,
+				"3400": 2745,
+				"3466": 2763,
+				"3600": 2801,
+				"3733": 2838
 			},
 			"fullName": "AMD Ryzen 3 Quad Core 1200",
 			"partName": "Ryzen 3 Quad Core 1200",
@@ -1884,34 +2662,38 @@ var data = {
 		},
 		"AMD Ryzen 3 Quad Core 1300X": {
 			"1": {
-				"2133": 2866,
-				"2400": 2932,
-				"2666": 2997,
-				"2667": 2997,
-				"2800": 3030,
-				"2933": 3063,
-				"3000": 3079,
-				"3200": 3128,
-				"3300": 3153,
-				"3400": 3177,
-				"3466": 3193,
-				"3600": 3226,
-				"3733": 3259
+				"1866": 2250,
+				"2133": 2315,
+				"2400": 2381,
+				"2666": 2446,
+				"2667": 2446,
+				"2800": 2479,
+				"2933": 2511,
+				"3000": 2528,
+				"3066": 2544,
+				"3200": 2577,
+				"3300": 2601,
+				"3400": 2626,
+				"3466": 2642,
+				"3600": 2675,
+				"3733": 2708
 			},
 			"2": {
-				"2133": 3023,
-				"2400": 3088,
-				"2666": 3153,
-				"2667": 3154,
-				"2800": 3186,
-				"2933": 3219,
-				"3000": 3235,
-				"3200": 3284,
-				"3300": 3309,
-				"3400": 3334,
-				"3466": 3350,
-				"3600": 3383,
-				"3733": 3415
+				"1866": 2406,
+				"2133": 2472,
+				"2400": 2537,
+				"2666": 2602,
+				"2667": 2603,
+				"2800": 2635,
+				"2933": 2668,
+				"3000": 2684,
+				"3066": 2700,
+				"3200": 2733,
+				"3300": 2758,
+				"3400": 2782,
+				"3466": 2799,
+				"3600": 2831,
+				"3733": 2864
 			},
 			"fullName": "AMD Ryzen 3 Quad Core 1300X",
 			"partName": "Ryzen 3 Quad Core 1300X",
@@ -1939,44 +2721,44 @@ var data = {
 		},
 		"Intel Core i5-6400": {
 			"1": {
-				"2133": 2930,
-				"2400": 3026,
-				"2600": 3099,
-				"2666": 3122,
-				"2800": 3171,
-				"3000": 3243,
-				"3200": 3315,
-				"3300": 3351,
-				"3333": 3363,
-				"3400": 3387,
-				"3466": 3411,
-				"3600": 3459,
-				"3666": 3483,
-				"3733": 3507,
-				"3800": 3531,
-				"3866": 3555,
-				"4000": 3603,
-				"4133": 3651
+				"2133": 2562,
+				"2400": 2659,
+				"2600": 2731,
+				"2666": 2755,
+				"2800": 2803,
+				"3000": 2875,
+				"3200": 2947,
+				"3300": 2983,
+				"3333": 2995,
+				"3400": 3019,
+				"3466": 3043,
+				"3600": 3091,
+				"3666": 3115,
+				"3733": 3139,
+				"3800": 3164,
+				"3866": 3187,
+				"4000": 3236,
+				"4133": 3284
 			},
 			"2": {
-				"2133": 3216,
-				"2400": 3312,
-				"2600": 3384,
-				"2666": 3408,
-				"2800": 3457,
-				"3000": 3529,
-				"3200": 3601,
-				"3300": 3637,
-				"3333": 3649,
-				"3400": 3673,
-				"3466": 3697,
-				"3600": 3745,
-				"3666": 3769,
-				"3733": 3793,
-				"3800": 3817,
-				"3866": 3841,
-				"4000": 3889,
-				"4133": 3937
+				"2133": 2848,
+				"2400": 2945,
+				"2600": 3017,
+				"2666": 3040,
+				"2800": 3089,
+				"3000": 3161,
+				"3200": 3233,
+				"3300": 3269,
+				"3333": 3281,
+				"3400": 3305,
+				"3466": 3329,
+				"3600": 3377,
+				"3666": 3401,
+				"3733": 3425,
+				"3800": 3449,
+				"3866": 3473,
+				"4000": 3521,
+				"4133": 3569
 			},
 			"fullName": "Intel Core i5-6400",
 			"partName": "Core i5-6400",
@@ -2004,44 +2786,44 @@ var data = {
 		},
 		"Intel Core i5-6500": {
 			"1": {
-				"2133": 3151,
-				"2400": 3247,
-				"2600": 3319,
-				"2666": 3343,
-				"2800": 3391,
-				"3000": 3463,
-				"3200": 3536,
-				"3300": 3572,
-				"3333": 3584,
-				"3400": 3608,
-				"3466": 3631,
-				"3600": 3680,
-				"3666": 3704,
-				"3733": 3728,
-				"3800": 3752,
-				"3866": 3776,
-				"4000": 3824,
-				"4133": 3872
+				"2133": 2562,
+				"2400": 2659,
+				"2600": 2731,
+				"2666": 2755,
+				"2800": 2803,
+				"3000": 2875,
+				"3200": 2947,
+				"3300": 2983,
+				"3333": 2995,
+				"3400": 3019,
+				"3466": 3043,
+				"3600": 3091,
+				"3666": 3115,
+				"3733": 3139,
+				"3800": 3164,
+				"3866": 3187,
+				"4000": 3236,
+				"4133": 3284
 			},
 			"2": {
-				"2133": 3437,
-				"2400": 3533,
-				"2600": 3605,
-				"2666": 3629,
-				"2800": 3677,
-				"3000": 3749,
-				"3200": 3821,
-				"3300": 3857,
-				"3333": 3869,
-				"3400": 3894,
-				"3466": 3917,
-				"3600": 3966,
-				"3666": 3989,
-				"3733": 4014,
-				"3800": 4038,
-				"3866": 4062,
-				"4000": 4110,
-				"4133": 4158
+				"2133": 2848,
+				"2400": 2945,
+				"2600": 3017,
+				"2666": 3040,
+				"2800": 3089,
+				"3000": 3161,
+				"3200": 3233,
+				"3300": 3269,
+				"3333": 3281,
+				"3400": 3305,
+				"3466": 3329,
+				"3600": 3377,
+				"3666": 3401,
+				"3733": 3425,
+				"3800": 3449,
+				"3866": 3473,
+				"4000": 3521,
+				"4133": 3569
 			},
 			"fullName": "Intel Core i5-6500",
 			"partName": "Core i5-6500",
@@ -2069,52 +2851,56 @@ var data = {
 		},
 		"Intel Core i3-8100": {
 			"1": {
-				"2133": 3309,
-				"2400": 3350,
-				"2666": 3390,
-				"2667": 3390,
-				"2800": 3410,
-				"3000": 3440,
-				"3200": 3471,
-				"3300": 3486,
-				"3333": 3491,
-				"3400": 3501,
-				"3466": 3511,
-				"3600": 3531,
-				"3666": 3541,
-				"3733": 3551,
-				"3800": 3562,
-				"3866": 3572,
-				"4000": 3592,
-				"4133": 3612,
-				"4200": 3622,
-				"4266": 3632,
-				"4333": 3642,
-				"4500": 3668
+				"2133": 2701,
+				"2400": 2741,
+				"2666": 2781,
+				"2667": 2781,
+				"2800": 2802,
+				"3000": 2832,
+				"3200": 2862,
+				"3300": 2877,
+				"3333": 2882,
+				"3400": 2892,
+				"3466": 2902,
+				"3600": 2923,
+				"3666": 2933,
+				"3733": 2943,
+				"3800": 2953,
+				"3866": 2963,
+				"4000": 2983,
+				"4133": 3003,
+				"4200": 3013,
+				"4266": 3023,
+				"4300": 3029,
+				"4333": 3034,
+				"4400": 3044,
+				"4500": 3059
 			},
 			"2": {
-				"2133": 3542,
-				"2400": 3583,
-				"2666": 3623,
-				"2667": 3623,
-				"2800": 3643,
-				"3000": 3674,
-				"3200": 3704,
-				"3300": 3719,
-				"3333": 3724,
-				"3400": 3734,
-				"3466": 3744,
-				"3600": 3764,
-				"3666": 3774,
-				"3733": 3785,
-				"3800": 3795,
-				"3866": 3805,
-				"4000": 3825,
-				"4133": 3845,
-				"4200": 3855,
-				"4266": 3865,
-				"4333": 3875,
-				"4500": 3901
+				"2133": 2934,
+				"2400": 2974,
+				"2666": 3014,
+				"2667": 3015,
+				"2800": 3035,
+				"3000": 3065,
+				"3200": 3095,
+				"3300": 3110,
+				"3333": 3115,
+				"3400": 3126,
+				"3466": 3136,
+				"3600": 3156,
+				"3666": 3166,
+				"3733": 3176,
+				"3800": 3186,
+				"3866": 3196,
+				"4000": 3216,
+				"4133": 3237,
+				"4200": 3247,
+				"4266": 3257,
+				"4300": 3262,
+				"4333": 3267,
+				"4400": 3277,
+				"4500": 3292
 			},
 			"fullName": "Intel Core i3-8100",
 			"partName": "Core i3-8100",
@@ -2142,44 +2928,44 @@ var data = {
 		},
 		"Intel Core i5-7400": {
 			"1": {
-				"2133": 3135,
-				"2400": 3239,
-				"2600": 3317,
-				"2666": 3343,
-				"2800": 3395,
-				"3000": 3473,
-				"3200": 3551,
-				"3300": 3590,
-				"3333": 3603,
-				"3400": 3629,
-				"3466": 3655,
-				"3600": 3707,
-				"3666": 3733,
-				"3733": 3759,
-				"3800": 3785,
-				"3866": 3811,
-				"4000": 3863,
-				"4133": 3915
+				"2133": 2741,
+				"2400": 2846,
+				"2600": 2924,
+				"2666": 2949,
+				"2800": 3002,
+				"3000": 3080,
+				"3200": 3158,
+				"3300": 3197,
+				"3333": 3210,
+				"3400": 3236,
+				"3466": 3261,
+				"3600": 3314,
+				"3666": 3339,
+				"3733": 3366,
+				"3800": 3392,
+				"3866": 3417,
+				"4000": 3470,
+				"4133": 3522
 			},
 			"2": {
-				"2133": 3516,
-				"2400": 3620,
-				"2600": 3698,
-				"2666": 3724,
-				"2800": 3776,
-				"3000": 3854,
-				"3200": 3932,
-				"3300": 3971,
-				"3333": 3984,
-				"3400": 4010,
-				"3466": 4036,
-				"3600": 4088,
-				"3666": 4114,
-				"3733": 4140,
-				"3800": 4166,
-				"3866": 4192,
-				"4000": 4244,
-				"4133": 4296
+				"2133": 3122,
+				"2400": 3227,
+				"2600": 3305,
+				"2666": 3330,
+				"2800": 3383,
+				"3000": 3461,
+				"3200": 3539,
+				"3300": 3578,
+				"3333": 3591,
+				"3400": 3617,
+				"3466": 3642,
+				"3600": 3695,
+				"3666": 3720,
+				"3733": 3747,
+				"3800": 3773,
+				"3866": 3798,
+				"4000": 3851,
+				"4133": 3903
 			},
 			"fullName": "Intel Core i5-7400",
 			"partName": "Core i5-7400",
@@ -2207,44 +2993,44 @@ var data = {
 		},
 		"Intel Core i5-6600": {
 			"1": {
-				"2133": 3371,
-				"2400": 3468,
-				"2600": 3540,
-				"2666": 3564,
-				"2800": 3612,
-				"3000": 3684,
-				"3200": 3756,
-				"3300": 3792,
-				"3333": 3804,
-				"3400": 3828,
-				"3466": 3852,
-				"3600": 3900,
-				"3666": 3924,
-				"3733": 3948,
-				"3800": 3973,
-				"3866": 3996,
-				"4000": 4045,
-				"4133": 4093
+				"2133": 2562,
+				"2400": 2659,
+				"2600": 2731,
+				"2666": 2755,
+				"2800": 2803,
+				"3000": 2875,
+				"3200": 2947,
+				"3300": 2983,
+				"3333": 2995,
+				"3400": 3019,
+				"3466": 3043,
+				"3600": 3091,
+				"3666": 3115,
+				"3733": 3139,
+				"3800": 3164,
+				"3866": 3187,
+				"4000": 3236,
+				"4133": 3284
 			},
 			"2": {
-				"2133": 3657,
-				"2400": 3754,
-				"2600": 3826,
-				"2666": 3849,
-				"2800": 3898,
-				"3000": 3970,
-				"3200": 4042,
-				"3300": 4078,
-				"3333": 4090,
-				"3400": 4114,
-				"3466": 4138,
-				"3600": 4186,
-				"3666": 4210,
-				"3733": 4234,
-				"3800": 4258,
-				"3866": 4282,
-				"4000": 4331,
-				"4133": 4378
+				"2133": 2848,
+				"2400": 2945,
+				"2600": 3017,
+				"2666": 3040,
+				"2800": 3089,
+				"3000": 3161,
+				"3200": 3233,
+				"3300": 3269,
+				"3333": 3281,
+				"3400": 3305,
+				"3466": 3329,
+				"3600": 3377,
+				"3666": 3401,
+				"3733": 3425,
+				"3800": 3449,
+				"3866": 3473,
+				"4000": 3521,
+				"4133": 3569
 			},
 			"fullName": "Intel Core i5-6600",
 			"partName": "Core i5-6600",
@@ -2272,44 +3058,44 @@ var data = {
 		},
 		"Intel Core i5-6600K": {
 			"1": {
-				"2133": 3371,
-				"2400": 3468,
-				"2600": 3540,
-				"2666": 3564,
-				"2800": 3612,
-				"3000": 3684,
-				"3200": 3756,
-				"3300": 3792,
-				"3333": 3804,
-				"3400": 3828,
-				"3466": 3852,
-				"3600": 3900,
-				"3666": 3924,
-				"3733": 3948,
-				"3800": 3973,
-				"3866": 3996,
-				"4000": 4045,
-				"4133": 4093
+				"2133": 2562,
+				"2400": 2659,
+				"2600": 2731,
+				"2666": 2755,
+				"2800": 2803,
+				"3000": 2875,
+				"3200": 2947,
+				"3300": 2983,
+				"3333": 2995,
+				"3400": 3019,
+				"3466": 3043,
+				"3600": 3091,
+				"3666": 3115,
+				"3733": 3139,
+				"3800": 3164,
+				"3866": 3187,
+				"4000": 3236,
+				"4133": 3284
 			},
 			"2": {
-				"2133": 3657,
-				"2400": 3754,
-				"2600": 3826,
-				"2666": 3849,
-				"2800": 3898,
-				"3000": 3970,
-				"3200": 4042,
-				"3300": 4078,
-				"3333": 4090,
-				"3400": 4114,
-				"3466": 4138,
-				"3600": 4186,
-				"3666": 4210,
-				"3733": 4234,
-				"3800": 4258,
-				"3866": 4282,
-				"4000": 4331,
-				"4133": 4378
+				"2133": 2848,
+				"2400": 2945,
+				"2600": 3017,
+				"2666": 3040,
+				"2800": 3089,
+				"3000": 3161,
+				"3200": 3233,
+				"3300": 3269,
+				"3333": 3281,
+				"3400": 3305,
+				"3466": 3329,
+				"3600": 3377,
+				"3666": 3401,
+				"3733": 3425,
+				"3800": 3449,
+				"3866": 3473,
+				"4000": 3521,
+				"4133": 3569
 			},
 			"fullName": "Intel Core i5-6600K",
 			"partName": "Core i5-6600K",
@@ -2337,34 +3123,38 @@ var data = {
 		},
 		"AMD Ryzen 5 Quad Core 1400": {
 			"1": {
-				"2133": 3273,
-				"2400": 3360,
-				"2666": 3447,
-				"2667": 3447,
-				"2800": 3490,
-				"2933": 3533,
-				"3000": 3555,
-				"3200": 3620,
-				"3300": 3653,
-				"3400": 3685,
-				"3466": 3706,
-				"3600": 3750,
-				"3733": 3793
+				"1866": 2753,
+				"2133": 2839,
+				"2400": 2926,
+				"2666": 3012,
+				"2667": 3013,
+				"2800": 3056,
+				"2933": 3099,
+				"3000": 3121,
+				"3066": 3142,
+				"3200": 3186,
+				"3300": 3218,
+				"3400": 3251,
+				"3466": 3272,
+				"3600": 3316,
+				"3733": 3359
 			},
 			"2": {
-				"2133": 3543,
-				"2400": 3630,
-				"2666": 3716,
-				"2667": 3716,
-				"2800": 3760,
-				"2933": 3803,
-				"3000": 3825,
-				"3200": 3890,
-				"3300": 3922,
-				"3400": 3955,
-				"3466": 3976,
-				"3600": 4019,
-				"3733": 4063
+				"1866": 3022,
+				"2133": 3109,
+				"2400": 3196,
+				"2666": 3282,
+				"2667": 3282,
+				"2800": 3326,
+				"2933": 3369,
+				"3000": 3390,
+				"3066": 3412,
+				"3200": 3455,
+				"3300": 3488,
+				"3400": 3520,
+				"3466": 3542,
+				"3600": 3585,
+				"3733": 3629
 			},
 			"fullName": "AMD Ryzen 5 Quad Core 1400",
 			"partName": "Ryzen 5 Quad Core 1400",
@@ -2392,44 +3182,44 @@ var data = {
 		},
 		"Intel Core i5-7500": {
 			"1": {
-				"2133": 3304,
-				"2400": 3408,
-				"2600": 3486,
-				"2666": 3511,
-				"2800": 3564,
-				"3000": 3642,
-				"3200": 3720,
-				"3300": 3759,
-				"3333": 3772,
-				"3400": 3798,
-				"3466": 3823,
-				"3600": 3876,
-				"3666": 3902,
-				"3733": 3928,
-				"3800": 3954,
-				"3866": 3980,
-				"4000": 4032,
-				"4133": 4084
+				"2133": 2741,
+				"2400": 2846,
+				"2600": 2924,
+				"2666": 2949,
+				"2800": 3002,
+				"3000": 3080,
+				"3200": 3158,
+				"3300": 3197,
+				"3333": 3210,
+				"3400": 3236,
+				"3466": 3261,
+				"3600": 3314,
+				"3666": 3339,
+				"3733": 3366,
+				"3800": 3392,
+				"3866": 3417,
+				"4000": 3470,
+				"4133": 3522
 			},
 			"2": {
-				"2133": 3684,
-				"2400": 3789,
-				"2600": 3867,
-				"2666": 3892,
-				"2800": 3945,
-				"3000": 4023,
-				"3200": 4101,
-				"3300": 4140,
-				"3333": 4153,
-				"3400": 4179,
-				"3466": 4204,
-				"3600": 4257,
-				"3666": 4282,
-				"3733": 4309,
-				"3800": 4335,
-				"3866": 4360,
-				"4000": 4413,
-				"4133": 4465
+				"2133": 3122,
+				"2400": 3227,
+				"2600": 3305,
+				"2666": 3330,
+				"2800": 3383,
+				"3000": 3461,
+				"3200": 3539,
+				"3300": 3578,
+				"3333": 3591,
+				"3400": 3617,
+				"3466": 3642,
+				"3600": 3695,
+				"3666": 3720,
+				"3733": 3747,
+				"3800": 3773,
+				"3866": 3798,
+				"4000": 3851,
+				"4133": 3903
 			},
 			"fullName": "Intel Core i5-7500",
 			"partName": "Core i5-7500",
@@ -2457,52 +3247,56 @@ var data = {
 		},
 		"Intel Core i3-8350K": {
 			"1": {
-				"2133": 3614,
-				"2400": 3654,
-				"2666": 3694,
-				"2667": 3694,
-				"2800": 3715,
-				"3000": 3745,
-				"3200": 3775,
-				"3300": 3790,
-				"3333": 3795,
-				"3400": 3805,
-				"3466": 3815,
-				"3600": 3836,
-				"3666": 3846,
-				"3733": 3856,
-				"3800": 3866,
-				"3866": 3876,
-				"4000": 3896,
-				"4133": 3916,
-				"4200": 3926,
-				"4266": 3936,
-				"4333": 3947,
-				"4500": 3972
+				"2133": 2701,
+				"2400": 2741,
+				"2666": 2781,
+				"2667": 2781,
+				"2800": 2802,
+				"3000": 2832,
+				"3200": 2862,
+				"3300": 2877,
+				"3333": 2882,
+				"3400": 2892,
+				"3466": 2902,
+				"3600": 2923,
+				"3666": 2933,
+				"3733": 2943,
+				"3800": 2953,
+				"3866": 2963,
+				"4000": 2983,
+				"4133": 3003,
+				"4200": 3013,
+				"4266": 3023,
+				"4300": 3029,
+				"4333": 3034,
+				"4400": 3044,
+				"4500": 3059
 			},
 			"2": {
-				"2133": 3847,
-				"2400": 3887,
-				"2666": 3927,
-				"2667": 3928,
-				"2800": 3948,
-				"3000": 3978,
-				"3200": 4008,
-				"3300": 4023,
-				"3333": 4028,
-				"3400": 4038,
-				"3466": 4048,
-				"3600": 4069,
-				"3666": 4079,
-				"3733": 4089,
-				"3800": 4099,
-				"3866": 4109,
-				"4000": 4129,
-				"4133": 4149,
-				"4200": 4160,
-				"4266": 4170,
-				"4333": 4180,
-				"4500": 4205
+				"2133": 2934,
+				"2400": 2974,
+				"2666": 3014,
+				"2667": 3015,
+				"2800": 3035,
+				"3000": 3065,
+				"3200": 3095,
+				"3300": 3110,
+				"3333": 3115,
+				"3400": 3126,
+				"3466": 3136,
+				"3600": 3156,
+				"3666": 3166,
+				"3733": 3176,
+				"3800": 3186,
+				"3866": 3196,
+				"4000": 3216,
+				"4133": 3237,
+				"4200": 3247,
+				"4266": 3257,
+				"4300": 3262,
+				"4333": 3267,
+				"4400": 3277,
+				"4500": 3292
 			},
 			"fullName": "Intel Core i3-8350K",
 			"partName": "Core i3-8350K",
@@ -2530,34 +3324,38 @@ var data = {
 		},
 		"AMD Ryzen 5 Quad Core 1500X": {
 			"1": {
-				"2133": 3491,
-				"2400": 3577,
-				"2666": 3664,
-				"2667": 3664,
-				"2800": 3707,
-				"2933": 3750,
-				"3000": 3772,
-				"3200": 3837,
-				"3300": 3870,
-				"3400": 3902,
-				"3466": 3924,
-				"3600": 3967,
-				"3733": 4010
+				"1866": 2753,
+				"2133": 2839,
+				"2400": 2926,
+				"2666": 3012,
+				"2667": 3013,
+				"2800": 3056,
+				"2933": 3099,
+				"3000": 3121,
+				"3066": 3142,
+				"3200": 3186,
+				"3300": 3218,
+				"3400": 3251,
+				"3466": 3272,
+				"3600": 3316,
+				"3733": 3359
 			},
 			"2": {
-				"2133": 3760,
-				"2400": 3847,
-				"2666": 3933,
-				"2667": 3933,
-				"2800": 3977,
-				"2933": 4020,
-				"3000": 4042,
-				"3200": 4107,
-				"3300": 4139,
-				"3400": 4172,
-				"3466": 4193,
-				"3600": 4237,
-				"3733": 4280
+				"1866": 3022,
+				"2133": 3109,
+				"2400": 3196,
+				"2666": 3282,
+				"2667": 3282,
+				"2800": 3326,
+				"2933": 3369,
+				"3000": 3390,
+				"3066": 3412,
+				"3200": 3455,
+				"3300": 3488,
+				"3400": 3520,
+				"3466": 3542,
+				"3600": 3585,
+				"3733": 3629
 			},
 			"fullName": "AMD Ryzen 5 Quad Core 1500X",
 			"partName": "Ryzen 5 Quad Core 1500X",
@@ -2585,44 +3383,44 @@ var data = {
 		},
 		"Intel Core i5-7600": {
 			"1": {
-				"2133": 3472,
-				"2400": 3576,
-				"2600": 3654,
-				"2666": 3680,
-				"2800": 3732,
-				"3000": 3810,
-				"3200": 3888,
-				"3300": 3927,
-				"3333": 3940,
-				"3400": 3966,
-				"3466": 3992,
-				"3600": 4044,
-				"3666": 4070,
-				"3733": 4096,
-				"3800": 4122,
-				"3866": 4148,
-				"4000": 4200,
-				"4133": 4252
+				"2133": 2741,
+				"2400": 2846,
+				"2600": 2924,
+				"2666": 2949,
+				"2800": 3002,
+				"3000": 3080,
+				"3200": 3158,
+				"3300": 3197,
+				"3333": 3210,
+				"3400": 3236,
+				"3466": 3261,
+				"3600": 3314,
+				"3666": 3339,
+				"3733": 3366,
+				"3800": 3392,
+				"3866": 3417,
+				"4000": 3470,
+				"4133": 3522
 			},
 			"2": {
-				"2133": 3853,
-				"2400": 3957,
-				"2600": 4035,
-				"2666": 4061,
-				"2800": 4113,
-				"3000": 4191,
-				"3200": 4269,
-				"3300": 4308,
-				"3333": 4321,
-				"3400": 4347,
-				"3466": 4373,
-				"3600": 4425,
-				"3666": 4451,
-				"3733": 4477,
-				"3800": 4503,
-				"3866": 4529,
-				"4000": 4581,
-				"4133": 4633
+				"2133": 3122,
+				"2400": 3227,
+				"2600": 3305,
+				"2666": 3330,
+				"2800": 3383,
+				"3000": 3461,
+				"3200": 3539,
+				"3300": 3578,
+				"3333": 3591,
+				"3400": 3617,
+				"3466": 3642,
+				"3600": 3695,
+				"3666": 3720,
+				"3733": 3747,
+				"3800": 3773,
+				"3866": 3798,
+				"4000": 3851,
+				"4133": 3903
 			},
 			"fullName": "Intel Core i5-7600",
 			"partName": "Core i5-7600",
@@ -2650,44 +3448,44 @@ var data = {
 		},
 		"Intel Core i5-7600K": {
 			"1": {
-				"2133": 3528,
-				"2400": 3632,
-				"2600": 3710,
-				"2666": 3736,
-				"2800": 3789,
-				"3000": 3867,
-				"3200": 3945,
-				"3300": 3984,
-				"3333": 3996,
-				"3400": 4023,
-				"3466": 4048,
-				"3600": 4101,
-				"3666": 4126,
-				"3733": 4152,
-				"3800": 4179,
-				"3866": 4204,
-				"4000": 4257,
-				"4133": 4308
+				"2133": 2741,
+				"2400": 2846,
+				"2600": 2924,
+				"2666": 2949,
+				"2800": 3002,
+				"3000": 3080,
+				"3200": 3158,
+				"3300": 3197,
+				"3333": 3210,
+				"3400": 3236,
+				"3466": 3261,
+				"3600": 3314,
+				"3666": 3339,
+				"3733": 3366,
+				"3800": 3392,
+				"3866": 3417,
+				"4000": 3470,
+				"4133": 3522
 			},
 			"2": {
-				"2133": 3909,
-				"2400": 4013,
-				"2600": 4091,
-				"2666": 4117,
-				"2800": 4169,
-				"3000": 4247,
-				"3200": 4325,
-				"3300": 4364,
-				"3333": 4377,
-				"3400": 4403,
-				"3466": 4429,
-				"3600": 4482,
-				"3666": 4507,
-				"3733": 4533,
-				"3800": 4560,
-				"3866": 4585,
-				"4000": 4638,
-				"4133": 4689
+				"2133": 3122,
+				"2400": 3227,
+				"2600": 3305,
+				"2666": 3330,
+				"2800": 3383,
+				"3000": 3461,
+				"3200": 3539,
+				"3300": 3578,
+				"3333": 3591,
+				"3400": 3617,
+				"3466": 3642,
+				"3600": 3695,
+				"3666": 3720,
+				"3733": 3747,
+				"3800": 3773,
+				"3866": 3798,
+				"4000": 3851,
+				"4133": 3903
 			},
 			"fullName": "Intel Core i5-7600K",
 			"partName": "Core i5-7600K",
@@ -2715,40 +3513,52 @@ var data = {
 		},
 		"Intel Core i5-7640X": {
 			"1": {
-				"2133": 3585,
-				"2400": 3689,
-				"2666": 3792,
-				"2800": 3845,
-				"3000": 3923,
-				"3200": 4001,
-				"3300": 4040,
-				"3333": 4053,
-				"3400": 4079,
-				"3466": 4105,
-				"3600": 4157,
-				"3733": 4209,
-				"3800": 4235,
-				"3866": 4261,
-				"4000": 4313,
-				"4133": 4365
+				"2133": 2741,
+				"2400": 2846,
+				"2600": 2924,
+				"2666": 2949,
+				"2800": 3002,
+				"3000": 3080,
+				"3200": 3158,
+				"3300": 3197,
+				"3333": 3210,
+				"3400": 3236,
+				"3466": 3261,
+				"3600": 3314,
+				"3666": 3339,
+				"3733": 3366,
+				"3800": 3392,
+				"3866": 3417,
+				"4000": 3470,
+				"4133": 3522,
+				"4200": 3548,
+				"4266": 3574,
+				"4333": 3600,
+				"4400": 3626
 			},
 			"2": {
-				"2133": 3965,
-				"2400": 4070,
-				"2666": 4173,
-				"2800": 4226,
-				"3000": 4304,
-				"3200": 4382,
-				"3300": 4421,
-				"3333": 4434,
-				"3400": 4460,
-				"3466": 4485,
-				"3600": 4538,
-				"3733": 4590,
-				"3800": 4616,
-				"3866": 4641,
-				"4000": 4694,
-				"4133": 4746
+				"2133": 3122,
+				"2400": 3227,
+				"2600": 3305,
+				"2666": 3330,
+				"2800": 3383,
+				"3000": 3461,
+				"3200": 3539,
+				"3300": 3578,
+				"3333": 3591,
+				"3400": 3617,
+				"3466": 3642,
+				"3600": 3695,
+				"3666": 3720,
+				"3733": 3747,
+				"3800": 3773,
+				"3866": 3798,
+				"4000": 3851,
+				"4133": 3903,
+				"4200": 3929,
+				"4266": 3954,
+				"4333": 3981,
+				"4400": 4007
 			},
 			"fullName": "Intel Core i5-7640X",
 			"partName": "Core i5-7640X",
@@ -2776,44 +3586,44 @@ var data = {
 		},
 		"Intel Core i7-6700": {
 			"1": {
-				"2133": 4185,
-				"2400": 4273,
-				"2600": 4339,
-				"2666": 4361,
-				"2800": 4406,
-				"3000": 4472,
-				"3200": 4538,
-				"3300": 4572,
-				"3333": 4583,
-				"3400": 4605,
-				"3466": 4627,
-				"3600": 4671,
-				"3666": 4693,
-				"3733": 4715,
-				"3800": 4737,
-				"3866": 4759,
-				"4000": 4804,
-				"4133": 4848
+				"2133": 2740,
+				"2400": 2828,
+				"2600": 2895,
+				"2666": 2917,
+				"2800": 2961,
+				"3000": 3027,
+				"3200": 3094,
+				"3300": 3127,
+				"3333": 3138,
+				"3400": 3160,
+				"3466": 3182,
+				"3600": 3226,
+				"3666": 3248,
+				"3733": 3271,
+				"3800": 3293,
+				"3866": 3315,
+				"4000": 3359,
+				"4133": 3403
 			},
 			"2": {
-				"2133": 4685,
-				"2400": 4773,
-				"2600": 4840,
-				"2666": 4862,
-				"2800": 4906,
-				"3000": 4972,
-				"3200": 5039,
-				"3300": 5072,
-				"3333": 5083,
-				"3400": 5105,
-				"3466": 5127,
-				"3600": 5171,
-				"3666": 5193,
-				"3733": 5215,
-				"3800": 5238,
-				"3866": 5260,
-				"4000": 5304,
-				"4133": 5348
+				"2133": 3240,
+				"2400": 3329,
+				"2600": 3395,
+				"2666": 3417,
+				"2800": 3461,
+				"3000": 3528,
+				"3200": 3594,
+				"3300": 3627,
+				"3333": 3638,
+				"3400": 3660,
+				"3466": 3682,
+				"3600": 3727,
+				"3666": 3749,
+				"3733": 3771,
+				"3800": 3793,
+				"3866": 3815,
+				"4000": 3859,
+				"4133": 3903
 			},
 			"fullName": "Intel Core i7-6700",
 			"partName": "Core i7-6700",
@@ -2841,44 +3651,44 @@ var data = {
 		},
 		"Intel Core i7-6700K": {
 			"1": {
-				"2133": 4425,
-				"2400": 4514,
-				"2600": 4580,
-				"2666": 4602,
-				"2800": 4647,
-				"3000": 4713,
-				"3200": 4779,
-				"3300": 4812,
-				"3333": 4823,
-				"3400": 4846,
-				"3466": 4867,
-				"3600": 4912,
-				"3666": 4934,
-				"3733": 4956,
-				"3800": 4978,
-				"3866": 5000,
-				"4000": 5045,
-				"4133": 5089
+				"2133": 2740,
+				"2400": 2828,
+				"2600": 2895,
+				"2666": 2917,
+				"2800": 2961,
+				"3000": 3027,
+				"3200": 3094,
+				"3300": 3127,
+				"3333": 3138,
+				"3400": 3160,
+				"3466": 3182,
+				"3600": 3226,
+				"3666": 3248,
+				"3733": 3271,
+				"3800": 3293,
+				"3866": 3315,
+				"4000": 3359,
+				"4133": 3403
 			},
 			"2": {
-				"2133": 4926,
-				"2400": 5014,
-				"2600": 5080,
-				"2666": 5102,
-				"2800": 5147,
-				"3000": 5213,
-				"3200": 5279,
-				"3300": 5313,
-				"3333": 5324,
-				"3400": 5346,
-				"3466": 5368,
-				"3600": 5412,
-				"3666": 5434,
-				"3733": 5456,
-				"3800": 5478,
-				"3866": 5500,
-				"4000": 5545,
-				"4133": 5589
+				"2133": 3240,
+				"2400": 3329,
+				"2600": 3395,
+				"2666": 3417,
+				"2800": 3461,
+				"3000": 3528,
+				"3200": 3594,
+				"3300": 3627,
+				"3333": 3638,
+				"3400": 3660,
+				"3466": 3682,
+				"3600": 3727,
+				"3666": 3749,
+				"3733": 3771,
+				"3800": 3793,
+				"3866": 3815,
+				"4000": 3859,
+				"4133": 3903
 			},
 			"fullName": "Intel Core i7-6700K",
 			"partName": "Core i7-6700K",
@@ -2906,44 +3716,44 @@ var data = {
 		},
 		"Intel Core i7-7700": {
 			"1": {
-				"2133": 4586,
-				"2400": 4666,
-				"2600": 4725,
-				"2666": 4745,
-				"2800": 4785,
-				"3000": 4844,
-				"3200": 4904,
-				"3300": 4934,
-				"3333": 4944,
-				"3400": 4964,
-				"3466": 4983,
-				"3600": 5023,
-				"3666": 5043,
-				"3733": 5063,
-				"3800": 5083,
-				"3866": 5103,
-				"4000": 5142,
-				"4133": 5182
+				"2133": 3186,
+				"2400": 3266,
+				"2600": 3325,
+				"2666": 3345,
+				"2800": 3385,
+				"3000": 3444,
+				"3200": 3504,
+				"3300": 3534,
+				"3333": 3544,
+				"3400": 3564,
+				"3466": 3583,
+				"3600": 3623,
+				"3666": 3643,
+				"3733": 3663,
+				"3800": 3683,
+				"3866": 3702,
+				"4000": 3742,
+				"4133": 3782
 			},
 			"2": {
-				"2133": 4997,
-				"2400": 5076,
-				"2600": 5136,
-				"2666": 5156,
-				"2800": 5195,
-				"3000": 5255,
-				"3200": 5315,
-				"3300": 5344,
-				"3333": 5354,
-				"3400": 5374,
-				"3466": 5394,
-				"3600": 5434,
-				"3666": 5454,
-				"3733": 5474,
-				"3800": 5493,
-				"3866": 5513,
-				"4000": 5553,
-				"4133": 5593
+				"2133": 3597,
+				"2400": 3676,
+				"2600": 3736,
+				"2666": 3755,
+				"2800": 3795,
+				"3000": 3855,
+				"3200": 3915,
+				"3300": 3944,
+				"3333": 3954,
+				"3400": 3974,
+				"3466": 3994,
+				"3600": 4034,
+				"3666": 4053,
+				"3733": 4073,
+				"3800": 4093,
+				"3866": 4113,
+				"4000": 4153,
+				"4133": 4193
 			},
 			"fullName": "Intel Core i7-7700",
 			"partName": "Core i7-7700",
@@ -2971,40 +3781,52 @@ var data = {
 		},
 		"Intel Core i7-7740X": {
 			"1": {
-				"2133": 4630,
-				"2400": 4717,
-				"2666": 4802,
-				"2800": 4846,
-				"3000": 4910,
-				"3200": 4975,
-				"3300": 5007,
-				"3333": 5018,
-				"3400": 5040,
-				"3466": 5061,
-				"3600": 5104,
-				"3733": 5147,
-				"3800": 5169,
-				"3866": 5190,
-				"4000": 5233,
-				"4133": 5276
+				"2133": 2556,
+				"2400": 2643,
+				"2600": 2707,
+				"2666": 2728,
+				"2800": 2772,
+				"3000": 2836,
+				"3200": 2901,
+				"3300": 2933,
+				"3333": 2944,
+				"3400": 2966,
+				"3466": 2987,
+				"3600": 3030,
+				"3666": 3051,
+				"3733": 3073,
+				"3800": 3095,
+				"3866": 3116,
+				"4000": 3159,
+				"4133": 3202,
+				"4200": 3224,
+				"4266": 3245,
+				"4333": 3267,
+				"4400": 3289
 			},
 			"2": {
-				"2133": 5202,
-				"2400": 5288,
-				"2666": 5374,
-				"2800": 5417,
-				"3000": 5482,
-				"3200": 5547,
-				"3300": 5579,
-				"3333": 5590,
-				"3400": 5611,
-				"3466": 5633,
-				"3600": 5676,
-				"3733": 5719,
-				"3800": 5740,
-				"3866": 5762,
-				"4000": 5805,
-				"4133": 5848
+				"2133": 3128,
+				"2400": 3214,
+				"2600": 3279,
+				"2666": 3300,
+				"2800": 3343,
+				"3000": 3408,
+				"3200": 3473,
+				"3300": 3505,
+				"3333": 3516,
+				"3400": 3537,
+				"3466": 3559,
+				"3600": 3602,
+				"3666": 3623,
+				"3733": 3645,
+				"3800": 3666,
+				"3866": 3688,
+				"4000": 3731,
+				"4133": 3774,
+				"4200": 3796,
+				"4266": 3817,
+				"4333": 3839,
+				"4400": 3860
 			},
 			"fullName": "Intel Core i7-7740X",
 			"partName": "Core i7-7740X",
@@ -3032,44 +3854,44 @@ var data = {
 		},
 		"Intel Core i7-7700K": {
 			"1": {
-				"2133": 4886,
-				"2400": 4966,
-				"2600": 5025,
-				"2666": 5045,
-				"2800": 5085,
-				"3000": 5144,
-				"3200": 5204,
-				"3300": 5234,
-				"3333": 5244,
-				"3400": 5264,
-				"3466": 5283,
-				"3600": 5323,
-				"3666": 5343,
-				"3733": 5363,
-				"3800": 5383,
-				"3866": 5403,
-				"4000": 5442,
-				"4133": 5482
+				"2133": 3186,
+				"2400": 3266,
+				"2600": 3325,
+				"2666": 3345,
+				"2800": 3385,
+				"3000": 3444,
+				"3200": 3504,
+				"3300": 3534,
+				"3333": 3544,
+				"3400": 3564,
+				"3466": 3583,
+				"3600": 3623,
+				"3666": 3643,
+				"3733": 3663,
+				"3800": 3683,
+				"3866": 3702,
+				"4000": 3742,
+				"4133": 3782
 			},
 			"2": {
-				"2133": 5297,
-				"2400": 5376,
-				"2600": 5436,
-				"2666": 5456,
-				"2800": 5496,
-				"3000": 5555,
-				"3200": 5615,
-				"3300": 5645,
-				"3333": 5654,
-				"3400": 5674,
-				"3466": 5694,
-				"3600": 5734,
-				"3666": 5754,
-				"3733": 5774,
-				"3800": 5794,
-				"3866": 5813,
-				"4000": 5853,
-				"4133": 5893
+				"2133": 3597,
+				"2400": 3676,
+				"2600": 3736,
+				"2666": 3755,
+				"2800": 3795,
+				"3000": 3855,
+				"3200": 3915,
+				"3300": 3944,
+				"3333": 3954,
+				"3400": 3974,
+				"3466": 3994,
+				"3600": 4034,
+				"3666": 4053,
+				"3733": 4073,
+				"3800": 4093,
+				"3866": 4113,
+				"4000": 4153,
+				"4133": 4193
 			},
 			"fullName": "Intel Core i7-7700K",
 			"partName": "Core i7-7700K",
@@ -3097,52 +3919,56 @@ var data = {
 		},
 		"Intel Core i5-8400": {
 			"1": {
-				"2133": 4539,
-				"2400": 4647,
-				"2666": 4754,
-				"2667": 4755,
-				"2800": 4808,
-				"3000": 4889,
-				"3200": 4970,
-				"3300": 5010,
-				"3333": 5024,
-				"3400": 5051,
-				"3466": 5077,
-				"3600": 5132,
-				"3666": 5158,
-				"3733": 5185,
-				"3800": 5212,
-				"3866": 5239,
-				"4000": 5293,
-				"4133": 5347,
-				"4200": 5374,
-				"4266": 5401,
-				"4333": 5428,
-				"4500": 5495
+				"2133": 3318,
+				"2400": 3426,
+				"2666": 3533,
+				"2667": 3533,
+				"2800": 3587,
+				"3000": 3668,
+				"3200": 3749,
+				"3300": 3789,
+				"3333": 3803,
+				"3400": 3830,
+				"3466": 3856,
+				"3600": 3910,
+				"3666": 3937,
+				"3733": 3964,
+				"3800": 3991,
+				"3866": 4018,
+				"4000": 4072,
+				"4133": 4126,
+				"4200": 4153,
+				"4266": 4180,
+				"4300": 4193,
+				"4333": 4207,
+				"4400": 4234,
+				"4500": 4274
 			},
 			"2": {
-				"2133": 5234,
-				"2400": 5342,
-				"2666": 5449,
-				"2667": 5450,
-				"2800": 5503,
-				"3000": 5584,
-				"3200": 5665,
-				"3300": 5705,
-				"3333": 5719,
-				"3400": 5746,
-				"3466": 5773,
-				"3600": 5827,
-				"3666": 5853,
-				"3733": 5880,
-				"3800": 5908,
-				"3866": 5934,
-				"4000": 5988,
-				"4133": 6042,
-				"4200": 6069,
-				"4266": 6096,
-				"4333": 6123,
-				"4500": 6190
+				"2133": 4013,
+				"2400": 4121,
+				"2666": 4228,
+				"2667": 4229,
+				"2800": 4282,
+				"3000": 4363,
+				"3200": 4444,
+				"3300": 4484,
+				"3333": 4498,
+				"3400": 4525,
+				"3466": 4551,
+				"3600": 4606,
+				"3666": 4632,
+				"3733": 4659,
+				"3800": 4686,
+				"3866": 4713,
+				"4000": 4767,
+				"4133": 4821,
+				"4200": 4848,
+				"4266": 4875,
+				"4300": 4888,
+				"4333": 4902,
+				"4400": 4929,
+				"4500": 4969
 			},
 			"fullName": "Intel Core i5-8400",
 			"partName": "Core i5-8400",
@@ -3170,34 +3996,38 @@ var data = {
 		},
 		"AMD Ryzen 5 Six Core 1600": {
 			"1": {
-				"2133": 4871,
-				"2400": 4990,
-				"2666": 5108,
-				"2667": 5109,
-				"2800": 5168,
-				"2933": 5227,
-				"3000": 5257,
-				"3200": 5346,
-				"3300": 5391,
-				"3400": 5436,
-				"3466": 5465,
-				"3600": 5525,
-				"3733": 5584
+				"1866": 3637,
+				"2133": 3756,
+				"2400": 3875,
+				"2666": 3994,
+				"2667": 3994,
+				"2800": 4053,
+				"2933": 4113,
+				"3000": 4143,
+				"3066": 4172,
+				"3200": 4232,
+				"3300": 4276,
+				"3400": 4321,
+				"3466": 4350,
+				"3600": 4410,
+				"3733": 4469
 			},
 			"2": {
-				"2133": 5321,
-				"2400": 5440,
-				"2666": 5558,
-				"2667": 5559,
-				"2800": 5618,
-				"2933": 5677,
-				"3000": 5707,
-				"3200": 5797,
-				"3300": 5841,
-				"3400": 5886,
-				"3466": 5915,
-				"3600": 5975,
-				"3733": 6034
+				"1866": 4087,
+				"2133": 4206,
+				"2400": 4325,
+				"2666": 4444,
+				"2667": 4444,
+				"2800": 4504,
+				"2933": 4563,
+				"3000": 4593,
+				"3066": 4622,
+				"3200": 4682,
+				"3300": 4727,
+				"3400": 4771,
+				"3466": 4801,
+				"3600": 4860,
+				"3733": 4920
 			},
 			"fullName": "AMD Ryzen 5 Six Core 1600",
 			"partName": "Ryzen 5 Six Core 1600",
@@ -3225,52 +4055,56 @@ var data = {
 		},
 		"Intel Core i5-8600K": {
 			"1": {
-				"2133": 4844,
-				"2400": 4952,
-				"2666": 5059,
-				"2667": 5060,
-				"2800": 5114,
-				"3000": 5194,
-				"3200": 5275,
-				"3300": 5316,
-				"3333": 5329,
-				"3400": 5356,
-				"3466": 5383,
-				"3600": 5437,
-				"3666": 5464,
-				"3733": 5491,
-				"3800": 5518,
-				"3866": 5544,
-				"4000": 5599,
-				"4133": 5652,
-				"4200": 5679,
-				"4266": 5706,
-				"4333": 5733,
-				"4500": 5801
+				"2133": 3318,
+				"2400": 3426,
+				"2666": 3533,
+				"2667": 3533,
+				"2800": 3587,
+				"3000": 3668,
+				"3200": 3749,
+				"3300": 3789,
+				"3333": 3803,
+				"3400": 3830,
+				"3466": 3856,
+				"3600": 3910,
+				"3666": 3937,
+				"3733": 3964,
+				"3800": 3991,
+				"3866": 4018,
+				"4000": 4072,
+				"4133": 4126,
+				"4200": 4153,
+				"4266": 4180,
+				"4300": 4193,
+				"4333": 4207,
+				"4400": 4234,
+				"4500": 4274
 			},
 			"2": {
-				"2133": 5539,
-				"2400": 5647,
-				"2666": 5755,
-				"2667": 5755,
-				"2800": 5809,
-				"3000": 5890,
-				"3200": 5970,
-				"3300": 6011,
-				"3333": 6024,
-				"3400": 6051,
-				"3466": 6078,
-				"3600": 6132,
-				"3666": 6159,
-				"3733": 6186,
-				"3800": 6213,
-				"3866": 6240,
-				"4000": 6294,
-				"4133": 6347,
-				"4200": 6374,
-				"4266": 6401,
-				"4333": 6428,
-				"4500": 6496
+				"2133": 4013,
+				"2400": 4121,
+				"2666": 4228,
+				"2667": 4229,
+				"2800": 4282,
+				"3000": 4363,
+				"3200": 4444,
+				"3300": 4484,
+				"3333": 4498,
+				"3400": 4525,
+				"3466": 4551,
+				"3600": 4606,
+				"3666": 4632,
+				"3733": 4659,
+				"3800": 4686,
+				"3866": 4713,
+				"4000": 4767,
+				"4133": 4821,
+				"4200": 4848,
+				"4266": 4875,
+				"4300": 4888,
+				"4333": 4902,
+				"4400": 4929,
+				"4500": 4969
 			},
 			"fullName": "Intel Core i5-8600K",
 			"partName": "Core i5-8600K",
@@ -3298,52 +4132,56 @@ var data = {
 		},
 		"Intel Core i5-9600K": {
 			"1": {
-				"2133": 4900,
-				"2400": 4992,
-				"2666": 5084,
-				"2667": 5085,
-				"2800": 5131,
-				"3000": 5200,
-				"3200": 5269,
-				"3300": 5304,
-				"3333": 5315,
-				"3400": 5338,
-				"3466": 5361,
-				"3600": 5408,
-				"3666": 5431,
-				"3733": 5454,
-				"3800": 5477,
-				"3866": 5500,
-				"4000": 5546,
-				"4133": 5592,
-				"4200": 5616,
-				"4266": 5638,
-				"4333": 5662,
-				"4500": 5719
+				"2133": 3453,
+				"2400": 3546,
+				"2666": 3638,
+				"2667": 3638,
+				"2800": 3684,
+				"3000": 3753,
+				"3200": 3823,
+				"3300": 3857,
+				"3333": 3869,
+				"3400": 3892,
+				"3466": 3915,
+				"3600": 3961,
+				"3666": 3984,
+				"3733": 4007,
+				"3800": 4030,
+				"3866": 4053,
+				"4000": 4100,
+				"4133": 4146,
+				"4200": 4169,
+				"4266": 4192,
+				"4300": 4203,
+				"4333": 4215,
+				"4400": 4238,
+				"4500": 4273
 			},
 			"2": {
-				"2133": 5684,
-				"2400": 5776,
-				"2666": 5868,
-				"2667": 5869,
-				"2800": 5915,
-				"3000": 5984,
-				"3200": 6053,
-				"3300": 6088,
-				"3333": 6099,
-				"3400": 6123,
-				"3466": 6145,
-				"3600": 6192,
-				"3666": 6215,
-				"3733": 6238,
-				"3800": 6261,
-				"3866": 6284,
-				"4000": 6330,
-				"4133": 6376,
-				"4200": 6400,
-				"4266": 6422,
-				"4333": 6446,
-				"4500": 6503
+				"2133": 4237,
+				"2400": 4330,
+				"2666": 4422,
+				"2667": 4422,
+				"2800": 4468,
+				"3000": 4537,
+				"3200": 4607,
+				"3300": 4641,
+				"3333": 4653,
+				"3400": 4676,
+				"3466": 4699,
+				"3600": 4745,
+				"3666": 4768,
+				"3733": 4791,
+				"3800": 4814,
+				"3866": 4837,
+				"4000": 4884,
+				"4133": 4930,
+				"4200": 4953,
+				"4266": 4976,
+				"4300": 4988,
+				"4333": 4999,
+				"4400": 5022,
+				"4500": 5057
 			},
 			"fullName": "Intel Core i5-9600K",
 			"partName": "Core i5-9600K",
@@ -3371,34 +4209,38 @@ var data = {
 		},
 		"AMD Ryzen 5 Six Core 1600X": {
 			"1": {
-				"2133": 5032,
-				"2400": 5189,
-				"2666": 5346,
-				"2667": 5347,
-				"2800": 5426,
-				"2933": 5504,
-				"3000": 5544,
-				"3200": 5662,
-				"3300": 5721,
-				"3400": 5780,
-				"3466": 5819,
-				"3600": 5898,
-				"3733": 5976
+				"1866": 4328,
+				"2133": 4485,
+				"2400": 4643,
+				"2666": 4800,
+				"2667": 4801,
+				"2800": 4879,
+				"2933": 4958,
+				"3000": 4997,
+				"3066": 5036,
+				"3200": 5115,
+				"3300": 5174,
+				"3400": 5233,
+				"3466": 5272,
+				"3600": 5351,
+				"3733": 5430
 			},
 			"2": {
-				"2133": 5600,
-				"2400": 5757,
-				"2666": 5914,
-				"2667": 5915,
-				"2800": 5994,
-				"2933": 6072,
-				"3000": 6112,
-				"3200": 6230,
-				"3300": 6289,
-				"3400": 6348,
-				"3466": 6387,
-				"3600": 6466,
-				"3733": 6544
+				"1866": 4896,
+				"2133": 5053,
+				"2400": 5211,
+				"2666": 5368,
+				"2667": 5369,
+				"2800": 5447,
+				"2933": 5526,
+				"3000": 5565,
+				"3066": 5604,
+				"3200": 5683,
+				"3300": 5742,
+				"3400": 5801,
+				"3466": 5840,
+				"3600": 5919,
+				"3733": 5998
 			},
 			"fullName": "AMD Ryzen 5 Six Core 1600X",
 			"partName": "Ryzen 5 Six Core 1600X",
@@ -3426,34 +4268,38 @@ var data = {
 		},
 		"AMD Ryzen 5 Six Core 2600": {
 			"1": {
-				"2133": 5354,
-				"2400": 5458,
-				"2666": 5562,
-				"2667": 5563,
-				"2800": 5615,
-				"2933": 5667,
-				"3000": 5693,
-				"3200": 5771,
-				"3300": 5810,
-				"3400": 5849,
-				"3466": 5875,
-				"3600": 5927,
-				"3733": 5979
+				"1866": 4769,
+				"2133": 4873,
+				"2400": 4977,
+				"2666": 5081,
+				"2667": 5082,
+				"2800": 5134,
+				"2933": 5186,
+				"3000": 5212,
+				"3066": 5238,
+				"3200": 5290,
+				"3300": 5329,
+				"3400": 5368,
+				"3466": 5394,
+				"3600": 5446,
+				"3733": 5498
 			},
 			"2": {
-				"2133": 5922,
-				"2400": 6027,
-				"2666": 6131,
-				"2667": 6131,
-				"2800": 6183,
-				"2933": 6235,
-				"3000": 6261,
-				"3200": 6340,
-				"3300": 6379,
-				"3400": 6418,
-				"3466": 6444,
-				"3600": 6496,
-				"3733": 6548
+				"1866": 5337,
+				"2133": 5442,
+				"2400": 5546,
+				"2666": 5650,
+				"2667": 5650,
+				"2800": 5702,
+				"2933": 5754,
+				"3000": 5781,
+				"3066": 5806,
+				"3200": 5859,
+				"3300": 5898,
+				"3400": 5937,
+				"3466": 5963,
+				"3600": 6015,
+				"3733": 6067
 			},
 			"fullName": "AMD Ryzen 5 Six Core 2600",
 			"partName": "Ryzen 5 Six Core 2600",
@@ -3481,34 +4327,38 @@ var data = {
 		},
 		"AMD Ryzen 5 Six Core 2600X": {
 			"1": {
-				"2133": 5507,
-				"2400": 5611,
-				"2666": 5715,
-				"2667": 5716,
-				"2800": 5768,
-				"2933": 5820,
-				"3000": 5846,
-				"3200": 5924,
-				"3300": 5963,
-				"3400": 6002,
-				"3466": 6028,
-				"3600": 6080,
-				"3733": 6132
+				"1866": 4769,
+				"2133": 4873,
+				"2400": 4977,
+				"2666": 5081,
+				"2667": 5082,
+				"2800": 5134,
+				"2933": 5186,
+				"3000": 5212,
+				"3066": 5238,
+				"3200": 5290,
+				"3300": 5329,
+				"3400": 5368,
+				"3466": 5394,
+				"3600": 5446,
+				"3733": 5498
 			},
 			"2": {
-				"2133": 6075,
-				"2400": 6180,
-				"2666": 6284,
-				"2667": 6284,
-				"2800": 6336,
-				"2933": 6388,
-				"3000": 6414,
-				"3200": 6493,
-				"3300": 6532,
-				"3400": 6571,
-				"3466": 6597,
-				"3600": 6649,
-				"3733": 6701
+				"1866": 5337,
+				"2133": 5442,
+				"2400": 5546,
+				"2666": 5650,
+				"2667": 5650,
+				"2800": 5702,
+				"2933": 5754,
+				"3000": 5781,
+				"3066": 5806,
+				"3200": 5859,
+				"3300": 5898,
+				"3400": 5937,
+				"3466": 5963,
+				"3600": 6015,
+				"3733": 6067
 			},
 			"fullName": "AMD Ryzen 5 Six Core 2600X",
 			"partName": "Ryzen 5 Six Core 2600X",
@@ -3536,76 +4386,100 @@ var data = {
 		},
 		"Intel Core i7-7800X": {
 			"1": {
-				"2133": 6020,
-				"2400": 6125,
-				"2666": 6230,
-				"2800": 6282,
-				"3000": 6361,
-				"3200": 6439,
-				"3300": 6479,
-				"3333": 6492,
-				"3400": 6518,
-				"3466": 6544,
-				"3600": 6596,
-				"3733": 6649,
-				"3800": 6675,
-				"3866": 6701,
-				"4000": 6754,
-				"4133": 6806
+				"2133": 4510,
+				"2400": 4615,
+				"2600": 4694,
+				"2666": 4719,
+				"2800": 4772,
+				"3000": 4851,
+				"3200": 4929,
+				"3300": 4968,
+				"3333": 4981,
+				"3400": 5008,
+				"3466": 5034,
+				"3600": 5086,
+				"3666": 5112,
+				"3733": 5139,
+				"3800": 5165,
+				"3866": 5191,
+				"4000": 5243,
+				"4133": 5296,
+				"4200": 5322,
+				"4266": 5348,
+				"4333": 5374,
+				"4400": 5401
 			},
 			"2": {
-				"2133": 6197,
-				"2400": 6302,
-				"2666": 6406,
-				"2800": 6459,
-				"3000": 6538,
-				"3200": 6616,
-				"3300": 6655,
-				"3333": 6668,
-				"3400": 6695,
-				"3466": 6721,
-				"3600": 6773,
-				"3733": 6826,
-				"3800": 6852,
-				"3866": 6878,
-				"4000": 6930,
-				"4133": 6983
+				"2133": 4687,
+				"2400": 4792,
+				"2600": 4870,
+				"2666": 4896,
+				"2800": 4949,
+				"3000": 5027,
+				"3200": 5106,
+				"3300": 5145,
+				"3333": 5158,
+				"3400": 5185,
+				"3466": 5210,
+				"3600": 5263,
+				"3666": 5289,
+				"3733": 5315,
+				"3800": 5342,
+				"3866": 5368,
+				"4000": 5420,
+				"4133": 5472,
+				"4200": 5499,
+				"4266": 5525,
+				"4333": 5551,
+				"4400": 5577
 			},
 			"3": {
-				"2133": 6374,
-				"2400": 6479,
-				"2666": 6583,
-				"2800": 6636,
-				"3000": 6714,
-				"3200": 6793,
-				"3300": 6832,
-				"3333": 6845,
-				"3400": 6872,
-				"3466": 6897,
-				"3600": 6950,
-				"3733": 7002,
-				"3800": 7029,
-				"3866": 7055,
-				"4000": 7107,
-				"4133": 7159
+				"2133": 4864,
+				"2400": 4969,
+				"2600": 5047,
+				"2666": 5073,
+				"2800": 5126,
+				"3000": 5204,
+				"3200": 5283,
+				"3300": 5322,
+				"3333": 5335,
+				"3400": 5361,
+				"3466": 5387,
+				"3600": 5440,
+				"3666": 5466,
+				"3733": 5492,
+				"3800": 5518,
+				"3866": 5544,
+				"4000": 5597,
+				"4133": 5649,
+				"4200": 5676,
+				"4266": 5702,
+				"4333": 5728,
+				"4400": 5754
 			},
 			"4": {
-				"2133": 6551,
-				"2400": 6656,
-				"2666": 6760,
-				"2800": 6813,
-				"3000": 6891,
-				"3200": 6970,
-				"3300": 7009,
-				"3333": 7022,
-				"3400": 7048,
-				"3466": 7074,
-				"3600": 7127,
-				"3733": 7179,
-				"3800": 7205,
-				"3866": 7231,
-				"4000": 7284,
-				"4133": 7336
+				"2133": 5041,
+				"2400": 5145,
+				"2600": 5224,
+				"2666": 5250,
+				"2800": 5303,
+				"3000": 5381,
+				"3200": 5460,
+				"3300": 5499,
+				"3333": 5512,
+				"3400": 5538,
+				"3466": 5564,
+				"3600": 5617,
+				"3666": 5643,
+				"3733": 5669,
+				"3800": 5695,
+				"3866": 5721,
+				"4000": 5774,
+				"4133": 5826,
+				"4200": 5852,
+				"4266": 5878,
+				"4333": 5905,
+				"4400": 5931
 			},
 			"fullName": "Intel Core i7-7800X",
 			"partName": "Core i7-7800X",
@@ -3633,84 +4507,60 @@ var data = {
 		},
 		"AMD Ryzen Threadripper 2970WX": {
 			"1": {
-				"2133": 6259,
-				"2400": 6408,
-				"2666": 6557,
-				"2667": 6557,
-				"2800": 6631,
-				"2933": 6705,
-				"3000": 6743,
-				"3066": 6780,
-				"3200": 6854,
-				"3300": 6910,
-				"3333": 6929,
-				"3466": 7003,
-				"3600": 7078,
-				"3733": 7152,
-				"3866": 7226,
-				"4000": 7301,
-				"4133": 7375,
-				"4200": 7412
+				"2133": 5842,
+				"2400": 5991,
+				"2666": 6139,
+				"2667": 6140,
+				"2800": 6214,
+				"2933": 6288,
+				"3000": 6326,
+				"3066": 6362,
+				"3200": 6437,
+				"3333": 6511,
+				"3466": 6586,
+				"3600": 6660
 			},
 			"2": {
-				"2133": 6533,
-				"2400": 6682,
-				"2666": 6831,
-				"2667": 6831,
-				"2800": 6905,
-				"2933": 6980,
-				"3000": 7017,
-				"3066": 7054,
-				"3200": 7128,
-				"3300": 7184,
-				"3333": 7203,
-				"3466": 7277,
-				"3600": 7352,
-				"3733": 7426,
-				"3866": 7500,
-				"4000": 7575,
-				"4133": 7649,
-				"4200": 7686
+				"2133": 6116,
+				"2400": 6265,
+				"2666": 6413,
+				"2667": 6414,
+				"2800": 6488,
+				"2933": 6562,
+				"3000": 6600,
+				"3066": 6637,
+				"3200": 6711,
+				"3333": 6785,
+				"3466": 6860,
+				"3600": 6934
 			},
 			"3": {
-				"2133": 6807,
-				"2400": 6956,
-				"2666": 7105,
-				"2667": 7105,
-				"2800": 7179,
-				"2933": 7254,
-				"3000": 7291,
-				"3066": 7328,
-				"3200": 7403,
-				"3300": 7458,
-				"3333": 7477,
-				"3466": 7551,
-				"3600": 7626,
-				"3733": 7700,
-				"3866": 7774,
-				"4000": 7849,
-				"4133": 7923,
-				"4200": 7960
+				"2133": 6390,
+				"2400": 6539,
+				"2666": 6687,
+				"2667": 6688,
+				"2800": 6762,
+				"2933": 6836,
+				"3000": 6874,
+				"3066": 6911,
+				"3200": 6985,
+				"3333": 7060,
+				"3466": 7134,
+				"3600": 7208
 			},
 			"4": {
-				"2133": 7081,
-				"2400": 7230,
-				"2666": 7379,
-				"2667": 7379,
-				"2800": 7453,
-				"2933": 7528,
-				"3000": 7565,
-				"3066": 7602,
-				"3200": 7677,
-				"3300": 7732,
-				"3333": 7751,
-				"3466": 7825,
-				"3600": 7900,
-				"3733": 7974,
-				"3866": 8048,
-				"4000": 8123,
-				"4133": 8197,
-				"4200": 8234
+				"2133": 6664,
+				"2400": 6813,
+				"2666": 6962,
+				"2667": 6962,
+				"2800": 7036,
+				"2933": 7110,
+				"3000": 7148,
+				"3066": 7185,
+				"3200": 7259,
+				"3333": 7334,
+				"3466": 7408,
+				"3600": 7483
 			},
 			"fullName": "AMD Ryzen Threadripper 2970WX",
 			"partName": "Ryzen Threadripper 2970WX",
@@ -3738,34 +4588,38 @@ var data = {
 		},
 		"AMD Ryzen 7 Eight Core 1700": {
 			"1": {
-				"2133": 6267,
-				"2400": 6472,
-				"2666": 6677,
-				"2667": 6677,
-				"2800": 6780,
-				"2933": 6882,
-				"3000": 6934,
-				"3200": 7087,
-				"3300": 7164,
-				"3400": 7241,
-				"3466": 7292,
-				"3600": 7395,
-				"3733": 7497
+				"1866": 4881,
+				"2133": 5086,
+				"2400": 5291,
+				"2666": 5496,
+				"2667": 5496,
+				"2800": 5599,
+				"2933": 5701,
+				"3000": 5752,
+				"3066": 5803,
+				"3200": 5906,
+				"3300": 5983,
+				"3400": 6060,
+				"3466": 6111,
+				"3600": 6214,
+				"3733": 6316
 			},
 			"2": {
-				"2133": 7248,
-				"2400": 7453,
-				"2666": 7658,
-				"2667": 7659,
-				"2800": 7761,
-				"2933": 7863,
-				"3000": 7915,
-				"3200": 8069,
-				"3300": 8145,
-				"3400": 8222,
-				"3466": 8273,
-				"3600": 8376,
-				"3733": 8478
+				"1866": 5862,
+				"2133": 6067,
+				"2400": 6272,
+				"2666": 6477,
+				"2667": 6478,
+				"2800": 6580,
+				"2933": 6682,
+				"3000": 6734,
+				"3066": 6784,
+				"3200": 6887,
+				"3300": 6964,
+				"3400": 7041,
+				"3466": 7092,
+				"3600": 7195,
+				"3733": 7297
 			},
 			"fullName": "AMD Ryzen 7 Eight Core 1700",
 			"partName": "Ryzen 7 Eight Core 1700",
@@ -3793,52 +4647,56 @@ var data = {
 		},
 		"Intel Core i7-8700": {
 			"1": {
-				"2133": 6172,
-				"2400": 6328,
-				"2666": 6483,
-				"2667": 6484,
-				"2800": 6561,
-				"3000": 6678,
-				"3200": 6795,
-				"3300": 6853,
-				"3333": 6873,
-				"3400": 6912,
-				"3466": 6950,
-				"3600": 7028,
-				"3666": 7067,
-				"3733": 7106,
-				"3800": 7145,
-				"3866": 7184,
-				"4000": 7262,
-				"4133": 7340,
-				"4200": 7379,
-				"4266": 7417,
-				"4333": 7456,
-				"4500": 7554
+				"2133": 3271,
+				"2400": 3427,
+				"2666": 3582,
+				"2667": 3582,
+				"2800": 3660,
+				"3000": 3777,
+				"3200": 3894,
+				"3300": 3952,
+				"3333": 3971,
+				"3400": 4010,
+				"3466": 4049,
+				"3600": 4127,
+				"3666": 4166,
+				"3733": 4205,
+				"3800": 4244,
+				"3866": 4282,
+				"4000": 4361,
+				"4133": 4438,
+				"4200": 4477,
+				"4266": 4516,
+				"4300": 4536,
+				"4333": 4555,
+				"4400": 4594,
+				"4500": 4652
 			},
 			"2": {
-				"2133": 7556,
-				"2400": 7712,
-				"2666": 7867,
-				"2667": 7867,
-				"2800": 7945,
-				"3000": 8062,
-				"3200": 8179,
-				"3300": 8237,
-				"3333": 8256,
-				"3400": 8295,
-				"3466": 8334,
-				"3600": 8412,
-				"3666": 8451,
-				"3733": 8490,
-				"3800": 8529,
-				"3866": 8567,
-				"4000": 8646,
-				"4133": 8723,
-				"4200": 8762,
-				"4266": 8801,
-				"4333": 8840,
-				"4500": 8937
+				"2133": 4654,
+				"2400": 4810,
+				"2666": 4965,
+				"2667": 4966,
+				"2800": 5044,
+				"3000": 5160,
+				"3200": 5277,
+				"3300": 5336,
+				"3333": 5355,
+				"3400": 5394,
+				"3466": 5432,
+				"3600": 5511,
+				"3666": 5549,
+				"3733": 5588,
+				"3800": 5627,
+				"3866": 5666,
+				"4000": 5744,
+				"4133": 5822,
+				"4200": 5861,
+				"4266": 5899,
+				"4300": 5919,
+				"4333": 5939,
+				"4400": 5978,
+				"4500": 6036
 			},
 			"fullName": "Intel Core i7-8700",
 			"partName": "Core i7-8700",
@@ -3866,34 +4724,38 @@ var data = {
 		},
 		"AMD Ryzen 7 Eight Core 1700X": {
 			"1": {
-				"2133": 6499,
-				"2400": 6698,
-				"2666": 6896,
-				"2667": 6897,
-				"2800": 6995,
-				"2933": 7094,
-				"3000": 7144,
-				"3200": 7293,
-				"3300": 7367,
-				"3400": 7441,
-				"3466": 7491,
-				"3600": 7590,
-				"3733": 7689
+				"1866": 4874,
+				"2133": 5073,
+				"2400": 5271,
+				"2666": 5469,
+				"2667": 5470,
+				"2800": 5569,
+				"2933": 5667,
+				"3000": 5717,
+				"3066": 5766,
+				"3200": 5866,
+				"3300": 5940,
+				"3400": 6015,
+				"3466": 6064,
+				"3600": 6163,
+				"3733": 6262
 			},
 			"2": {
-				"2133": 7509,
-				"2400": 7708,
-				"2666": 7905,
-				"2667": 7906,
-				"2800": 8005,
-				"2933": 8104,
-				"3000": 8154,
-				"3200": 8303,
-				"3300": 8377,
-				"3400": 8451,
-				"3466": 8500,
-				"3600": 8600,
-				"3733": 8699
+				"1866": 5884,
+				"2133": 6082,
+				"2400": 6281,
+				"2666": 6479,
+				"2667": 6479,
+				"2800": 6578,
+				"2933": 6677,
+				"3000": 6727,
+				"3066": 6776,
+				"3200": 6876,
+				"3300": 6950,
+				"3400": 7024,
+				"3466": 7073,
+				"3600": 7173,
+				"3733": 7272
 			},
 			"fullName": "AMD Ryzen 7 Eight Core 1700X",
 			"partName": "Ryzen 7 Eight Core 1700X",
@@ -3921,84 +4783,60 @@ var data = {
 		},
 		"AMD Ryzen Threadripper Eight Core 1900X": {
 			"1": {
-				"2133": 5801,
-				"2400": 6076,
-				"2666": 6349,
-				"2667": 6350,
-				"2800": 6487,
-				"2933": 6624,
-				"3000": 6693,
-				"3066": 6760,
-				"3200": 6898,
-				"3300": 7001,
-				"3333": 7035,
-				"3466": 7171,
-				"3600": 7309,
-				"3733": 7446,
-				"3866": 7583,
-				"4000": 7720,
-				"4133": 7857,
-				"4200": 7926
+				"2133": 3718,
+				"2400": 3992,
+				"2666": 4265,
+				"2667": 4267,
+				"2800": 4403,
+				"2933": 4540,
+				"3000": 4609,
+				"3066": 4677,
+				"3200": 4814,
+				"3333": 4951,
+				"3466": 5088,
+				"3600": 5225
 			},
 			"2": {
-				"2133": 6358,
-				"2400": 6633,
-				"2666": 6906,
-				"2667": 6907,
-				"2800": 7044,
-				"2933": 7180,
-				"3000": 7249,
-				"3066": 7317,
-				"3200": 7455,
-				"3300": 7558,
-				"3333": 7592,
-				"3466": 7728,
-				"3600": 7866,
-				"3733": 8003,
-				"3866": 8139,
-				"4000": 8277,
-				"4133": 8414,
-				"4200": 8483
+				"2133": 4274,
+				"2400": 4549,
+				"2666": 4822,
+				"2667": 4823,
+				"2800": 4960,
+				"2933": 5097,
+				"3000": 5166,
+				"3066": 5233,
+				"3200": 5371,
+				"3333": 5508,
+				"3466": 5645,
+				"3600": 5782
 			},
 			"3": {
-				"2133": 6915,
-				"2400": 7189,
-				"2666": 7463,
-				"2667": 7464,
-				"2800": 7601,
-				"2933": 7737,
-				"3000": 7806,
-				"3066": 7874,
-				"3200": 8012,
-				"3300": 8114,
-				"3333": 8148,
-				"3466": 8285,
-				"3600": 8423,
-				"3733": 8559,
-				"3866": 8696,
-				"4000": 8834,
-				"4133": 8971,
-				"4200": 9039
+				"2133": 4831,
+				"2400": 5106,
+				"2666": 5379,
+				"2667": 5380,
+				"2800": 5517,
+				"2933": 5653,
+				"3000": 5722,
+				"3066": 5790,
+				"3200": 5928,
+				"3333": 6065,
+				"3466": 6201,
+				"3600": 6339
 			},
 			"4": {
-				"2133": 7472,
-				"2400": 7746,
-				"2666": 8020,
-				"2667": 8021,
-				"2800": 8157,
-				"2933": 8294,
-				"3000": 8363,
-				"3066": 8431,
-				"3200": 8568,
-				"3300": 8671,
-				"3333": 8705,
-				"3466": 8842,
-				"3600": 8980,
-				"3733": 9116,
-				"3866": 9253,
-				"4000": 9391,
-				"4133": 9527,
-				"4200": 9596
+				"2133": 5388,
+				"2400": 5662,
+				"2666": 5936,
+				"2667": 5937,
+				"2800": 6074,
+				"2933": 6210,
+				"3000": 6279,
+				"3066": 6347,
+				"3200": 6485,
+				"3333": 6621,
+				"3466": 6758,
+				"3600": 6896
 			},
 			"fullName": "AMD Ryzen Threadripper Eight Core 1900X",
 			"partName": "Ryzen Threadripper Eight Core 1900X",
@@ -4026,52 +4864,56 @@ var data = {
 		},
 		"Intel Core i7-8700K": {
 			"1": {
-				"2133": 6333,
-				"2400": 6489,
-				"2666": 6644,
-				"2667": 6645,
-				"2800": 6723,
-				"3000": 6839,
-				"3200": 6956,
-				"3300": 7014,
-				"3333": 7034,
-				"3400": 7073,
-				"3466": 7111,
-				"3600": 7190,
-				"3666": 7228,
-				"3733": 7267,
-				"3800": 7306,
-				"3866": 7345,
-				"4000": 7423,
-				"4133": 7501,
-				"4200": 7540,
-				"4266": 7578,
-				"4333": 7618,
-				"4500": 7715
+				"2133": 3271,
+				"2400": 3427,
+				"2666": 3582,
+				"2667": 3582,
+				"2800": 3660,
+				"3000": 3777,
+				"3200": 3894,
+				"3300": 3952,
+				"3333": 3971,
+				"3400": 4010,
+				"3466": 4049,
+				"3600": 4127,
+				"3666": 4166,
+				"3733": 4205,
+				"3800": 4244,
+				"3866": 4282,
+				"4000": 4361,
+				"4133": 4438,
+				"4200": 4477,
+				"4266": 4516,
+				"4300": 4536,
+				"4333": 4555,
+				"4400": 4594,
+				"4500": 4652
 			},
 			"2": {
-				"2133": 7717,
-				"2400": 7873,
-				"2666": 8028,
-				"2667": 8029,
-				"2800": 8106,
-				"3000": 8223,
-				"3200": 8340,
-				"3300": 8398,
-				"3333": 8417,
-				"3400": 8456,
-				"3466": 8495,
-				"3600": 8573,
-				"3666": 8612,
-				"3733": 8651,
-				"3800": 8690,
-				"3866": 8729,
-				"4000": 8807,
-				"4133": 8884,
-				"4200": 8924,
-				"4266": 8962,
-				"4333": 9001,
-				"4500": 9099
+				"2133": 4654,
+				"2400": 4810,
+				"2666": 4965,
+				"2667": 4966,
+				"2800": 5044,
+				"3000": 5160,
+				"3200": 5277,
+				"3300": 5336,
+				"3333": 5355,
+				"3400": 5394,
+				"3466": 5432,
+				"3600": 5511,
+				"3666": 5549,
+				"3733": 5588,
+				"3800": 5627,
+				"3866": 5666,
+				"4000": 5744,
+				"4133": 5822,
+				"4200": 5861,
+				"4266": 5899,
+				"4300": 5919,
+				"4333": 5939,
+				"4400": 5978,
+				"4500": 6036
 			},
 			"fullName": "Intel Core i7-8700K",
 			"partName": "Core i7-8700K",
@@ -4099,52 +4941,56 @@ var data = {
 		},
 		"Intel Core i7-9700K": {
 			"1": {
-				"2133": 6241,
-				"2400": 6449,
-				"2666": 6655,
-				"2667": 6656,
-				"2800": 6759,
-				"3000": 6915,
-				"3200": 7070,
-				"3300": 7148,
-				"3333": 7173,
-				"3400": 7225,
-				"3466": 7277,
-				"3600": 7381,
-				"3666": 7432,
-				"3733": 7484,
-				"3800": 7536,
-				"3866": 7587,
-				"4000": 7691,
-				"4133": 7795,
-				"4200": 7847,
-				"4266": 7898,
-				"4333": 7950,
-				"4500": 8080
+				"2133": 3471,
+				"2400": 3678,
+				"2666": 3885,
+				"2667": 3886,
+				"2800": 3989,
+				"3000": 4144,
+				"3200": 4300,
+				"3300": 4377,
+				"3333": 4403,
+				"3400": 4455,
+				"3466": 4506,
+				"3600": 4610,
+				"3666": 4662,
+				"3733": 4714,
+				"3800": 4766,
+				"3866": 4817,
+				"4000": 4921,
+				"4133": 5024,
+				"4200": 5076,
+				"4266": 5127,
+				"4300": 5154,
+				"4333": 5180,
+				"4400": 5232,
+				"4500": 5309
 			},
 			"2": {
-				"2133": 7626,
-				"2400": 7833,
-				"2666": 8040,
-				"2667": 8040,
-				"2800": 8144,
-				"3000": 8299,
-				"3200": 8454,
-				"3300": 8532,
-				"3333": 8558,
-				"3400": 8610,
-				"3466": 8661,
-				"3600": 8765,
-				"3666": 8816,
-				"3733": 8868,
-				"3800": 8920,
-				"3866": 8972,
-				"4000": 9076,
-				"4133": 9179,
-				"4200": 9231,
-				"4266": 9282,
-				"4333": 9334,
-				"4500": 9464
+				"2133": 4855,
+				"2400": 5063,
+				"2666": 5269,
+				"2667": 5270,
+				"2800": 5373,
+				"3000": 5529,
+				"3200": 5684,
+				"3300": 5762,
+				"3333": 5787,
+				"3400": 5839,
+				"3466": 5890,
+				"3600": 5995,
+				"3666": 6046,
+				"3733": 6098,
+				"3800": 6150,
+				"3866": 6201,
+				"4000": 6305,
+				"4133": 6408,
+				"4200": 6460,
+				"4266": 6512,
+				"4300": 6538,
+				"4333": 6564,
+				"4400": 6616,
+				"4500": 6693
 			},
 			"fullName": "Intel Core i7-9700K",
 			"partName": "Core i7-9700K",
@@ -4172,34 +5018,38 @@ var data = {
 		},
 		"AMD Ryzen 7 Eight Core 1800X": {
 			"1": {
-				"2133": 6624,
-				"2400": 6842,
-				"2666": 7059,
-				"2667": 7060,
-				"2800": 7169,
-				"2933": 7277,
-				"3000": 7332,
-				"3200": 7495,
-				"3300": 7577,
-				"3400": 7659,
-				"3466": 7713,
-				"3600": 7822,
-				"3733": 7931
+				"1866": 4896,
+				"2133": 5114,
+				"2400": 5332,
+				"2666": 5549,
+				"2667": 5550,
+				"2800": 5658,
+				"2933": 5767,
+				"3000": 5822,
+				"3066": 5876,
+				"3200": 5985,
+				"3300": 6067,
+				"3400": 6149,
+				"3466": 6202,
+				"3600": 6312,
+				"3733": 6421
 			},
 			"2": {
-				"2133": 7737,
-				"2400": 7955,
-				"2666": 8173,
-				"2667": 8173,
-				"2800": 8282,
-				"2933": 8391,
-				"3000": 8445,
-				"3200": 8609,
-				"3300": 8690,
-				"3400": 8772,
-				"3466": 8826,
-				"3600": 8936,
-				"3733": 9044
+				"1866": 6009,
+				"2133": 6227,
+				"2400": 6445,
+				"2666": 6662,
+				"2667": 6663,
+				"2800": 6772,
+				"2933": 6881,
+				"3000": 6935,
+				"3066": 6989,
+				"3200": 7099,
+				"3300": 7180,
+				"3400": 7262,
+				"3466": 7316,
+				"3600": 7425,
+				"3733": 7534
 			},
 			"fullName": "AMD Ryzen 7 Eight Core 1800X",
 			"partName": "Ryzen 7 Eight Core 1800X",
@@ -4227,52 +5077,56 @@ var data = {
 		},
 		"Intel Core i7-8086K": {
 			"1": {
-				"2133": 6817,
-				"2400": 6973,
-				"2666": 7128,
-				"2667": 7129,
-				"2800": 7206,
-				"3000": 7323,
-				"3200": 7440,
-				"3300": 7498,
-				"3333": 7517,
-				"3400": 7556,
-				"3466": 7595,
-				"3600": 7673,
-				"3666": 7712,
-				"3733": 7751,
-				"3800": 7790,
-				"3866": 7828,
-				"4000": 7907,
-				"4133": 7984,
-				"4200": 8023,
-				"4266": 8062,
-				"4333": 8101,
-				"4500": 8199
+				"2133": 3271,
+				"2400": 3427,
+				"2666": 3582,
+				"2667": 3582,
+				"2800": 3660,
+				"3000": 3777,
+				"3200": 3894,
+				"3300": 3952,
+				"3333": 3971,
+				"3400": 4010,
+				"3466": 4049,
+				"3600": 4127,
+				"3666": 4166,
+				"3733": 4205,
+				"3800": 4244,
+				"3866": 4282,
+				"4000": 4361,
+				"4133": 4438,
+				"4200": 4477,
+				"4266": 4516,
+				"4300": 4536,
+				"4333": 4555,
+				"4400": 4594,
+				"4500": 4652
 			},
 			"2": {
-				"2133": 8200,
-				"2400": 8356,
-				"2666": 8512,
-				"2667": 8512,
-				"2800": 8590,
-				"3000": 8707,
-				"3200": 8823,
-				"3300": 8882,
-				"3333": 8901,
-				"3400": 8940,
-				"3466": 8979,
-				"3600": 9057,
-				"3666": 9095,
-				"3733": 9134,
-				"3800": 9174,
-				"3866": 9212,
-				"4000": 9290,
-				"4133": 9368,
-				"4200": 9407,
-				"4266": 9446,
-				"4333": 9485,
-				"4500": 9582
+				"2133": 4654,
+				"2400": 4810,
+				"2666": 4965,
+				"2667": 4966,
+				"2800": 5044,
+				"3000": 5160,
+				"3200": 5277,
+				"3300": 5336,
+				"3333": 5355,
+				"3400": 5394,
+				"3466": 5432,
+				"3600": 5511,
+				"3666": 5549,
+				"3733": 5588,
+				"3800": 5627,
+				"3866": 5666,
+				"4000": 5744,
+				"4133": 5822,
+				"4200": 5861,
+				"4266": 5899,
+				"4300": 5919,
+				"4333": 5939,
+				"4400": 5978,
+				"4500": 6036
 			},
 			"fullName": "Intel Core i7-8086K",
 			"partName": "Core i7-8086K",
@@ -4300,34 +5154,38 @@ var data = {
 		},
 		"AMD Ryzen 7 Eight Core 2700": {
 			"1": {
-				"2133": 7063,
-				"2400": 7287,
-				"2666": 7510,
-				"2667": 7511,
-				"2800": 7622,
-				"2933": 7734,
-				"3000": 7790,
-				"3200": 7958,
-				"3300": 8041,
-				"3400": 8125,
-				"3466": 8181,
-				"3600": 8293,
-				"3733": 8404
+				"1866": 6352,
+				"2133": 6575,
+				"2400": 6799,
+				"2666": 7022,
+				"2667": 7023,
+				"2800": 7135,
+				"2933": 7246,
+				"3000": 7302,
+				"3066": 7358,
+				"3200": 7470,
+				"3300": 7554,
+				"3400": 7638,
+				"3466": 7693,
+				"3600": 7805,
+				"3733": 7917
 			},
 			"2": {
-				"2133": 7993,
-				"2400": 8217,
-				"2666": 8440,
-				"2667": 8441,
-				"2800": 8552,
-				"2933": 8664,
-				"3000": 8720,
-				"3200": 8888,
-				"3300": 8972,
-				"3400": 9055,
-				"3466": 9111,
-				"3600": 9223,
-				"3733": 9334
+				"1866": 7282,
+				"2133": 7506,
+				"2400": 7729,
+				"2666": 7952,
+				"2667": 7953,
+				"2800": 8065,
+				"2933": 8176,
+				"3000": 8232,
+				"3066": 8288,
+				"3200": 8400,
+				"3300": 8484,
+				"3400": 8568,
+				"3466": 8623,
+				"3600": 8735,
+				"3733": 8847
 			},
 			"fullName": "AMD Ryzen 7 Eight Core 2700",
 			"partName": "Ryzen 7 Eight Core 2700",
@@ -4355,34 +5213,38 @@ var data = {
 		},
 		"AMD Ryzen 7 Eight Core 2700X": {
 			"1": {
-				"2133": 7157,
-				"2400": 7381,
-				"2666": 7604,
-				"2667": 7605,
-				"2800": 7716,
-				"2933": 7828,
-				"3000": 7884,
-				"3200": 8051,
-				"3300": 8135,
-				"3400": 8219,
-				"3466": 8274,
-				"3600": 8387,
-				"3733": 8498
+				"1866": 6352,
+				"2133": 6575,
+				"2400": 6799,
+				"2666": 7022,
+				"2667": 7023,
+				"2800": 7135,
+				"2933": 7246,
+				"3000": 7302,
+				"3066": 7358,
+				"3200": 7470,
+				"3300": 7554,
+				"3400": 7638,
+				"3466": 7693,
+				"3600": 7805,
+				"3733": 7917
 			},
 			"2": {
-				"2133": 8087,
-				"2400": 8311,
-				"2666": 8534,
-				"2667": 8535,
-				"2800": 8646,
-				"2933": 8758,
-				"3000": 8814,
-				"3200": 8981,
-				"3300": 9065,
-				"3400": 9149,
-				"3466": 9204,
-				"3600": 9317,
-				"3733": 9428
+				"1866": 7282,
+				"2133": 7506,
+				"2400": 7729,
+				"2666": 7952,
+				"2667": 7953,
+				"2800": 8065,
+				"2933": 8176,
+				"3000": 8232,
+				"3066": 8288,
+				"3200": 8400,
+				"3300": 8484,
+				"3400": 8568,
+				"3466": 8623,
+				"3600": 8735,
+				"3733": 8847
 			},
 			"fullName": "AMD Ryzen 7 Eight Core 2700X",
 			"partName": "Ryzen 7 Eight Core 2700X",
@@ -4410,84 +5272,60 @@ var data = {
 		},
 		"AMD Ryzen Threadripper Twelve Core 1920X": {
 			"1": {
-				"2133": 4822,
-				"2400": 5206,
-				"2666": 5589,
-				"2667": 5591,
-				"2800": 5782,
-				"2933": 5974,
-				"3000": 6070,
-				"3066": 6165,
-				"3200": 6358,
-				"3300": 6502,
-				"3333": 6549,
-				"3466": 6741,
-				"3600": 6934,
-				"3733": 7125,
-				"3866": 7317,
-				"4000": 7509,
-				"4133": 7701,
-				"4200": 7797
+				"2133": 4225,
+				"2400": 4609,
+				"2666": 4992,
+				"2667": 4994,
+				"2800": 5185,
+				"2933": 5376,
+				"3000": 5473,
+				"3066": 5568,
+				"3200": 5761,
+				"3333": 5952,
+				"3466": 6144,
+				"3600": 6336
 			},
 			"2": {
-				"2133": 6010,
-				"2400": 6394,
-				"2666": 6777,
-				"2667": 6778,
-				"2800": 6970,
-				"2933": 7161,
-				"3000": 7258,
-				"3066": 7353,
-				"3200": 7546,
-				"3300": 7690,
-				"3333": 7737,
-				"3466": 7929,
-				"3600": 8121,
-				"3733": 8313,
-				"3866": 8504,
-				"4000": 8697,
-				"4133": 8889,
-				"4200": 8985
+				"2133": 5413,
+				"2400": 5797,
+				"2666": 6180,
+				"2667": 6181,
+				"2800": 6373,
+				"2933": 6564,
+				"3000": 6661,
+				"3066": 6756,
+				"3200": 6948,
+				"3333": 7140,
+				"3466": 7331,
+				"3600": 7524
 			},
 			"3": {
-				"2133": 7198,
-				"2400": 7582,
-				"2666": 7965,
-				"2667": 7966,
-				"2800": 8158,
-				"2933": 8349,
-				"3000": 8446,
-				"3066": 8541,
-				"3200": 8733,
-				"3300": 8877,
-				"3333": 8925,
-				"3466": 9116,
-				"3600": 9309,
-				"3733": 9501,
-				"3866": 9692,
-				"4000": 9885,
-				"4133": 10076,
-				"4200": 10173
+				"2133": 6600,
+				"2400": 6985,
+				"2666": 7368,
+				"2667": 7369,
+				"2800": 7560,
+				"2933": 7752,
+				"3000": 7848,
+				"3066": 7943,
+				"3200": 8136,
+				"3333": 8328,
+				"3466": 8519,
+				"3600": 8712
 			},
 			"4": {
-				"2133": 8385,
-				"2400": 8770,
-				"2666": 9152,
-				"2667": 9154,
-				"2800": 9345,
-				"2933": 9537,
-				"3000": 9633,
-				"3066": 9728,
-				"3200": 9921,
-				"3300": 10065,
-				"3333": 10113,
-				"3466": 10304,
-				"3600": 10497,
-				"3733": 10688,
-				"3866": 10880,
-				"4000": 11073,
-				"4133": 11264,
-				"4200": 11360
+				"2133": 7788,
+				"2400": 8172,
+				"2666": 8555,
+				"2667": 8557,
+				"2800": 8748,
+				"2933": 8940,
+				"3000": 9036,
+				"3066": 9131,
+				"3200": 9324,
+				"3333": 9515,
+				"3466": 9707,
+				"3600": 9900
 			},
 			"fullName": "AMD Ryzen Threadripper Twelve Core 1920X",
 			"partName": "Ryzen Threadripper Twelve Core 1920X",
@@ -4515,76 +5353,100 @@ var data = {
 		},
 		"Intel Core i7-7820X": {
 			"1": {
-				"2133": 7809,
-				"2400": 8013,
-				"2666": 8215,
-				"2800": 8317,
-				"3000": 8470,
-				"3200": 8622,
-				"3300": 8699,
-				"3333": 8724,
-				"3400": 8775,
-				"3466": 8825,
-				"3600": 8927,
-				"3733": 9029,
-				"3800": 9080,
-				"3866": 9130,
-				"4000": 9232,
-				"4133": 9334
+				"2133": 5718,
+				"2400": 5922,
+				"2600": 6074,
+				"2666": 6125,
+				"2800": 6227,
+				"3000": 6379,
+				"3200": 6532,
+				"3300": 6608,
+				"3333": 6633,
+				"3400": 6684,
+				"3466": 6735,
+				"3600": 6837,
+				"3666": 6887,
+				"3733": 6938,
+				"3800": 6989,
+				"3866": 7039,
+				"4000": 7142,
+				"4133": 7243,
+				"4200": 7294,
+				"4266": 7344,
+				"4333": 7395,
+				"4400": 7447
 			},
 			"2": {
-				"2133": 8256,
-				"2400": 8459,
-				"2666": 8662,
-				"2800": 8764,
-				"3000": 8917,
-				"3200": 9069,
-				"3300": 9145,
-				"3333": 9171,
-				"3400": 9222,
-				"3466": 9272,
-				"3600": 9374,
-				"3733": 9475,
-				"3800": 9527,
-				"3866": 9577,
-				"4000": 9679,
-				"4133": 9780
+				"2133": 6165,
+				"2400": 6369,
+				"2600": 6521,
+				"2666": 6571,
+				"2800": 6674,
+				"3000": 6826,
+				"3200": 6979,
+				"3300": 7055,
+				"3333": 7080,
+				"3400": 7131,
+				"3466": 7181,
+				"3600": 7283,
+				"3666": 7334,
+				"3733": 7385,
+				"3800": 7436,
+				"3866": 7486,
+				"4000": 7588,
+				"4133": 7690,
+				"4200": 7741,
+				"4266": 7791,
+				"4333": 7842,
+				"4400": 7893
 			},
 			"3": {
-				"2133": 8703,
-				"2400": 8906,
-				"2666": 9109,
-				"2800": 9211,
-				"3000": 9363,
-				"3200": 9516,
-				"3300": 9592,
-				"3333": 9617,
-				"3400": 9668,
-				"3466": 9719,
-				"3600": 9821,
-				"3733": 9922,
-				"3800": 9973,
-				"3866": 10024,
-				"4000": 10126,
-				"4133": 10227
+				"2133": 6612,
+				"2400": 6816,
+				"2600": 6968,
+				"2666": 7018,
+				"2800": 7120,
+				"3000": 7273,
+				"3200": 7425,
+				"3300": 7502,
+				"3333": 7527,
+				"3400": 7578,
+				"3466": 7628,
+				"3600": 7730,
+				"3666": 7781,
+				"3733": 7832,
+				"3800": 7883,
+				"3866": 7933,
+				"4000": 8035,
+				"4133": 8137,
+				"4200": 8188,
+				"4266": 8238,
+				"4333": 8289,
+				"4400": 8340
 			},
 			"4": {
-				"2133": 9149,
-				"2400": 9353,
-				"2666": 9556,
-				"2800": 9658,
-				"3000": 9810,
-				"3200": 9963,
-				"3300": 10039,
-				"3333": 10064,
-				"3400": 10115,
-				"3466": 10166,
-				"3600": 10268,
-				"3733": 10369,
-				"3800": 10420,
-				"3866": 10470,
-				"4000": 10573,
-				"4133": 10674
+				"2133": 7059,
+				"2400": 7262,
+				"2600": 7415,
+				"2666": 7465,
+				"2800": 7567,
+				"3000": 7720,
+				"3200": 7872,
+				"3300": 7948,
+				"3333": 7973,
+				"3400": 8025,
+				"3466": 8075,
+				"3600": 8177,
+				"3666": 8227,
+				"3733": 8278,
+				"3800": 8329,
+				"3866": 8380,
+				"4000": 8482,
+				"4133": 8583,
+				"4200": 8634,
+				"4266": 8685,
+				"4333": 8736,
+				"4400": 8787
 			},
 			"fullName": "Intel Core i7-7820X",
 			"partName": "Core i7-7820X",
@@ -4612,84 +5474,60 @@ var data = {
 		},
 		"AMD Ryzen Threadripper Sixteen Core 1950X": {
 			"1": {
-				"2133": 4878,
-				"2400": 5303,
-				"2666": 5727,
-				"2667": 5728,
-				"2800": 5940,
-				"2933": 6152,
-				"3000": 6258,
-				"3066": 6364,
-				"3200": 6577,
-				"3300": 6736,
-				"3333": 6789,
-				"3466": 7001,
-				"3600": 7214,
-				"3733": 7426,
-				"3866": 7638,
-				"4000": 7851,
-				"4133": 8063,
-				"4200": 8170
+				"2133": 3566,
+				"2400": 3992,
+				"2666": 4415,
+				"2667": 4417,
+				"2800": 4629,
+				"2933": 4840,
+				"3000": 4947,
+				"3066": 5052,
+				"3200": 5266,
+				"3333": 5477,
+				"3466": 5689,
+				"3600": 5903
 			},
 			"2": {
-				"2133": 6170,
-				"2400": 6595,
-				"2666": 7018,
-				"2667": 7020,
-				"2800": 7232,
-				"2933": 7444,
-				"3000": 7550,
-				"3066": 7655,
-				"3200": 7869,
-				"3300": 8028,
-				"3333": 8081,
-				"3466": 8292,
-				"3600": 8506,
-				"3733": 8718,
-				"3866": 8929,
-				"4000": 9143,
-				"4133": 9355,
-				"4200": 9461
+				"2133": 4858,
+				"2400": 5283,
+				"2666": 5707,
+				"2667": 5709,
+				"2800": 5920,
+				"2933": 6132,
+				"3000": 6239,
+				"3066": 6344,
+				"3200": 6557,
+				"3333": 6769,
+				"3466": 6981,
+				"3600": 7194
 			},
 			"3": {
-				"2133": 7461,
-				"2400": 7886,
-				"2666": 8310,
-				"2667": 8312,
-				"2800": 8523,
-				"2933": 8735,
-				"3000": 8842,
-				"3066": 8947,
-				"3200": 9160,
-				"3300": 9320,
-				"3333": 9372,
-				"3466": 9584,
-				"3600": 9798,
-				"3733": 10009,
-				"3866": 10221,
-				"4000": 10435,
-				"4133": 10646,
-				"4200": 10753
+				"2133": 6150,
+				"2400": 6575,
+				"2666": 6999,
+				"2667": 7000,
+				"2800": 7212,
+				"2933": 7424,
+				"3000": 7531,
+				"3066": 7636,
+				"3200": 7849,
+				"3333": 8061,
+				"3466": 8273,
+				"3600": 8486
 			},
 			"4": {
-				"2133": 8753,
-				"2400": 9178,
-				"2666": 9602,
-				"2667": 9603,
-				"2800": 9815,
-				"2933": 10027,
-				"3000": 10134,
-				"3066": 10239,
-				"3200": 10452,
-				"3300": 10611,
-				"3333": 10664,
-				"3466": 10876,
-				"3600": 11089,
-				"3733": 11301,
-				"3866": 11513,
-				"4000": 11726,
-				"4133": 11938,
-				"4200": 12045
+				"2133": 7442,
+				"2400": 7867,
+				"2666": 8291,
+				"2667": 8292,
+				"2800": 8504,
+				"2933": 8716,
+				"3000": 8822,
+				"3066": 8928,
+				"3200": 9141,
+				"3333": 9353,
+				"3466": 9565,
+				"3600": 9778
 			},
 			"fullName": "AMD Ryzen Threadripper Sixteen Core 1950X",
 			"partName": "Ryzen Threadripper Sixteen Core 1950X",
@@ -4717,76 +5555,100 @@ var data = {
 		},
 		"Intel Core i7-9800X": {
 			"1": {
-				"2133": 7948,
-				"2400": 8152,
-				"2666": 8355,
-				"2800": 8457,
-				"3000": 8609,
-				"3200": 8762,
-				"3300": 8838,
-				"3333": 8863,
-				"3400": 8914,
-				"3466": 8965,
-				"3600": 9067,
-				"3733": 9168,
-				"3800": 9219,
-				"3866": 9269,
-				"4000": 9372,
-				"4133": 9473
+				"2133": 5718,
+				"2400": 5922,
+				"2600": 6074,
+				"2666": 6125,
+				"2800": 6227,
+				"3000": 6379,
+				"3200": 6532,
+				"3300": 6608,
+				"3333": 6633,
+				"3400": 6684,
+				"3466": 6735,
+				"3600": 6837,
+				"3666": 6887,
+				"3733": 6938,
+				"3800": 6989,
+				"3866": 7039,
+				"4000": 7142,
+				"4133": 7243,
+				"4200": 7294,
+				"4266": 7344,
+				"4333": 7395,
+				"4400": 7447
 			},
 			"2": {
-				"2133": 8395,
-				"2400": 8599,
-				"2666": 8801,
-				"2800": 8904,
-				"3000": 9056,
-				"3200": 9209,
-				"3300": 9285,
-				"3333": 9310,
-				"3400": 9361,
-				"3466": 9411,
-				"3600": 9513,
-				"3733": 9615,
-				"3800": 9666,
-				"3866": 9716,
-				"4000": 9818,
-				"4133": 9920
+				"2133": 6165,
+				"2400": 6369,
+				"2600": 6521,
+				"2666": 6571,
+				"2800": 6674,
+				"3000": 6826,
+				"3200": 6979,
+				"3300": 7055,
+				"3333": 7080,
+				"3400": 7131,
+				"3466": 7181,
+				"3600": 7283,
+				"3666": 7334,
+				"3733": 7385,
+				"3800": 7436,
+				"3866": 7486,
+				"4000": 7588,
+				"4133": 7690,
+				"4200": 7741,
+				"4266": 7791,
+				"4333": 7842,
+				"4400": 7893
 			},
 			"3": {
-				"2133": 8842,
-				"2400": 9046,
-				"2666": 9248,
-				"2800": 9350,
-				"3000": 9503,
-				"3200": 9655,
-				"3300": 9732,
-				"3333": 9757,
-				"3400": 9808,
-				"3466": 9858,
-				"3600": 9960,
-				"3733": 10062,
-				"3800": 10113,
-				"3866": 10163,
-				"4000": 10265,
-				"4133": 10367
+				"2133": 6612,
+				"2400": 6816,
+				"2600": 6968,
+				"2666": 7018,
+				"2800": 7120,
+				"3000": 7273,
+				"3200": 7425,
+				"3300": 7502,
+				"3333": 7527,
+				"3400": 7578,
+				"3466": 7628,
+				"3600": 7730,
+				"3666": 7781,
+				"3733": 7832,
+				"3800": 7883,
+				"3866": 7933,
+				"4000": 8035,
+				"4133": 8137,
+				"4200": 8188,
+				"4266": 8238,
+				"4333": 8289,
+				"4400": 8340
 			},
 			"4": {
-				"2133": 9289,
-				"2400": 9492,
-				"2666": 9695,
-				"2800": 9797,
-				"3000": 9950,
-				"3200": 10102,
-				"3300": 10178,
-				"3333": 10203,
-				"3400": 10255,
-				"3466": 10305,
-				"3600": 10407,
-				"3733": 10508,
-				"3800": 10559,
-				"3866": 10610,
-				"4000": 10712,
-				"4133": 10813
+				"2133": 7059,
+				"2400": 7262,
+				"2600": 7415,
+				"2666": 7465,
+				"2800": 7567,
+				"3000": 7720,
+				"3200": 7872,
+				"3300": 7948,
+				"3333": 7973,
+				"3400": 8025,
+				"3466": 8075,
+				"3600": 8177,
+				"3666": 8227,
+				"3733": 8278,
+				"3800": 8329,
+				"3866": 8380,
+				"4000": 8482,
+				"4133": 8583,
+				"4200": 8634,
+				"4266": 8685,
+				"4333": 8736,
+				"4400": 8787
 			},
 			"fullName": "Intel Core i7-9800X",
 			"partName": "Core i7-9800X",
@@ -4814,84 +5676,60 @@ var data = {
 		},
 		"AMD Ryzen Threadripper 2920X": {
 			"1": {
-				"2133": 7363,
-				"2400": 7735,
-				"2666": 8106,
-				"2667": 8107,
-				"2800": 8293,
-				"2933": 8478,
-				"3000": 8572,
-				"3066": 8664,
-				"3200": 8851,
-				"3300": 8990,
-				"3333": 9036,
-				"3466": 9222,
-				"3600": 9408,
-				"3733": 9594,
-				"3866": 9779,
-				"4000": 9966,
-				"4133": 10152,
-				"4200": 10245
+				"2133": 7304,
+				"2400": 7677,
+				"2666": 8048,
+				"2667": 8049,
+				"2800": 8235,
+				"2933": 8420,
+				"3000": 8514,
+				"3066": 8606,
+				"3200": 8793,
+				"3333": 8978,
+				"3466": 9163,
+				"3600": 9350
 			},
 			"2": {
-				"2133": 7936,
-				"2400": 8308,
-				"2666": 8679,
-				"2667": 8680,
-				"2800": 8866,
-				"2933": 9051,
-				"3000": 9145,
-				"3066": 9237,
-				"3200": 9424,
-				"3300": 9563,
-				"3333": 9609,
-				"3466": 9795,
-				"3600": 9982,
-				"3733": 10167,
-				"3866": 10353,
-				"4000": 10540,
-				"4133": 10725,
-				"4200": 10818
+				"2133": 7878,
+				"2400": 8250,
+				"2666": 8621,
+				"2667": 8622,
+				"2800": 8808,
+				"2933": 8993,
+				"3000": 9087,
+				"3066": 9179,
+				"3200": 9366,
+				"3333": 9551,
+				"3466": 9737,
+				"3600": 9924
 			},
 			"3": {
-				"2133": 8509,
-				"2400": 8881,
-				"2666": 9252,
-				"2667": 9254,
-				"2800": 9439,
-				"2933": 9625,
-				"3000": 9718,
-				"3066": 9810,
-				"3200": 9997,
-				"3300": 10136,
-				"3333": 10182,
-				"3466": 10368,
-				"3600": 10555,
-				"3733": 10740,
-				"3866": 10926,
-				"4000": 11113,
-				"4133": 11298,
-				"4200": 11392
+				"2133": 8451,
+				"2400": 8823,
+				"2666": 9194,
+				"2667": 9196,
+				"2800": 9381,
+				"2933": 9567,
+				"3000": 9660,
+				"3066": 9752,
+				"3200": 9939,
+				"3333": 10124,
+				"3466": 10310,
+				"3600": 10497
 			},
 			"4": {
-				"2133": 9082,
-				"2400": 9454,
-				"2666": 9825,
-				"2667": 9827,
-				"2800": 10012,
-				"2933": 10198,
-				"3000": 10291,
-				"3066": 10383,
-				"3200": 10570,
-				"3300": 10710,
-				"3333": 10756,
-				"3466": 10941,
-				"3600": 11128,
-				"3733": 11314,
-				"3866": 11499,
-				"4000": 11686,
-				"4133": 11871,
-				"4200": 11965
+				"2133": 9024,
+				"2400": 9396,
+				"2666": 9767,
+				"2667": 9769,
+				"2800": 9954,
+				"2933": 10140,
+				"3000": 10233,
+				"3066": 10325,
+				"3200": 10512,
+				"3333": 10698,
+				"3466": 10883,
+				"3600": 11070
 			},
 			"fullName": "AMD Ryzen Threadripper 2920X",
 			"partName": "Ryzen Threadripper 2920X",
@@ -4919,84 +5757,60 @@ var data = {
 		},
 		"AMD Ryzen Threadripper 2950X": {
 			"1": {
-				"2133": 7366,
-				"2400": 7739,
-				"2666": 8110,
-				"2667": 8111,
-				"2800": 8297,
-				"2933": 8482,
-				"3000": 8576,
-				"3066": 8668,
-				"3200": 8854,
-				"3300": 8994,
-				"3333": 9040,
-				"3466": 9225,
-				"3600": 9412,
-				"3733": 9598,
-				"3866": 9783,
-				"4000": 9970,
-				"4133": 10156,
-				"4200": 10249
+				"2133": 7304,
+				"2400": 7677,
+				"2666": 8048,
+				"2667": 8049,
+				"2800": 8235,
+				"2933": 8420,
+				"3000": 8514,
+				"3066": 8606,
+				"3200": 8793,
+				"3333": 8978,
+				"3466": 9163,
+				"3600": 9350
 			},
 			"2": {
-				"2133": 7940,
-				"2400": 8312,
-				"2666": 8683,
-				"2667": 8684,
-				"2800": 8870,
-				"2933": 9055,
-				"3000": 9149,
-				"3066": 9241,
-				"3200": 9428,
-				"3300": 9567,
-				"3333": 9613,
-				"3466": 9799,
-				"3600": 9986,
-				"3733": 10171,
-				"3866": 10357,
-				"4000": 10543,
-				"4133": 10729,
-				"4200": 10822
+				"2133": 7878,
+				"2400": 8250,
+				"2666": 8621,
+				"2667": 8622,
+				"2800": 8808,
+				"2933": 8993,
+				"3000": 9087,
+				"3066": 9179,
+				"3200": 9366,
+				"3333": 9551,
+				"3466": 9737,
+				"3600": 9924
 			},
 			"3": {
-				"2133": 8513,
-				"2400": 8885,
-				"2666": 9256,
-				"2667": 9258,
-				"2800": 9443,
-				"2933": 9628,
-				"3000": 9722,
-				"3066": 9814,
-				"3200": 10001,
-				"3300": 10140,
-				"3333": 10186,
-				"3466": 10372,
-				"3600": 10559,
-				"3733": 10744,
-				"3866": 10930,
-				"4000": 11117,
-				"4133": 11302,
-				"4200": 11395
+				"2133": 8451,
+				"2400": 8823,
+				"2666": 9194,
+				"2667": 9196,
+				"2800": 9381,
+				"2933": 9567,
+				"3000": 9660,
+				"3066": 9752,
+				"3200": 9939,
+				"3333": 10124,
+				"3466": 10310,
+				"3600": 10497
 			},
 			"4": {
-				"2133": 9086,
-				"2400": 9458,
-				"2666": 9829,
-				"2667": 9831,
-				"2800": 10016,
-				"2933": 10202,
-				"3000": 10295,
-				"3066": 10387,
-				"3200": 10574,
-				"3300": 10714,
-				"3333": 10760,
-				"3466": 10945,
-				"3600": 11132,
-				"3733": 11317,
-				"3866": 11503,
-				"4000": 11690,
-				"4133": 11875,
-				"4200": 11969
+				"2133": 9024,
+				"2400": 9396,
+				"2666": 9767,
+				"2667": 9769,
+				"2800": 9954,
+				"2933": 10140,
+				"3000": 10233,
+				"3066": 10325,
+				"3200": 10512,
+				"3333": 10698,
+				"3466": 10883,
+				"3600": 11070
 			},
 			"fullName": "AMD Ryzen Threadripper 2950X",
 			"partName": "Ryzen Threadripper 2950X",
@@ -5024,76 +5838,100 @@ var data = {
 		},
 		"Intel Core i9-9820X": {
 			"1": {
-				"2133": 8762,
-				"2400": 8949,
-				"2666": 9137,
-				"2800": 9231,
-				"3000": 9372,
-				"3200": 9512,
-				"3300": 9583,
-				"3333": 9606,
-				"3400": 9653,
-				"3466": 9699,
-				"3600": 9794,
-				"3733": 9887,
-				"3800": 9934,
-				"3866": 9981,
-				"4000": 10075,
-				"4133": 10169
+				"2133": 7356,
+				"2400": 7543,
+				"2600": 7684,
+				"2666": 7731,
+				"2800": 7825,
+				"3000": 7966,
+				"3200": 8106,
+				"3300": 8177,
+				"3333": 8200,
+				"3400": 8247,
+				"3466": 8293,
+				"3600": 8388,
+				"3666": 8434,
+				"3733": 8481,
+				"3800": 8528,
+				"3866": 8575,
+				"4000": 8669,
+				"4133": 8763,
+				"4200": 8810,
+				"4266": 8856,
+				"4333": 8903,
+				"4400": 8951
 			},
 			"2": {
-				"2133": 9121,
-				"2400": 9309,
-				"2666": 9496,
-				"2800": 9590,
-				"3000": 9731,
-				"3200": 9872,
-				"3300": 9942,
-				"3333": 9965,
-				"3400": 10013,
-				"3466": 10059,
-				"3600": 10153,
-				"3733": 10247,
-				"3800": 10294,
-				"3866": 10340,
-				"4000": 10435,
-				"4133": 10528
+				"2133": 7715,
+				"2400": 7903,
+				"2600": 8044,
+				"2666": 8090,
+				"2800": 8184,
+				"3000": 8325,
+				"3200": 8466,
+				"3300": 8536,
+				"3333": 8559,
+				"3400": 8607,
+				"3466": 8653,
+				"3600": 8747,
+				"3666": 8794,
+				"3733": 8841,
+				"3800": 8888,
+				"3866": 8934,
+				"4000": 9029,
+				"4133": 9122,
+				"4200": 9169,
+				"4266": 9216,
+				"4333": 9263,
+				"4400": 9310
 			},
 			"3": {
-				"2133": 9481,
-				"2400": 9669,
-				"2666": 9856,
-				"2800": 9950,
-				"3000": 10091,
-				"3200": 10232,
-				"3300": 10302,
-				"3333": 10325,
-				"3400": 10372,
-				"3466": 10419,
-				"3600": 10513,
-				"3733": 10607,
-				"3800": 10654,
-				"3866": 10700,
-				"4000": 10794,
-				"4133": 10888
+				"2133": 8075,
+				"2400": 8263,
+				"2600": 8403,
+				"2666": 8450,
+				"2800": 8544,
+				"3000": 8685,
+				"3200": 8826,
+				"3300": 8896,
+				"3333": 8919,
+				"3400": 8966,
+				"3466": 9013,
+				"3600": 9107,
+				"3666": 9153,
+				"3733": 9201,
+				"3800": 9248,
+				"3866": 9294,
+				"4000": 9388,
+				"4133": 9482,
+				"4200": 9529,
+				"4266": 9576,
+				"4333": 9623,
+				"4400": 9670
 			},
 			"4": {
-				"2133": 9840,
-				"2400": 10028,
-				"2666": 10215,
-				"2800": 10310,
-				"3000": 10450,
-				"3200": 10591,
-				"3300": 10662,
-				"3333": 10685,
-				"3400": 10732,
-				"3466": 10778,
-				"3600": 10873,
-				"3733": 10966,
-				"3800": 11013,
-				"3866": 11060,
-				"4000": 11154,
-				"4133": 11248
+				"2133": 8434,
+				"2400": 8622,
+				"2600": 8763,
+				"2666": 8809,
+				"2800": 8904,
+				"3000": 9044,
+				"3200": 9185,
+				"3300": 9256,
+				"3333": 9279,
+				"3400": 9326,
+				"3466": 9372,
+				"3600": 9467,
+				"3666": 9513,
+				"3733": 9560,
+				"3800": 9607,
+				"3866": 9654,
+				"4000": 9748,
+				"4133": 9842,
+				"4200": 9889,
+				"4266": 9935,
+				"4333": 9982,
+				"4400": 10029
 			},
 			"fullName": "Intel Core i9-9820X",
 			"partName": "Core i9-9820X",
@@ -5121,76 +5959,100 @@ var data = {
 		},
 		"Intel Core i9-9900X": {
 			"1": {
-				"2133": 7881,
-				"2400": 8216,
-				"2666": 8550,
-				"2800": 8719,
-				"3000": 8970,
-				"3200": 9221,
-				"3300": 9347,
-				"3333": 9388,
-				"3400": 9472,
-				"3466": 9555,
-				"3600": 9723,
-				"3733": 9890,
-				"3800": 9974,
-				"3866": 10057,
-				"4000": 10226,
-				"4133": 10393
+				"2133": 6529,
+				"2400": 6865,
+				"2600": 7116,
+				"2666": 7199,
+				"2800": 7367,
+				"3000": 7618,
+				"3200": 7869,
+				"3300": 7995,
+				"3333": 8036,
+				"3400": 8120,
+				"3466": 8203,
+				"3600": 8372,
+				"3666": 8454,
+				"3733": 8539,
+				"3800": 8623,
+				"3866": 8706,
+				"4000": 8874,
+				"4133": 9041,
+				"4200": 9125,
+				"4266": 9208,
+				"4333": 9292,
+				"4400": 9376
 			},
 			"2": {
-				"2133": 8545,
-				"2400": 8880,
-				"2666": 9214,
-				"2800": 9382,
-				"3000": 9634,
-				"3200": 9885,
-				"3300": 10010,
-				"3333": 10052,
-				"3400": 10136,
-				"3466": 10219,
-				"3600": 10387,
-				"3733": 10554,
-				"3800": 10638,
-				"3866": 10721,
-				"4000": 10889,
-				"4133": 11056
+				"2133": 7193,
+				"2400": 7528,
+				"2600": 7779,
+				"2666": 7862,
+				"2800": 8031,
+				"3000": 8282,
+				"3200": 8533,
+				"3300": 8659,
+				"3333": 8700,
+				"3400": 8784,
+				"3466": 8867,
+				"3600": 9035,
+				"3666": 9118,
+				"3733": 9202,
+				"3800": 9286,
+				"3866": 9369,
+				"4000": 9538,
+				"4133": 9705,
+				"4200": 9789,
+				"4266": 9872,
+				"4333": 9956,
+				"4400": 10040
 			},
 			"3": {
-				"2133": 9208,
-				"2400": 9544,
-				"2666": 9878,
-				"2800": 10046,
-				"3000": 10297,
-				"3200": 10548,
-				"3300": 10674,
-				"3333": 10715,
-				"3400": 10799,
-				"3466": 10882,
-				"3600": 11051,
-				"3733": 11218,
-				"3800": 11302,
-				"3866": 11385,
-				"4000": 11553,
-				"4133": 11720
+				"2133": 7857,
+				"2400": 8192,
+				"2600": 8443,
+				"2666": 8526,
+				"2800": 8694,
+				"3000": 8945,
+				"3200": 9197,
+				"3300": 9322,
+				"3333": 9364,
+				"3400": 9448,
+				"3466": 9531,
+				"3600": 9699,
+				"3666": 9782,
+				"3733": 9866,
+				"3800": 9950,
+				"3866": 10033,
+				"4000": 10201,
+				"4133": 10368,
+				"4200": 10452,
+				"4266": 10535,
+				"4333": 10619,
+				"4400": 10704
 			},
 			"4": {
-				"2133": 9872,
-				"2400": 10207,
-				"2666": 10541,
-				"2800": 10710,
-				"3000": 10961,
-				"3200": 11212,
-				"3300": 11338,
-				"3333": 11379,
-				"3400": 11463,
-				"3466": 11546,
-				"3600": 11714,
-				"3733": 11881,
-				"3800": 11965,
-				"3866": 12048,
-				"4000": 12217,
-				"4133": 12384
+				"2133": 8520,
+				"2400": 8856,
+				"2600": 9107,
+				"2666": 9190,
+				"2800": 9358,
+				"3000": 9609,
+				"3200": 9860,
+				"3300": 9986,
+				"3333": 10027,
+				"3400": 10111,
+				"3466": 10194,
+				"3600": 10363,
+				"3666": 10445,
+				"3733": 10530,
+				"3800": 10614,
+				"3866": 10697,
+				"4000": 10865,
+				"4133": 11032,
+				"4200": 11116,
+				"4266": 11199,
+				"4333": 11283,
+				"4400": 11367
 			},
 			"fullName": "Intel Core i9-9900X",
 			"partName": "Core i9-9900X",
@@ -5218,76 +6080,100 @@ var data = {
 		},
 		"Intel Core i9-7900X": {
 			"1": {
-				"2133": 7966,
-				"2400": 8301,
-				"2666": 8635,
-				"2800": 8803,
-				"3000": 9054,
-				"3200": 9305,
-				"3300": 9431,
-				"3333": 9473,
-				"3400": 9557,
-				"3466": 9640,
-				"3600": 9808,
-				"3733": 9975,
-				"3800": 10059,
-				"3866": 10142,
-				"4000": 10310,
-				"4133": 10477
+				"2133": 6529,
+				"2400": 6865,
+				"2600": 7116,
+				"2666": 7199,
+				"2800": 7367,
+				"3000": 7618,
+				"3200": 7869,
+				"3300": 7995,
+				"3333": 8036,
+				"3400": 8120,
+				"3466": 8203,
+				"3600": 8372,
+				"3666": 8454,
+				"3733": 8539,
+				"3800": 8623,
+				"3866": 8706,
+				"4000": 8874,
+				"4133": 9041,
+				"4200": 9125,
+				"4266": 9208,
+				"4333": 9292,
+				"4400": 9376
 			},
 			"2": {
-				"2133": 8629,
-				"2400": 8965,
-				"2666": 9299,
-				"2800": 9467,
-				"3000": 9718,
-				"3200": 9969,
-				"3300": 10095,
-				"3333": 10136,
-				"3400": 10220,
-				"3466": 10303,
-				"3600": 10471,
-				"3733": 10638,
-				"3800": 10723,
-				"3866": 10805,
-				"4000": 10974,
-				"4133": 11141
+				"2133": 7193,
+				"2400": 7528,
+				"2600": 7779,
+				"2666": 7862,
+				"2800": 8031,
+				"3000": 8282,
+				"3200": 8533,
+				"3300": 8659,
+				"3333": 8700,
+				"3400": 8784,
+				"3466": 8867,
+				"3600": 9035,
+				"3666": 9118,
+				"3733": 9202,
+				"3800": 9286,
+				"3866": 9369,
+				"4000": 9538,
+				"4133": 9705,
+				"4200": 9789,
+				"4266": 9872,
+				"4333": 9956,
+				"4400": 10040
 			},
 			"3": {
-				"2133": 9293,
-				"2400": 9628,
-				"2666": 9962,
-				"2800": 10130,
-				"3000": 10382,
-				"3200": 10633,
-				"3300": 10758,
-				"3333": 10800,
-				"3400": 10884,
-				"3466": 10967,
-				"3600": 11135,
-				"3733": 11302,
-				"3800": 11386,
-				"3866": 11469,
-				"4000": 11637,
-				"4133": 11804
+				"2133": 7857,
+				"2400": 8192,
+				"2600": 8443,
+				"2666": 8526,
+				"2800": 8694,
+				"3000": 8945,
+				"3200": 9197,
+				"3300": 9322,
+				"3333": 9364,
+				"3400": 9448,
+				"3466": 9531,
+				"3600": 9699,
+				"3666": 9782,
+				"3733": 9866,
+				"3800": 9950,
+				"3866": 10033,
+				"4000": 10201,
+				"4133": 10368,
+				"4200": 10452,
+				"4266": 10535,
+				"4333": 10619,
+				"4400": 10704
 			},
 			"4": {
-				"2133": 9957,
-				"2400": 10292,
-				"2666": 10626,
-				"2800": 10794,
-				"3000": 11045,
-				"3200": 11296,
-				"3300": 11422,
-				"3333": 11463,
-				"3400": 11548,
-				"3466": 11630,
-				"3600": 11799,
-				"3733": 11966,
-				"3800": 12050,
-				"3866": 12133,
-				"4000": 12301,
-				"4133": 12468
+				"2133": 8520,
+				"2400": 8856,
+				"2600": 9107,
+				"2666": 9190,
+				"2800": 9358,
+				"3000": 9609,
+				"3200": 9860,
+				"3300": 9986,
+				"3333": 10027,
+				"3400": 10111,
+				"3466": 10194,
+				"3600": 10363,
+				"3666": 10445,
+				"3733": 10530,
+				"3800": 10614,
+				"3866": 10697,
+				"4000": 10865,
+				"4133": 11032,
+				"4200": 11116,
+				"4266": 11199,
+				"4333": 11283,
+				"4400": 11367
 			},
 			"fullName": "Intel Core i9-7900X",
 			"partName": "Core i9-7900X",
@@ -5315,52 +6201,56 @@ var data = {
 		},
 		"Intel Core i9-9900K": {
 			"1": {
-				"2133": 7848,
-				"2400": 8012,
-				"2666": 8177,
-				"2667": 8177,
-				"2800": 8260,
-				"3000": 8383,
-				"3200": 8507,
-				"3300": 8568,
-				"3333": 8589,
-				"3400": 8630,
-				"3466": 8671,
-				"3600": 8754,
-				"3666": 8795,
-				"3733": 8836,
-				"3800": 8877,
-				"3866": 8918,
-				"4000": 9001,
-				"4133": 9083,
-				"4200": 9124,
-				"4266": 9165,
-				"4333": 9207,
-				"4500": 9310
+				"2133": 4486,
+				"2400": 4651,
+				"2666": 4816,
+				"2667": 4816,
+				"2800": 4898,
+				"3000": 5022,
+				"3200": 5145,
+				"3300": 5207,
+				"3333": 5228,
+				"3400": 5269,
+				"3466": 5310,
+				"3600": 5393,
+				"3666": 5433,
+				"3733": 5475,
+				"3800": 5516,
+				"3866": 5557,
+				"4000": 5640,
+				"4133": 5722,
+				"4200": 5763,
+				"4266": 5804,
+				"4300": 5825,
+				"4333": 5845,
+				"4400": 5887,
+				"4500": 5948
 			},
 			"2": {
-				"2133": 10303,
-				"2400": 10468,
-				"2666": 10633,
-				"2667": 10633,
-				"2800": 10715,
-				"3000": 10839,
-				"3200": 10962,
-				"3300": 11024,
-				"3333": 11045,
-				"3400": 11086,
-				"3466": 11127,
-				"3600": 11210,
-				"3666": 11250,
-				"3733": 11292,
-				"3800": 11333,
-				"3866": 11374,
-				"4000": 11457,
-				"4133": 11539,
-				"4200": 11580,
-				"4266": 11621,
-				"4333": 11662,
-				"4500": 11766
+				"2133": 6942,
+				"2400": 7107,
+				"2666": 7271,
+				"2667": 7272,
+				"2800": 7354,
+				"3000": 7478,
+				"3200": 7601,
+				"3300": 7663,
+				"3333": 7683,
+				"3400": 7725,
+				"3466": 7766,
+				"3600": 7848,
+				"3666": 7889,
+				"3733": 7930,
+				"3800": 7972,
+				"3866": 8013,
+				"4000": 8095,
+				"4133": 8178,
+				"4200": 8219,
+				"4266": 8260,
+				"4300": 8281,
+				"4333": 8301,
+				"4400": 8343,
+				"4500": 8404
 			},
 			"fullName": "Intel Core i9-9900K",
 			"partName": "Core i9-9900K",
@@ -5388,76 +6278,100 @@ var data = {
 		},
 		"Intel Core i9-7920X": {
 			"1": {
-				"2133": 6894,
-				"2400": 7259,
-				"2666": 7622,
-				"2800": 7805,
-				"3000": 8077,
-				"3200": 8350,
-				"3300": 8487,
-				"3333": 8532,
-				"3400": 8623,
-				"3466": 8713,
-				"3600": 8896,
-				"3733": 9078,
-				"3800": 9169,
-				"3866": 9259,
-				"4000": 9442,
-				"4133": 9624
+				"2133": 4599,
+				"2400": 4964,
+				"2600": 5237,
+				"2666": 5327,
+				"2800": 5510,
+				"3000": 5783,
+				"3200": 6056,
+				"3300": 6192,
+				"3333": 6237,
+				"3400": 6329,
+				"3466": 6419,
+				"3600": 6601,
+				"3666": 6692,
+				"3733": 6783,
+				"3800": 6874,
+				"3866": 6965,
+				"4000": 7147,
+				"4133": 7329,
+				"4200": 7420,
+				"4266": 7510,
+				"4333": 7602,
+				"4400": 7693
 			},
 			"2": {
-				"2133": 7936,
-				"2400": 8300,
-				"2666": 8663,
-				"2800": 8846,
-				"3000": 9119,
-				"3200": 9392,
-				"3300": 9528,
-				"3333": 9573,
-				"3400": 9665,
-				"3466": 9755,
-				"3600": 9938,
-				"3733": 10119,
-				"3800": 10211,
-				"3866": 10301,
-				"4000": 10484,
-				"4133": 10665
+				"2133": 5641,
+				"2400": 6005,
+				"2600": 6278,
+				"2666": 6368,
+				"2800": 6551,
+				"3000": 6824,
+				"3200": 7097,
+				"3300": 7234,
+				"3333": 7279,
+				"3400": 7370,
+				"3466": 7460,
+				"3600": 7643,
+				"3666": 7733,
+				"3733": 7824,
+				"3800": 7916,
+				"3866": 8006,
+				"4000": 8189,
+				"4133": 8370,
+				"4200": 8462,
+				"4266": 8552,
+				"4333": 8643,
+				"4400": 8735
 			},
 			"3": {
-				"2133": 8977,
-				"2400": 9342,
-				"2666": 9705,
-				"2800": 9887,
-				"3000": 10160,
-				"3200": 10433,
-				"3300": 10570,
-				"3333": 10615,
-				"3400": 10706,
-				"3466": 10796,
-				"3600": 10979,
-				"3733": 11161,
-				"3800": 11252,
-				"3866": 11342,
-				"4000": 11525,
-				"4133": 11707
+				"2133": 6682,
+				"2400": 7047,
+				"2600": 7320,
+				"2666": 7410,
+				"2800": 7593,
+				"3000": 7866,
+				"3200": 8139,
+				"3300": 8275,
+				"3333": 8320,
+				"3400": 8411,
+				"3466": 8502,
+				"3600": 8684,
+				"3666": 8775,
+				"3733": 8866,
+				"3800": 8957,
+				"3866": 9047,
+				"4000": 9230,
+				"4133": 9412,
+				"4200": 9503,
+				"4266": 9593,
+				"4333": 9685,
+				"4400": 9776
 			},
 			"4": {
-				"2133": 10019,
-				"2400": 10383,
-				"2666": 10746,
-				"2800": 10929,
-				"3000": 11202,
-				"3200": 11475,
-				"3300": 11611,
-				"3333": 11656,
-				"3400": 11748,
-				"3466": 11838,
-				"3600": 12021,
-				"3733": 12202,
-				"3800": 12294,
-				"3866": 12384,
-				"4000": 12567,
-				"4133": 12748
+				"2133": 7724,
+				"2400": 8088,
+				"2600": 8361,
+				"2666": 8451,
+				"2800": 8634,
+				"3000": 8907,
+				"3200": 9180,
+				"3300": 9316,
+				"3333": 9362,
+				"3400": 9453,
+				"3466": 9543,
+				"3600": 9726,
+				"3666": 9816,
+				"3733": 9907,
+				"3800": 9999,
+				"3866": 10089,
+				"4000": 10272,
+				"4133": 10453,
+				"4200": 10545,
+				"4266": 10635,
+				"4333": 10726,
+				"4400": 10818
 			},
 			"fullName": "Intel Core i9-7920X",
 			"partName": "Core i9-7920X",
@@ -5485,76 +6399,100 @@ var data = {
 		},
 		"Intel Core i9-9920X": {
 			"1": {
-				"2133": 7047,
-				"2400": 7412,
-				"2666": 7775,
-				"2800": 7957,
-				"3000": 8230,
-				"3200": 8503,
-				"3300": 8640,
-				"3333": 8685,
-				"3400": 8776,
-				"3466": 8866,
-				"3600": 9049,
-				"3733": 9231,
-				"3800": 9322,
-				"3866": 9412,
-				"4000": 9595,
-				"4133": 9777
+				"2133": 4599,
+				"2400": 4964,
+				"2600": 5237,
+				"2666": 5327,
+				"2800": 5510,
+				"3000": 5783,
+				"3200": 6056,
+				"3300": 6192,
+				"3333": 6237,
+				"3400": 6329,
+				"3466": 6419,
+				"3600": 6601,
+				"3666": 6692,
+				"3733": 6783,
+				"3800": 6874,
+				"3866": 6965,
+				"4000": 7147,
+				"4133": 7329,
+				"4200": 7420,
+				"4266": 7510,
+				"4333": 7602,
+				"4400": 7693
 			},
 			"2": {
-				"2133": 8089,
-				"2400": 8453,
-				"2666": 8816,
-				"2800": 8999,
-				"3000": 9272,
-				"3200": 9545,
-				"3300": 9681,
-				"3333": 9726,
-				"3400": 9818,
-				"3466": 9908,
-				"3600": 10091,
-				"3733": 10272,
-				"3800": 10364,
-				"3866": 10454,
-				"4000": 10637,
-				"4133": 10818
+				"2133": 5641,
+				"2400": 6005,
+				"2600": 6278,
+				"2666": 6368,
+				"2800": 6551,
+				"3000": 6824,
+				"3200": 7097,
+				"3300": 7234,
+				"3333": 7279,
+				"3400": 7370,
+				"3466": 7460,
+				"3600": 7643,
+				"3666": 7733,
+				"3733": 7824,
+				"3800": 7916,
+				"3866": 8006,
+				"4000": 8189,
+				"4133": 8370,
+				"4200": 8462,
+				"4266": 8552,
+				"4333": 8643,
+				"4400": 8735
 			},
 			"3": {
-				"2133": 9130,
-				"2400": 9495,
-				"2666": 9858,
-				"2800": 10040,
-				"3000": 10313,
-				"3200": 10586,
-				"3300": 10723,
-				"3333": 10768,
-				"3400": 10859,
-				"3466": 10949,
-				"3600": 11132,
-				"3733": 11314,
-				"3800": 11405,
-				"3866": 11495,
-				"4000": 11678,
-				"4133": 11860
+				"2133": 6682,
+				"2400": 7047,
+				"2600": 7320,
+				"2666": 7410,
+				"2800": 7593,
+				"3000": 7866,
+				"3200": 8139,
+				"3300": 8275,
+				"3333": 8320,
+				"3400": 8411,
+				"3466": 8502,
+				"3600": 8684,
+				"3666": 8775,
+				"3733": 8866,
+				"3800": 8957,
+				"3866": 9047,
+				"4000": 9230,
+				"4133": 9412,
+				"4200": 9503,
+				"4266": 9593,
+				"4333": 9685,
+				"4400": 9776
 			},
 			"4": {
-				"2133": 10172,
-				"2400": 10536,
-				"2666": 10899,
-				"2800": 11082,
-				"3000": 11355,
-				"3200": 11628,
-				"3300": 11764,
-				"3333": 11809,
-				"3400": 11901,
-				"3466": 11991,
-				"3600": 12174,
-				"3733": 12355,
-				"3800": 12447,
-				"3866": 12537,
-				"4000": 12720,
-				"4133": 12901
+				"2133": 7724,
+				"2400": 8088,
+				"2600": 8361,
+				"2666": 8451,
+				"2800": 8634,
+				"3000": 8907,
+				"3200": 9180,
+				"3300": 9316,
+				"3333": 9362,
+				"3400": 9453,
+				"3466": 9543,
+				"3600": 9726,
+				"3666": 9816,
+				"3733": 9907,
+				"3800": 9999,
+				"3866": 10089,
+				"4000": 10272,
+				"4133": 10453,
+				"4200": 10545,
+				"4266": 10635,
+				"4333": 10726,
+				"4400": 10818
 			},
 			"fullName": "Intel Core i9-9920X",
 			"partName": "Core i9-9920X",
@@ -5582,76 +6520,100 @@ var data = {
 		},
 		"Intel Core i9-7940X": {
 			"1": {
-				"2133": 7153,
-				"2400": 7529,
-				"2666": 7903,
-				"2800": 8092,
-				"3000": 8374,
-				"3200": 8655,
-				"3300": 8796,
-				"3333": 8843,
-				"3400": 8937,
-				"3466": 9030,
-				"3600": 9219,
-				"3733": 9406,
-				"3800": 9500,
-				"3866": 9593,
-				"4000": 9782,
-				"4133": 9969
+				"2133": 3275,
+				"2400": 3651,
+				"2600": 3933,
+				"2666": 4026,
+				"2800": 4215,
+				"3000": 4496,
+				"3200": 4778,
+				"3300": 4919,
+				"3333": 4965,
+				"3400": 5060,
+				"3466": 5153,
+				"3600": 5341,
+				"3666": 5434,
+				"3733": 5529,
+				"3800": 5623,
+				"3866": 5716,
+				"4000": 5905,
+				"4133": 6092,
+				"4200": 6187,
+				"4266": 6279,
+				"4333": 6374,
+				"4400": 6468
 			},
 			"2": {
-				"2133": 8213,
-				"2400": 8589,
-				"2666": 8963,
-				"2800": 9152,
-				"3000": 9434,
-				"3200": 9715,
-				"3300": 9856,
-				"3333": 9903,
-				"3400": 9997,
-				"3466": 10090,
-				"3600": 10279,
-				"3733": 10466,
-				"3800": 10561,
-				"3866": 10653,
-				"4000": 10842,
-				"4133": 11029
+				"2133": 4336,
+				"2400": 4712,
+				"2600": 4993,
+				"2666": 5086,
+				"2800": 5275,
+				"3000": 5557,
+				"3200": 5838,
+				"3300": 5979,
+				"3333": 6026,
+				"3400": 6120,
+				"3466": 6213,
+				"3600": 6402,
+				"3666": 6495,
+				"3733": 6589,
+				"3800": 6683,
+				"3866": 6776,
+				"4000": 6965,
+				"4133": 7152,
+				"4200": 7247,
+				"4266": 7340,
+				"4333": 7434,
+				"4400": 7528
 			},
 			"3": {
-				"2133": 9273,
-				"2400": 9649,
-				"2666": 10024,
-				"2800": 10212,
-				"3000": 10494,
-				"3200": 10776,
-				"3300": 10916,
-				"3333": 10963,
-				"3400": 11057,
-				"3466": 11150,
-				"3600": 11339,
-				"3733": 11526,
-				"3800": 11621,
-				"3866": 11714,
-				"4000": 11902,
-				"4133": 12090
+				"2133": 5396,
+				"2400": 5772,
+				"2600": 6053,
+				"2666": 6146,
+				"2800": 6335,
+				"3000": 6617,
+				"3200": 6898,
+				"3300": 7039,
+				"3333": 7086,
+				"3400": 7180,
+				"3466": 7273,
+				"3600": 7462,
+				"3666": 7555,
+				"3733": 7649,
+				"3800": 7743,
+				"3866": 7836,
+				"4000": 8025,
+				"4133": 8212,
+				"4200": 8307,
+				"4266": 8400,
+				"4333": 8494,
+				"4400": 8588
 			},
 			"4": {
-				"2133": 10333,
-				"2400": 10709,
-				"2666": 11084,
-				"2800": 11272,
-				"3000": 11554,
-				"3200": 11836,
-				"3300": 11976,
-				"3333": 12023,
-				"3400": 12117,
-				"3466": 12210,
-				"3600": 12399,
-				"3733": 12586,
-				"3800": 12681,
-				"3866": 12774,
-				"4000": 12962,
-				"4133": 13150
+				"2133": 6456,
+				"2400": 6832,
+				"2600": 7113,
+				"2666": 7206,
+				"2800": 7395,
+				"3000": 7677,
+				"3200": 7958,
+				"3300": 8099,
+				"3333": 8146,
+				"3400": 8240,
+				"3466": 8333,
+				"3600": 8522,
+				"3666": 8615,
+				"3733": 8709,
+				"3800": 8803,
+				"3866": 8896,
+				"4000": 9085,
+				"4133": 9272,
+				"4200": 9367,
+				"4266": 9460,
+				"4333": 9554,
+				"4400": 9648
 			},
 			"fullName": "Intel Core i9-7940X",
 			"partName": "Core i9-7940X",
@@ -5679,76 +6641,100 @@ var data = {
 		},
 		"Intel Core i9-9940X": {
 			"1": {
-				"2133": 7411,
-				"2400": 7787,
-				"2666": 8162,
-				"2800": 8351,
-				"3000": 8632,
-				"3200": 8914,
-				"3300": 9055,
-				"3333": 9101,
-				"3400": 9196,
-				"3466": 9289,
-				"3600": 9477,
-				"3733": 9665,
-				"3800": 9759,
-				"3866": 9852,
-				"4000": 10041,
-				"4133": 10228
+				"2133": 3275,
+				"2400": 3651,
+				"2600": 3933,
+				"2666": 4026,
+				"2800": 4215,
+				"3000": 4496,
+				"3200": 4778,
+				"3300": 4919,
+				"3333": 4965,
+				"3400": 5060,
+				"3466": 5153,
+				"3600": 5341,
+				"3666": 5434,
+				"3733": 5529,
+				"3800": 5623,
+				"3866": 5716,
+				"4000": 5905,
+				"4133": 6092,
+				"4200": 6187,
+				"4266": 6279,
+				"4333": 6374,
+				"4400": 6468
 			},
 			"2": {
-				"2133": 8471,
-				"2400": 8847,
-				"2666": 9222,
-				"2800": 9411,
-				"3000": 9692,
-				"3200": 9974,
-				"3300": 10115,
-				"3333": 10161,
-				"3400": 10256,
-				"3466": 10349,
-				"3600": 10537,
-				"3733": 10725,
-				"3800": 10819,
-				"3866": 10912,
-				"4000": 11101,
-				"4133": 11288
+				"2133": 4336,
+				"2400": 4712,
+				"2600": 4993,
+				"2666": 5086,
+				"2800": 5275,
+				"3000": 5557,
+				"3200": 5838,
+				"3300": 5979,
+				"3333": 6026,
+				"3400": 6120,
+				"3466": 6213,
+				"3600": 6402,
+				"3666": 6495,
+				"3733": 6589,
+				"3800": 6683,
+				"3866": 6776,
+				"4000": 6965,
+				"4133": 7152,
+				"4200": 7247,
+				"4266": 7340,
+				"4333": 7434,
+				"4400": 7528
 			},
 			"3": {
-				"2133": 9531,
-				"2400": 9907,
-				"2666": 10282,
-				"2800": 10471,
-				"3000": 10752,
-				"3200": 11034,
-				"3300": 11175,
-				"3333": 11221,
-				"3400": 11316,
-				"3466": 11409,
-				"3600": 11597,
-				"3733": 11785,
-				"3800": 11879,
-				"3866": 11972,
-				"4000": 12161,
-				"4133": 12348
+				"2133": 5396,
+				"2400": 5772,
+				"2600": 6053,
+				"2666": 6146,
+				"2800": 6335,
+				"3000": 6617,
+				"3200": 6898,
+				"3300": 7039,
+				"3333": 7086,
+				"3400": 7180,
+				"3466": 7273,
+				"3600": 7462,
+				"3666": 7555,
+				"3733": 7649,
+				"3800": 7743,
+				"3866": 7836,
+				"4000": 8025,
+				"4133": 8212,
+				"4200": 8307,
+				"4266": 8400,
+				"4333": 8494,
+				"4400": 8588
 			},
 			"4": {
-				"2133": 10591,
-				"2400": 10967,
-				"2666": 11342,
-				"2800": 11531,
-				"3000": 11812,
-				"3200": 12094,
-				"3300": 12235,
-				"3333": 12281,
-				"3400": 12376,
-				"3466": 12469,
-				"3600": 12657,
-				"3733": 12845,
-				"3800": 12939,
-				"3866": 13032,
-				"4000": 13221,
-				"4133": 13408
+				"2133": 6456,
+				"2400": 6832,
+				"2600": 7113,
+				"2666": 7206,
+				"2800": 7395,
+				"3000": 7677,
+				"3200": 7958,
+				"3300": 8099,
+				"3333": 8146,
+				"3400": 8240,
+				"3466": 8333,
+				"3600": 8522,
+				"3666": 8615,
+				"3733": 8709,
+				"3800": 8803,
+				"3866": 8896,
+				"4000": 9085,
+				"4133": 9272,
+				"4200": 9367,
+				"4266": 9460,
+				"4333": 9554,
+				"4400": 9648
 			},
 			"fullName": "Intel Core i9-9940X",
 			"partName": "Core i9-9940X",
@@ -5776,76 +6762,100 @@ var data = {
 		},
 		"Intel Core i9-7980XE": {
 			"1": {
-				"2133": 6957,
-				"2400": 7376,
-				"2666": 7792,
-				"2800": 8002,
-				"3000": 8316,
-				"3200": 8629,
-				"3300": 8786,
-				"3333": 8838,
-				"3400": 8943,
-				"3466": 9046,
-				"3600": 9256,
-				"3733": 9464,
-				"3800": 9569,
-				"3866": 9673,
-				"4000": 9883,
-				"4133": 10091
+				"2133": 4356,
+				"2400": 4775,
+				"2600": 5088,
+				"2666": 5192,
+				"2800": 5402,
+				"3000": 5715,
+				"3200": 6028,
+				"3300": 6185,
+				"3333": 6237,
+				"3400": 6342,
+				"3466": 6445,
+				"3600": 6655,
+				"3666": 6759,
+				"3733": 6863,
+				"3800": 6968,
+				"3866": 7072,
+				"4000": 7282,
+				"4133": 7490,
+				"4200": 7595,
+				"4266": 7699,
+				"4333": 7804,
+				"4400": 7909
 			},
 			"2": {
-				"2133": 8146,
-				"2400": 8565,
-				"2666": 8982,
-				"2800": 9192,
-				"3000": 9505,
-				"3200": 9818,
-				"3300": 9975,
-				"3333": 10027,
-				"3400": 10132,
-				"3466": 10235,
-				"3600": 10445,
-				"3733": 10653,
-				"3800": 10758,
-				"3866": 10862,
-				"4000": 11072,
-				"4133": 11280
+				"2133": 5546,
+				"2400": 5964,
+				"2600": 6277,
+				"2666": 6381,
+				"2800": 6591,
+				"3000": 6904,
+				"3200": 7217,
+				"3300": 7374,
+				"3333": 7426,
+				"3400": 7531,
+				"3466": 7634,
+				"3600": 7844,
+				"3666": 7948,
+				"3733": 8053,
+				"3800": 8158,
+				"3866": 8261,
+				"4000": 8471,
+				"4133": 8679,
+				"4200": 8784,
+				"4266": 8888,
+				"4333": 8993,
+				"4400": 9098
 			},
 			"3": {
-				"2133": 9336,
-				"2400": 9754,
-				"2666": 10171,
-				"2800": 10381,
-				"3000": 10694,
-				"3200": 11007,
-				"3300": 11164,
-				"3333": 11216,
-				"3400": 11321,
-				"3466": 11424,
-				"3600": 11634,
-				"3733": 11843,
-				"3800": 11948,
-				"3866": 12051,
-				"4000": 12261,
-				"4133": 12469
+				"2133": 6735,
+				"2400": 7153,
+				"2600": 7466,
+				"2666": 7570,
+				"2800": 7780,
+				"3000": 8093,
+				"3200": 8407,
+				"3300": 8563,
+				"3333": 8615,
+				"3400": 8720,
+				"3466": 8823,
+				"3600": 9033,
+				"3666": 9137,
+				"3733": 9242,
+				"3800": 9347,
+				"3866": 9450,
+				"4000": 9660,
+				"4133": 9868,
+				"4200": 9973,
+				"4266": 10077,
+				"4333": 10182,
+				"4400": 10287
 			},
 			"4": {
-				"2133": 10525,
-				"2400": 10943,
-				"2666": 11360,
-				"2800": 11570,
-				"3000": 11883,
-				"3200": 12196,
-				"3300": 12353,
-				"3333": 12405,
-				"3400": 12510,
-				"3466": 12613,
-				"3600": 12823,
-				"3733": 13032,
-				"3800": 13137,
-				"3866": 13240,
-				"4000": 13450,
-				"4133": 13658
+				"2133": 7924,
+				"2400": 8342,
+				"2600": 8656,
+				"2666": 8759,
+				"2800": 8969,
+				"3000": 9282,
+				"3200": 9596,
+				"3300": 9752,
+				"3333": 9804,
+				"3400": 9909,
+				"3466": 10012,
+				"3600": 10222,
+				"3666": 10326,
+				"3733": 10431,
+				"3800": 10536,
+				"3866": 10639,
+				"4000": 10849,
+				"4133": 11058,
+				"4200": 11163,
+				"4266": 11266,
+				"4333": 11371,
+				"4400": 11476
 			},
 			"fullName": "Intel Core i9-7980XE",
 			"partName": "Core i9-7980XE",
@@ -5873,76 +6883,100 @@ var data = {
 		},
 		"Intel Core i9-7960X": {
 			"1": {
-				"2133": 7216,
-				"2400": 7575,
-				"2666": 7933,
-				"2800": 8114,
-				"3000": 8383,
-				"3200": 8652,
-				"3300": 8787,
-				"3333": 8831,
-				"3400": 8922,
-				"3466": 9010,
-				"3600": 9191,
-				"3733": 9370,
-				"3800": 9460,
-				"3866": 9549,
-				"4000": 9729,
-				"4133": 9909
+				"2133": 4862,
+				"2400": 5221,
+				"2600": 5490,
+				"2666": 5579,
+				"2800": 5760,
+				"3000": 6029,
+				"3200": 6298,
+				"3300": 6433,
+				"3333": 6477,
+				"3400": 6567,
+				"3466": 6656,
+				"3600": 6837,
+				"3666": 6926,
+				"3733": 7016,
+				"3800": 7106,
+				"3866": 7195,
+				"4000": 7375,
+				"4133": 7554,
+				"4200": 7644,
+				"4266": 7733,
+				"4333": 7824,
+				"4400": 7914
 			},
 			"2": {
-				"2133": 8367,
-				"2400": 8727,
-				"2666": 9085,
-				"2800": 9265,
-				"3000": 9535,
-				"3200": 9804,
-				"3300": 9939,
-				"3333": 9983,
-				"3400": 10073,
-				"3466": 10162,
-				"3600": 10342,
-				"3733": 10522,
-				"3800": 10612,
-				"3866": 10701,
-				"4000": 10881,
-				"4133": 11060
+				"2133": 6013,
+				"2400": 6373,
+				"2600": 6642,
+				"2666": 6731,
+				"2800": 6911,
+				"3000": 7180,
+				"3200": 7450,
+				"3300": 7584,
+				"3333": 7629,
+				"3400": 7719,
+				"3466": 7808,
+				"3600": 7988,
+				"3666": 8077,
+				"3733": 8167,
+				"3800": 8258,
+				"3866": 8346,
+				"4000": 8527,
+				"4133": 8706,
+				"4200": 8796,
+				"4266": 8885,
+				"4333": 8975,
+				"4400": 9065
 			},
 			"3": {
-				"2133": 9519,
-				"2400": 9878,
-				"2666": 10237,
-				"2800": 10417,
-				"3000": 10686,
-				"3200": 10956,
-				"3300": 11090,
-				"3333": 11135,
-				"3400": 11225,
-				"3466": 11314,
-				"3600": 11494,
-				"3733": 11673,
-				"3800": 11763,
-				"3866": 11852,
-				"4000": 12033,
-				"4133": 12212
+				"2133": 7165,
+				"2400": 7524,
+				"2600": 7793,
+				"2666": 7882,
+				"2800": 8063,
+				"3000": 8332,
+				"3200": 8601,
+				"3300": 8736,
+				"3333": 8780,
+				"3400": 8871,
+				"3466": 8959,
+				"3600": 9140,
+				"3666": 9229,
+				"3733": 9319,
+				"3800": 9409,
+				"3866": 9498,
+				"4000": 9678,
+				"4133": 9857,
+				"4200": 9948,
+				"4266": 10036,
+				"4333": 10127,
+				"4400": 10217
 			},
 			"4": {
-				"2133": 10671,
-				"2400": 11030,
-				"2666": 11388,
-				"2800": 11569,
-				"3000": 11838,
-				"3200": 12107,
-				"3300": 12242,
-				"3333": 12286,
-				"3400": 12376,
-				"3466": 12465,
-				"3600": 12646,
-				"3733": 12825,
-				"3800": 12915,
-				"3866": 13004,
-				"4000": 13184,
-				"4133": 13363
+				"2133": 8316,
+				"2400": 8676,
+				"2600": 8945,
+				"2666": 9034,
+				"2800": 9214,
+				"3000": 9484,
+				"3200": 9753,
+				"3300": 9887,
+				"3333": 9932,
+				"3400": 10022,
+				"3466": 10111,
+				"3600": 10291,
+				"3666": 10380,
+				"3733": 10470,
+				"3800": 10561,
+				"3866": 10650,
+				"4000": 10830,
+				"4133": 11009,
+				"4200": 11099,
+				"4266": 11188,
+				"4333": 11278,
+				"4400": 11368
 			},
 			"fullName": "Intel Core i9-7960X",
 			"partName": "Core i9-7960X",
@@ -5970,84 +7004,60 @@ var data = {
 		},
 		"AMD Ryzen Threadripper 2990WX": {
 			"1": {
-				"2133": 10928,
-				"2400": 11104,
-				"2666": 11280,
-				"2667": 11281,
-				"2800": 11369,
-				"2933": 11457,
-				"3000": 11501,
-				"3066": 11545,
-				"3200": 11633,
-				"3300": 11700,
-				"3333": 11721,
-				"3466": 11809,
-				"3600": 11898,
-				"3733": 11986,
-				"3866": 12074,
-				"4000": 12163,
-				"4133": 12251,
-				"4200": 12295
+				"2133": 9309,
+				"2400": 9485,
+				"2666": 9661,
+				"2667": 9662,
+				"2800": 9750,
+				"2933": 9838,
+				"3000": 9882,
+				"3066": 9926,
+				"3200": 10015,
+				"3333": 10103,
+				"3466": 10191,
+				"3600": 10279
 			},
 			"2": {
-				"2133": 10992,
-				"2400": 11168,
-				"2666": 11344,
-				"2667": 11345,
-				"2800": 11433,
-				"2933": 11521,
-				"3000": 11565,
-				"3066": 11609,
-				"3200": 11698,
-				"3300": 11764,
-				"3333": 11786,
-				"3466": 11874,
-				"3600": 11962,
-				"3733": 12050,
-				"3866": 12138,
-				"4000": 12227,
-				"4133": 12315,
-				"4200": 12359
+				"2133": 9373,
+				"2400": 9550,
+				"2666": 9726,
+				"2667": 9726,
+				"2800": 9814,
+				"2933": 9902,
+				"3000": 9946,
+				"3066": 9990,
+				"3200": 10079,
+				"3333": 10167,
+				"3466": 10255,
+				"3600": 10343
 			},
 			"3": {
-				"2133": 11056,
-				"2400": 11232,
-				"2666": 11408,
-				"2667": 11409,
-				"2800": 11497,
-				"2933": 11585,
-				"3000": 11629,
-				"3066": 11673,
-				"3200": 11762,
-				"3300": 11828,
-				"3333": 11850,
-				"3466": 11938,
-				"3600": 12026,
-				"3733": 12114,
-				"3866": 12202,
-				"4000": 12291,
-				"4133": 12379,
-				"4200": 12423
+				"2133": 9437,
+				"2400": 9614,
+				"2666": 9790,
+				"2667": 9790,
+				"2800": 9878,
+				"2933": 9966,
+				"3000": 10011,
+				"3066": 10054,
+				"3200": 10143,
+				"3333": 10231,
+				"3466": 10319,
+				"3600": 10408
 			},
 			"4": {
-				"2133": 11120,
-				"2400": 11296,
-				"2666": 11472,
-				"2667": 11473,
-				"2800": 11561,
-				"2933": 11649,
-				"3000": 11693,
-				"3066": 11737,
-				"3200": 11826,
-				"3300": 11892,
-				"3333": 11914,
-				"3466": 12002,
-				"3600": 12090,
-				"3733": 12178,
-				"3866": 12266,
-				"4000": 12355,
-				"4133": 12443,
-				"4200": 12487
+				"2133": 9501,
+				"2400": 9678,
+				"2666": 9854,
+				"2667": 9854,
+				"2800": 9942,
+				"2933": 10030,
+				"3000": 10075,
+				"3066": 10118,
+				"3200": 10207,
+				"3333": 10295,
+				"3466": 10383,
+				"3600": 10472
 			},
 			"fullName": "AMD Ryzen Threadripper 2990WX",
 			"partName": "Ryzen Threadripper 2990WX",
@@ -6075,76 +7085,100 @@ var data = {
 		},
 		"Intel Core i9-9960X": {
 			"1": {
-				"2133": 7552,
-				"2400": 7912,
-				"2666": 8270,
-				"2800": 8450,
-				"3000": 8719,
-				"3200": 8989,
-				"3300": 9123,
-				"3333": 9168,
-				"3400": 9258,
-				"3466": 9347,
-				"3600": 9527,
-				"3733": 9706,
-				"3800": 9797,
-				"3866": 9885,
-				"4000": 10066,
-				"4133": 10245
+				"2133": 4862,
+				"2400": 5221,
+				"2600": 5490,
+				"2666": 5579,
+				"2800": 5760,
+				"3000": 6029,
+				"3200": 6298,
+				"3300": 6433,
+				"3333": 6477,
+				"3400": 6567,
+				"3466": 6656,
+				"3600": 6837,
+				"3666": 6926,
+				"3733": 7016,
+				"3800": 7106,
+				"3866": 7195,
+				"4000": 7375,
+				"4133": 7554,
+				"4200": 7644,
+				"4266": 7733,
+				"4333": 7824,
+				"4400": 7914
 			},
 			"2": {
-				"2133": 8704,
-				"2400": 9063,
-				"2666": 9421,
-				"2800": 9602,
-				"3000": 9871,
-				"3200": 10140,
-				"3300": 10275,
-				"3333": 10319,
-				"3400": 10410,
-				"3466": 10498,
-				"3600": 10679,
-				"3733": 10858,
-				"3800": 10948,
-				"3866": 11037,
-				"4000": 11217,
-				"4133": 11396
+				"2133": 6013,
+				"2400": 6373,
+				"2600": 6642,
+				"2666": 6731,
+				"2800": 6911,
+				"3000": 7180,
+				"3200": 7450,
+				"3300": 7584,
+				"3333": 7629,
+				"3400": 7719,
+				"3466": 7808,
+				"3600": 7988,
+				"3666": 8077,
+				"3733": 8167,
+				"3800": 8258,
+				"3866": 8346,
+				"4000": 8527,
+				"4133": 8706,
+				"4200": 8796,
+				"4266": 8885,
+				"4333": 8975,
+				"4400": 9065
 			},
 			"3": {
-				"2133": 9855,
-				"2400": 10215,
-				"2666": 10573,
-				"2800": 10753,
-				"3000": 11023,
-				"3200": 11292,
-				"3300": 11426,
-				"3333": 11471,
-				"3400": 11561,
-				"3466": 11650,
-				"3600": 11830,
-				"3733": 12009,
-				"3800": 12100,
-				"3866": 12189,
-				"4000": 12369,
-				"4133": 12548
+				"2133": 7165,
+				"2400": 7524,
+				"2600": 7793,
+				"2666": 7882,
+				"2800": 8063,
+				"3000": 8332,
+				"3200": 8601,
+				"3300": 8736,
+				"3333": 8780,
+				"3400": 8871,
+				"3466": 8959,
+				"3600": 9140,
+				"3666": 9229,
+				"3733": 9319,
+				"3800": 9409,
+				"3866": 9498,
+				"4000": 9678,
+				"4133": 9857,
+				"4200": 9948,
+				"4266": 10036,
+				"4333": 10127,
+				"4400": 10217
 			},
 			"4": {
-				"2133": 11007,
-				"2400": 11366,
-				"2666": 11724,
-				"2800": 11905,
-				"3000": 12174,
-				"3200": 12443,
-				"3300": 12578,
-				"3333": 12622,
-				"3400": 12713,
-				"3466": 12802,
-				"3600": 12982,
-				"3733": 13161,
-				"3800": 13251,
-				"3866": 13340,
-				"4000": 13521,
-				"4133": 13700
+				"2133": 8316,
+				"2400": 8676,
+				"2600": 8945,
+				"2666": 9034,
+				"2800": 9214,
+				"3000": 9484,
+				"3200": 9753,
+				"3300": 9887,
+				"3333": 9932,
+				"3400": 10022,
+				"3466": 10111,
+				"3600": 10291,
+				"3666": 10380,
+				"3733": 10470,
+				"3800": 10561,
+				"3866": 10650,
+				"4000": 10830,
+				"4133": 11009,
+				"4200": 11099,
+				"4266": 11188,
+				"4333": 11278,
+				"4400": 11368
 			},
 			"fullName": "Intel Core i9-9960X",
 			"partName": "Core i9-9960X",
@@ -6172,76 +7206,100 @@ var data = {
 		},
 		"Intel Core i9-9980XE": {
 			"1": {
-				"2133": 7329,
-				"2400": 7747,
-				"2666": 8164,
-				"2800": 8374,
-				"3000": 8687,
-				"3200": 9001,
-				"3300": 9157,
-				"3333": 9209,
-				"3400": 9314,
-				"3466": 9418,
-				"3600": 9627,
-				"3733": 9836,
-				"3800": 9941,
-				"3866": 10044,
-				"4000": 10254,
-				"4133": 10463
+				"2133": 4356,
+				"2400": 4775,
+				"2600": 5088,
+				"2666": 5192,
+				"2800": 5402,
+				"3000": 5715,
+				"3200": 6028,
+				"3300": 6185,
+				"3333": 6237,
+				"3400": 6342,
+				"3466": 6445,
+				"3600": 6655,
+				"3666": 6759,
+				"3733": 6863,
+				"3800": 6968,
+				"3866": 7072,
+				"4000": 7282,
+				"4133": 7490,
+				"4200": 7595,
+				"4266": 7699,
+				"4333": 7804,
+				"4400": 7909
 			},
 			"2": {
-				"2133": 8518,
-				"2400": 8936,
-				"2666": 9353,
-				"2800": 9563,
-				"3000": 9876,
-				"3200": 10190,
-				"3300": 10347,
-				"3333": 10398,
-				"3400": 10503,
-				"3466": 10607,
-				"3600": 10817,
-				"3733": 11025,
-				"3800": 11130,
-				"3866": 11233,
-				"4000": 11443,
-				"4133": 11652
+				"2133": 5546,
+				"2400": 5964,
+				"2600": 6277,
+				"2666": 6381,
+				"2800": 6591,
+				"3000": 6904,
+				"3200": 7217,
+				"3300": 7374,
+				"3333": 7426,
+				"3400": 7531,
+				"3466": 7634,
+				"3600": 7844,
+				"3666": 7948,
+				"3733": 8053,
+				"3800": 8158,
+				"3866": 8261,
+				"4000": 8471,
+				"4133": 8679,
+				"4200": 8784,
+				"4266": 8888,
+				"4333": 8993,
+				"4400": 9098
 			},
 			"3": {
-				"2133": 9707,
-				"2400": 10125,
-				"2666": 10542,
-				"2800": 10752,
-				"3000": 11066,
-				"3200": 11379,
-				"3300": 11536,
-				"3333": 11587,
-				"3400": 11692,
-				"3466": 11796,
-				"3600": 12006,
-				"3733": 12214,
-				"3800": 12319,
-				"3866": 12422,
-				"4000": 12632,
-				"4133": 12841
+				"2133": 6735,
+				"2400": 7153,
+				"2600": 7466,
+				"2666": 7570,
+				"2800": 7780,
+				"3000": 8093,
+				"3200": 8407,
+				"3300": 8563,
+				"3333": 8615,
+				"3400": 8720,
+				"3466": 8823,
+				"3600": 9033,
+				"3666": 9137,
+				"3733": 9242,
+				"3800": 9347,
+				"3866": 9450,
+				"4000": 9660,
+				"4133": 9868,
+				"4200": 9973,
+				"4266": 10077,
+				"4333": 10182,
+				"4400": 10287
 			},
 			"4": {
-				"2133": 10896,
-				"2400": 11315,
-				"2666": 11731,
-				"2800": 11941,
-				"3000": 12255,
-				"3200": 12568,
-				"3300": 12725,
-				"3333": 12776,
-				"3400": 12881,
-				"3466": 12985,
-				"3600": 13195,
-				"3733": 13403,
-				"3800": 13508,
-				"3866": 13612,
-				"4000": 13822,
-				"4133": 14030
+				"2133": 7924,
+				"2400": 8342,
+				"2600": 8656,
+				"2666": 8759,
+				"2800": 8969,
+				"3000": 9282,
+				"3200": 9596,
+				"3300": 9752,
+				"3333": 9804,
+				"3400": 9909,
+				"3466": 10012,
+				"3600": 10222,
+				"3666": 10326,
+				"3733": 10431,
+				"3800": 10536,
+				"3866": 10639,
+				"4000": 10849,
+				"4133": 11058,
+				"4200": 11163,
+				"4266": 11266,
+				"4333": 11371,
+				"4400": 11476
 			},
 			"fullName": "Intel Core i9-9980XE",
 			"partName": "Core i9-9980XE",
@@ -6273,10 +7331,10 @@ var data = {
 			"1": {
 				"price": 75,
 				"sellPrice": 25,
-				"wattage": 30,
+				"wattage": 169,
 				"score": 1000,
 				"cclockm1": 0.002248,
-				"mclockm1": 0,
+				"mclockm1": 0.001908,
 				"adj1": 0.273974,
 				"cclockm2": 0.002101,
 				"mclockm2": 0.001258,
@@ -6287,7 +7345,7 @@ var data = {
 			"manufacturer": "EVGA",
 			"level": 5,
 			"size": 2,
-			"slot": "Single",
+			"slot": "1",
 			"length": 169,
 			"basecfreq": 1544,
 			"basemfreq": 1502,
@@ -6300,10 +7358,10 @@ var data = {
 			"1": {
 				"price": 75,
 				"sellPrice": 25,
-				"wattage": 30,
+				"wattage": 168,
 				"score": 1000,
 				"cclockm1": 0.002248,
-				"mclockm1": 0,
+				"mclockm1": 0.001908,
 				"adj1": 0.273974,
 				"cclockm2": 0.002101,
 				"mclockm2": 0.001258,
@@ -6314,7 +7372,7 @@ var data = {
 			"manufacturer": "GIGABYTE",
 			"level": 5,
 			"size": 2,
-			"slot": "Single",
+			"slot": "1",
 			"length": 168,
 			"basecfreq": 1544,
 			"basemfreq": 1502,
@@ -6327,10 +7385,10 @@ var data = {
 			"1": {
 				"price": 90,
 				"sellPrice": 30,
-				"wattage": 60,
+				"wattage": 147,
 				"score": 1163,
 				"cclockm1": 0.005024,
-				"mclockm1": 0,
+				"mclockm1": 0.000815,
 				"adj1": 1.012608,
 				"cclockm2": 0.004279,
 				"mclockm2": 0.00071,
@@ -6341,7 +7399,7 @@ var data = {
 			"manufacturer": "Shean",
 			"level": 1,
 			"size": 2,
-			"slot": "Single",
+			"slot": "1",
 			"length": 147,
 			"basecfreq": 1085,
 			"basemfreq": 1350,
@@ -6354,10 +7412,10 @@ var data = {
 			"1": {
 				"price": 120,
 				"sellPrice": 40,
-				"wattage": 75,
+				"wattage": 229,
 				"score": 1481,
 				"cclockm1": 0.007992,
-				"mclockm1": 0,
+				"mclockm1": 0.00044,
 				"adj1": -2.8124,
 				"cclockm2": 0.006501,
 				"mclockm2": 0.000376,
@@ -6368,7 +7426,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 1,
 			"size": 2,
-			"slot": "Double",
+			"slot": "2",
 			"length": 229,
 			"basecfreq": 1468,
 			"basemfreq": 1752,
@@ -6381,10 +7439,10 @@ var data = {
 			"1": {
 				"price": 115,
 				"sellPrice": 38,
-				"wattage": 110,
+				"wattage": 258,
 				"score": 1516,
 				"cclockm1": 0.010494,
-				"mclockm1": 2,
+				"mclockm1": 0.000604,
 				"adj1": -1.14691,
 				"cclockm2": 0.007101,
 				"mclockm2": 0.000589,
@@ -6407,7 +7465,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 3,
 			"size": 2,
-			"slot": "Double",
+			"slot": "2",
 			"length": 258,
 			"basecfreq": 1030,
 			"basemfreq": 1400,
@@ -6420,10 +7478,10 @@ var data = {
 			"1": {
 				"price": 120,
 				"sellPrice": 40,
-				"wattage": 75,
+				"wattage": 229,
 				"score": 1556,
 				"cclockm1": 0.007992,
-				"mclockm1": 0,
+				"mclockm1": 0.00044,
 				"adj1": -2.8124,
 				"cclockm2": 0.006501,
 				"mclockm2": 0.000376,
@@ -6434,7 +7492,7 @@ var data = {
 			"manufacturer": "GIGABYTE",
 			"level": 1,
 			"size": 2,
-			"slot": "Double",
+			"slot": "2",
 			"length": 229,
 			"basecfreq": 1531,
 			"basemfreq": 1752,
@@ -6447,10 +7505,10 @@ var data = {
 			"1": {
 				"price": 125,
 				"sellPrice": 42,
-				"wattage": 75,
+				"wattage": 229,
 				"score": 1556,
 				"cclockm1": 0.007992,
-				"mclockm1": 0,
+				"mclockm1": 0.00044,
 				"adj1": -2.8124,
 				"cclockm2": 0.006501,
 				"mclockm2": 0.000376,
@@ -6461,7 +7519,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 1,
 			"size": 2,
-			"slot": "Double",
+			"slot": "2",
 			"length": 229,
 			"basecfreq": 1531,
 			"basemfreq": 1752,
@@ -6474,10 +7532,10 @@ var data = {
 			"1": {
 				"price": 120,
 				"sellPrice": 40,
-				"wattage": 110,
+				"wattage": 258,
 				"score": 1574,
 				"cclockm1": 0.010494,
-				"mclockm1": 2,
+				"mclockm1": 0.000604,
 				"adj1": -1.14691,
 				"cclockm2": 0.007101,
 				"mclockm2": 0.000589,
@@ -6500,7 +7558,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 3,
 			"size": 4,
-			"slot": "Double",
+			"slot": "2",
 			"length": 258,
 			"basecfreq": 1070,
 			"basemfreq": 1425,
@@ -6513,10 +7571,10 @@ var data = {
 			"1": {
 				"price": 140,
 				"sellPrice": 47,
-				"wattage": 90,
+				"wattage": 270,
 				"score": 1846,
 				"cclockm1": 0.007772,
-				"mclockm1": -11,
+				"mclockm1": 0.001791,
 				"adj1": -1.02847,
 				"cclockm2": 0.007074,
 				"mclockm2": 0.001511,
@@ -6539,7 +7597,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 1,
 			"size": 2,
-			"slot": "Double",
+			"slot": "2",
 			"length": 270,
 			"basecfreq": 1316,
 			"basemfreq": 1663,
@@ -6552,10 +7610,10 @@ var data = {
 			"1": {
 				"price": 160,
 				"sellPrice": 53,
-				"wattage": 75,
+				"wattage": 220,
 				"score": 1940,
 				"cclockm1": 0.007928,
-				"mclockm1": -2.09805,
+				"mclockm1": 0.000358,
 				"adj1": 2.464616,
 				"cclockm2": 0.006675,
 				"mclockm2": 0.000319,
@@ -6578,7 +7636,7 @@ var data = {
 			"manufacturer": "ASUS",
 			"level": 2,
 			"size": 4,
-			"slot": "Double",
+			"slot": "2",
 			"length": 220,
 			"basecfreq": 1275,
 			"basemfreq": 1750,
@@ -6591,10 +7649,10 @@ var data = {
 			"1": {
 				"price": 155,
 				"sellPrice": 52,
-				"wattage": 75,
+				"wattage": 145,
 				"score": 1966,
 				"cclockm1": 0.00654,
-				"mclockm1": 0,
+				"mclockm1": 0.001127,
 				"adj1": 2.110894,
 				"cclockm2": 0.006342,
 				"mclockm2": 0.000657,
@@ -6605,7 +7663,7 @@ var data = {
 			"manufacturer": "EVGA",
 			"level": 1,
 			"size": 4,
-			"slot": "Double",
+			"slot": "2",
 			"length": 145,
 			"basecfreq": 1392,
 			"basemfreq": 1752,
@@ -6618,10 +7676,10 @@ var data = {
 			"1": {
 				"price": 160,
 				"sellPrice": 53,
-				"wattage": 75,
+				"wattage": 229,
 				"score": 1992,
 				"cclockm1": 0.00654,
-				"mclockm1": 0,
+				"mclockm1": 0.001127,
 				"adj1": 2.110894,
 				"cclockm2": 0.006342,
 				"mclockm2": 0.000657,
@@ -6632,7 +7690,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 1,
 			"size": 4,
-			"slot": "Double",
+			"slot": "2",
 			"length": 229,
 			"basecfreq": 1417,
 			"basemfreq": 1752,
@@ -6645,10 +7703,10 @@ var data = {
 			"1": {
 				"price": 165,
 				"sellPrice": 55,
-				"wattage": 75,
+				"wattage": 194,
 				"score": 2001,
 				"cclockm1": 0.007928,
-				"mclockm1": -2.09805,
+				"mclockm1": 0.000358,
 				"adj1": 2.464616,
 				"cclockm2": 0.006675,
 				"mclockm2": 0.000319,
@@ -6671,7 +7729,7 @@ var data = {
 			"manufacturer": "ASUS",
 			"level": 2,
 			"size": 4,
-			"slot": "Double",
+			"slot": "2",
 			"length": 194,
 			"basecfreq": 1326,
 			"basemfreq": 1750,
@@ -6684,10 +7742,10 @@ var data = {
 			"1": {
 				"price": 160,
 				"sellPrice": 53,
-				"wattage": 200,
+				"wattage": 147,
 				"score": 2019,
 				"cclockm1": 0.010059,
-				"mclockm1": 10.94924,
+				"mclockm1": 0.002164,
 				"adj1": 1.960358,
 				"cclockm2": 0.00801,
 				"mclockm2": 0.001543,
@@ -6710,7 +7768,7 @@ var data = {
 			"manufacturer": "DFL",
 			"level": 1,
 			"size": 3,
-			"slot": "Double",
+			"slot": "1",
 			"length": 147,
 			"basecfreq": 933,
 			"basemfreq": 1250,
@@ -6723,10 +7781,10 @@ var data = {
 			"1": {
 				"price": 165,
 				"sellPrice": 55,
-				"wattage": 75,
+				"wattage": 229,
 				"score": 2046,
 				"cclockm1": 0.00654,
-				"mclockm1": 0,
+				"mclockm1": 0.001127,
 				"adj1": 2.110894,
 				"cclockm2": 0.006342,
 				"mclockm2": 0.000657,
@@ -6737,7 +7795,7 @@ var data = {
 			"manufacturer": "GIGABYTE",
 			"level": 1,
 			"size": 4,
-			"slot": "Double",
+			"slot": "2",
 			"length": 229,
 			"basecfreq": 1468,
 			"basemfreq": 1752,
@@ -6750,10 +7808,10 @@ var data = {
 			"1": {
 				"price": 165,
 				"sellPrice": 55,
-				"wattage": 75,
+				"wattage": 229,
 				"score": 2046,
 				"cclockm1": 0.00654,
-				"mclockm1": 0,
+				"mclockm1": 0.001127,
 				"adj1": 2.110894,
 				"cclockm2": 0.006342,
 				"mclockm2": 0.000657,
@@ -6764,7 +7822,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 1,
 			"size": 4,
-			"slot": "Double",
+			"slot": "2",
 			"length": 229,
 			"basecfreq": 1468,
 			"basemfreq": 1752,
@@ -6777,10 +7835,10 @@ var data = {
 			"1": {
 				"price": 165,
 				"sellPrice": 55,
-				"wattage": 250,
+				"wattage": 269,
 				"score": 2057,
 				"cclockm1": 0.010059,
-				"mclockm1": 10.94924,
+				"mclockm1": 0.002164,
 				"adj1": 1.960358,
 				"cclockm2": 0.00801,
 				"mclockm2": 0.001543,
@@ -6803,7 +7861,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 3,
 			"size": 3,
-			"slot": "Double",
+			"slot": "2",
 			"length": 269,
 			"basecfreq": 959,
 			"basemfreq": 1250,
@@ -6816,10 +7874,10 @@ var data = {
 			"1": {
 				"price": 165,
 				"sellPrice": 55,
-				"wattage": 120,
+				"wattage": 257,
 				"score": 2073,
 				"cclockm1": 0.00654,
-				"mclockm1": 0,
+				"mclockm1": 0.001127,
 				"adj1": 2.110894,
 				"cclockm2": 0.006342,
 				"mclockm2": 0.000657,
@@ -6830,7 +7888,7 @@ var data = {
 			"manufacturer": "EVGA",
 			"level": 1,
 			"size": 4,
-			"slot": "Double",
+			"slot": "2",
 			"length": 257,
 			"basecfreq": 1493,
 			"basemfreq": 1752,
@@ -6843,10 +7901,10 @@ var data = {
 			"1": {
 				"price": 165,
 				"sellPrice": 55,
-				"wattage": 75,
+				"wattage": 174,
 				"score": 2087,
 				"cclockm1": 0.00654,
-				"mclockm1": 0,
+				"mclockm1": 0.001127,
 				"adj1": 2.110894,
 				"cclockm2": 0.006342,
 				"mclockm2": 0.000657,
@@ -6857,7 +7915,7 @@ var data = {
 			"manufacturer": "ZOTAC",
 			"level": 1,
 			"size": 4,
-			"slot": "Single",
+			"slot": "1",
 			"length": 174,
 			"basecfreq": 1506,
 			"basemfreq": 1752,
@@ -6870,10 +7928,10 @@ var data = {
 			"1": {
 				"price": 170,
 				"sellPrice": 57,
-				"wattage": 250,
+				"wattage": 269,
 				"score": 2117,
 				"cclockm1": 0.010059,
-				"mclockm1": 10.94924,
+				"mclockm1": 0.002164,
 				"adj1": 1.960358,
 				"cclockm2": 0.00801,
 				"mclockm2": 0.001543,
@@ -6896,7 +7954,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 3,
 			"size": 3,
-			"slot": "Double",
+			"slot": "2",
 			"length": 269,
 			"basecfreq": 1000,
 			"basemfreq": 1250,
@@ -6909,10 +7967,10 @@ var data = {
 			"1": {
 				"price": 170,
 				"sellPrice": 57,
-				"wattage": 120,
+				"wattage": 267,
 				"score": 2123,
 				"cclockm1": 0.007122,
-				"mclockm1": -3.10231,
+				"mclockm1": 0.003506,
 				"adj1": -0.92227,
 				"cclockm2": 0.006958,
 				"mclockm2": 0.002396,
@@ -6935,7 +7993,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 1,
 			"size": 2,
-			"slot": "Double",
+			"slot": "2",
 			"length": 267,
 			"basecfreq": 1216,
 			"basemfreq": 1753,
@@ -6948,10 +8006,10 @@ var data = {
 			"1": {
 				"price": 170,
 				"sellPrice": 57,
-				"wattage": 120,
+				"wattage": 267,
 				"score": 2123,
 				"cclockm1": 0.007122,
-				"mclockm1": -3.10231,
+				"mclockm1": 0.003506,
 				"adj1": -0.92227,
 				"cclockm2": 0.006958,
 				"mclockm2": 0.002396,
@@ -6974,7 +8032,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 1,
 			"size": 2,
-			"slot": "Double",
+			"slot": "2",
 			"length": 267,
 			"basecfreq": 1216,
 			"basemfreq": 1753,
@@ -6987,10 +8045,10 @@ var data = {
 			"1": {
 				"price": 170,
 				"sellPrice": 57,
-				"wattage": 120,
+				"wattage": 267,
 				"score": 2123,
 				"cclockm1": 0.007122,
-				"mclockm1": -3.10231,
+				"mclockm1": 0.003506,
 				"adj1": -0.92227,
 				"cclockm2": 0.006958,
 				"mclockm2": 0.002396,
@@ -7013,7 +8071,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 1,
 			"size": 4,
-			"slot": "Double",
+			"slot": "2",
 			"length": 267,
 			"basecfreq": 1216,
 			"basemfreq": 1753,
@@ -7026,10 +8084,10 @@ var data = {
 			"1": {
 				"price": 180,
 				"sellPrice": 60,
-				"wattage": 120,
+				"wattage": 267,
 				"score": 2225,
 				"cclockm1": 0.007122,
-				"mclockm1": -3.10231,
+				"mclockm1": 0.003506,
 				"adj1": -0.92227,
 				"cclockm2": 0.006958,
 				"mclockm2": 0.002396,
@@ -7052,7 +8110,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 1,
 			"size": 2,
-			"slot": "Double",
+			"slot": "2",
 			"length": 267,
 			"basecfreq": 1304,
 			"basemfreq": 1753,
@@ -7065,10 +8123,10 @@ var data = {
 			"1": {
 				"price": 180,
 				"sellPrice": 60,
-				"wattage": 120,
+				"wattage": 267,
 				"score": 2225,
 				"cclockm1": 0.007122,
-				"mclockm1": -3.10231,
+				"mclockm1": 0.003506,
 				"adj1": -0.92227,
 				"cclockm2": 0.006958,
 				"mclockm2": 0.002396,
@@ -7091,7 +8149,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 1,
 			"size": 4,
-			"slot": "Double",
+			"slot": "2",
 			"length": 267,
 			"basecfreq": 1304,
 			"basemfreq": 1753,
@@ -7104,10 +8162,10 @@ var data = {
 			"1": {
 				"price": 180,
 				"sellPrice": 60,
-				"wattage": 120,
+				"wattage": 267,
 				"score": 2225,
 				"cclockm1": 0.007122,
-				"mclockm1": -3.10231,
+				"mclockm1": 0.003506,
 				"adj1": -0.92227,
 				"cclockm2": 0.006958,
 				"mclockm2": 0.002396,
@@ -7130,7 +8188,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 1,
 			"size": 2,
-			"slot": "Double",
+			"slot": "2",
 			"length": 267,
 			"basecfreq": 1304,
 			"basemfreq": 1753,
@@ -7143,10 +8201,10 @@ var data = {
 			"1": {
 				"price": 215,
 				"sellPrice": 72,
-				"wattage": 190,
+				"wattage": 268,
 				"score": 2685,
 				"cclockm1": 0.013626,
-				"mclockm1": 10.39041,
+				"mclockm1": 0.001814,
 				"adj1": 2.379329,
 				"cclockm2": 0.011454,
 				"mclockm2": 0.001259,
@@ -7169,7 +8227,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 4,
 			"size": 2,
-			"slot": "Double",
+			"slot": "2",
 			"length": 268,
 			"basecfreq": 980,
 			"basemfreq": 1425,
@@ -7182,10 +8240,10 @@ var data = {
 			"1": {
 				"price": 215,
 				"sellPrice": 72,
-				"wattage": 190,
+				"wattage": 268,
 				"score": 2685,
 				"cclockm1": 0.013626,
-				"mclockm1": 10.39041,
+				"mclockm1": 0.001814,
 				"adj1": 2.379329,
 				"cclockm2": 0.011454,
 				"mclockm2": 0.001259,
@@ -7208,7 +8266,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 4,
 			"size": 4,
-			"slot": "Double",
+			"slot": "2",
 			"length": 268,
 			"basecfreq": 980,
 			"basemfreq": 1425,
@@ -7221,10 +8279,10 @@ var data = {
 			"1": {
 				"price": 265,
 				"sellPrice": 88,
-				"wattage": 145,
+				"wattage": 277,
 				"score": 3193,
 				"cclockm1": 0.015306,
-				"mclockm1": -0.83255,
+				"mclockm1": 0.002396,
 				"adj1": -1.22474,
 				"cclockm2": 0.014656,
 				"mclockm2": 0.00146,
@@ -7247,7 +8305,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 3,
 			"size": 4,
-			"slot": "Double",
+			"slot": "2",
 			"length": 277,
 			"basecfreq": 1178,
 			"basemfreq": 1753,
@@ -7260,10 +8318,10 @@ var data = {
 			"1": {
 				"price": 265,
 				"sellPrice": 88,
-				"wattage": 148,
+				"wattage": 147,
 				"score": 3193,
 				"cclockm1": 0.015306,
-				"mclockm1": -0.83255,
+				"mclockm1": 0.002396,
 				"adj1": -1.22474,
 				"cclockm2": 0.014656,
 				"mclockm2": 0.00146,
@@ -7286,7 +8344,7 @@ var data = {
 			"manufacturer": "Shean",
 			"level": 1,
 			"size": 4,
-			"slot": "Double",
+			"slot": "1",
 			"length": 147,
 			"basecfreq": 1178,
 			"basemfreq": 1753,
@@ -7299,10 +8357,10 @@ var data = {
 			"1": {
 				"price": 275,
 				"sellPrice": 92,
-				"wattage": 145,
+				"wattage": 277,
 				"score": 3286,
 				"cclockm1": 0.015306,
-				"mclockm1": -0.83255,
+				"mclockm1": 0.002396,
 				"adj1": -1.22474,
 				"cclockm2": 0.014656,
 				"mclockm2": 0.00146,
@@ -7325,7 +8383,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 3,
 			"size": 4,
-			"slot": "Double",
+			"slot": "2",
 			"length": 277,
 			"basecfreq": 1216,
 			"basemfreq": 1753,
@@ -7338,10 +8396,10 @@ var data = {
 			"1": {
 				"price": 280,
 				"sellPrice": 93,
-				"wattage": 148,
+				"wattage": 147,
 				"score": 3348,
 				"cclockm1": 0.015306,
-				"mclockm1": -0.83255,
+				"mclockm1": 0.002396,
 				"adj1": -1.22474,
 				"cclockm2": 0.014656,
 				"mclockm2": 0.00146,
@@ -7364,7 +8422,7 @@ var data = {
 			"manufacturer": "Shean",
 			"level": 1,
 			"size": 4,
-			"slot": "Double",
+			"slot": "1",
 			"length": 147,
 			"basecfreq": 1241,
 			"basemfreq": 1753,
@@ -7377,10 +8435,10 @@ var data = {
 			"1": {
 				"price": 280,
 				"sellPrice": 93,
-				"wattage": 145,
+				"wattage": 277,
 				"score": 3377,
 				"cclockm1": 0.015306,
-				"mclockm1": -0.83255,
+				"mclockm1": 0.002396,
 				"adj1": -1.22474,
 				"cclockm2": 0.014656,
 				"mclockm2": 0.00146,
@@ -7403,7 +8461,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 3,
 			"size": 4,
-			"slot": "Double",
+			"slot": "2",
 			"length": 277,
 			"basecfreq": 1253,
 			"basemfreq": 1753,
@@ -7416,10 +8474,10 @@ var data = {
 			"1": {
 				"price": 285,
 				"sellPrice": 95,
-				"wattage": 145,
+				"wattage": 277,
 				"score": 3441,
 				"cclockm1": 0.015306,
-				"mclockm1": -0.83255,
+				"mclockm1": 0.002396,
 				"adj1": -1.22474,
 				"cclockm2": 0.014656,
 				"mclockm2": 0.00146,
@@ -7442,7 +8500,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 3,
 			"size": 4,
-			"slot": "Double",
+			"slot": "2",
 			"length": 277,
 			"basecfreq": 1279,
 			"basemfreq": 1753,
@@ -7455,10 +8513,10 @@ var data = {
 			"1": {
 				"price": 295,
 				"sellPrice": 98,
-				"wattage": 120,
+				"wattage": 173,
 				"score": 3531,
 				"cclockm1": 0.010056,
-				"mclockm1": 0,
+				"mclockm1": 0.003354,
 				"adj1": -0.7444,
 				"cclockm2": 0.009068,
 				"mclockm2": 0.002859,
@@ -7469,7 +8527,7 @@ var data = {
 			"manufacturer": "EVGA",
 			"level": 6,
 			"size": 3,
-			"slot": "Double",
+			"slot": "2",
 			"length": 173,
 			"basecfreq": 1708,
 			"basemfreq": 2002,
@@ -7482,10 +8540,10 @@ var data = {
 			"1": {
 				"price": 295,
 				"sellPrice": 98,
-				"wattage": 120,
+				"wattage": 276,
 				"score": 3539,
 				"cclockm1": 0.013822,
-				"mclockm1": 36,
+				"mclockm1": 0.004227,
 				"adj1": 0.013516,
 				"cclockm2": 0.011815,
 				"mclockm2": 0.003241,
@@ -7508,7 +8566,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 4,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 276,
 			"basecfreq": 1218,
 			"basemfreq": 1650,
@@ -7521,10 +8579,10 @@ var data = {
 			"1": {
 				"price": 295,
 				"sellPrice": 98,
-				"wattage": 100,
+				"wattage": 276,
 				"score": 3539,
 				"cclockm1": 0.013822,
-				"mclockm1": 36,
+				"mclockm1": 0.004227,
 				"adj1": 0.013516,
 				"cclockm2": 0.011815,
 				"mclockm2": 0.003241,
@@ -7547,7 +8605,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 4,
 			"size": 4,
-			"slot": "Double",
+			"slot": "2",
 			"length": 276,
 			"basecfreq": 1218,
 			"basemfreq": 1650,
@@ -7560,10 +8618,10 @@ var data = {
 			"1": {
 				"price": 300,
 				"sellPrice": 100,
-				"wattage": 120,
+				"wattage": 277,
 				"score": 3570,
 				"cclockm1": 0.010056,
-				"mclockm1": 0,
+				"mclockm1": 0.003354,
 				"adj1": -0.7444,
 				"cclockm2": 0.009068,
 				"mclockm2": 0.002859,
@@ -7574,7 +8632,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 6,
 			"size": 3,
-			"slot": "Double",
+			"slot": "2",
 			"length": 277,
 			"basecfreq": 1733,
 			"basemfreq": 2002,
@@ -7587,10 +8645,10 @@ var data = {
 			"1": {
 				"price": 300,
 				"sellPrice": 100,
-				"wattage": 275,
+				"wattage": 147,
 				"score": 3572,
 				"cclockm1": 0.018288,
-				"mclockm1": 6,
+				"mclockm1": 0.002945,
 				"adj1": 3.655719,
 				"cclockm2": 0.015332,
 				"mclockm2": 0.002047,
@@ -7613,7 +8671,7 @@ var data = {
 			"manufacturer": "DFL",
 			"level": 1,
 			"size": 4,
-			"slot": "Double",
+			"slot": "1",
 			"length": 147,
 			"basecfreq": 947,
 			"basemfreq": 1250,
@@ -7626,10 +8684,10 @@ var data = {
 			"1": {
 				"price": 300,
 				"sellPrice": 100,
-				"wattage": 120,
+				"wattage": 276,
 				"score": 3589,
 				"cclockm1": 0.013822,
-				"mclockm1": 36,
+				"mclockm1": 0.004227,
 				"adj1": 0.013516,
 				"cclockm2": 0.011815,
 				"mclockm2": 0.003241,
@@ -7652,7 +8710,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 4,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 276,
 			"basecfreq": 1242,
 			"basemfreq": 1650,
@@ -7665,10 +8723,10 @@ var data = {
 			"1": {
 				"price": 300,
 				"sellPrice": 100,
-				"wattage": 120,
+				"wattage": 276,
 				"score": 3589,
 				"cclockm1": 0.013822,
-				"mclockm1": 36,
+				"mclockm1": 0.004227,
 				"adj1": 0.013516,
 				"cclockm2": 0.011815,
 				"mclockm2": 0.003241,
@@ -7691,7 +8749,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 4,
 			"size": 4,
-			"slot": "Double",
+			"slot": "2",
 			"length": 276,
 			"basecfreq": 1242,
 			"basemfreq": 1650,
@@ -7704,10 +8762,10 @@ var data = {
 			"1": {
 				"price": 300,
 				"sellPrice": 100,
-				"wattage": 120,
+				"wattage": 277,
 				"score": 3590,
 				"cclockm1": 0.010056,
-				"mclockm1": 0,
+				"mclockm1": 0.003354,
 				"adj1": -0.7444,
 				"cclockm2": 0.009068,
 				"mclockm2": 0.002859,
@@ -7718,7 +8776,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 6,
 			"size": 3,
-			"slot": "Double",
+			"slot": "2",
 			"length": 277,
 			"basecfreq": 1746,
 			"basemfreq": 2002,
@@ -7731,10 +8789,10 @@ var data = {
 			"1": {
 				"price": 305,
 				"sellPrice": 102,
-				"wattage": 120,
+				"wattage": 277,
 				"score": 3650,
 				"cclockm1": 0.010056,
-				"mclockm1": 0,
+				"mclockm1": 0.003354,
 				"adj1": -0.7444,
 				"cclockm2": 0.009068,
 				"mclockm2": 0.002859,
@@ -7745,7 +8803,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 6,
 			"size": 3,
-			"slot": "Double",
+			"slot": "2",
 			"length": 277,
 			"basecfreq": 1784,
 			"basemfreq": 2002,
@@ -7758,10 +8816,10 @@ var data = {
 			"1": {
 				"price": 320,
 				"sellPrice": 107,
-				"wattage": 120,
+				"wattage": 240,
 				"score": 3683,
 				"cclockm1": 0.01285,
-				"mclockm1": 1.660576,
+				"mclockm1": 0.000352,
 				"adj1": 8.34888,
 				"cclockm2": 0.011422,
 				"mclockm2": 0.000222,
@@ -7784,7 +8842,7 @@ var data = {
 			"manufacturer": "ASUS",
 			"level": 8,
 			"size": 4,
-			"slot": "Double",
+			"slot": "2",
 			"length": 240,
 			"basecfreq": 1256,
 			"basemfreq": 1750,
@@ -7797,10 +8855,10 @@ var data = {
 			"1": {
 				"price": 310,
 				"sellPrice": 103,
-				"wattage": 120,
+				"wattage": 277,
 				"score": 3701,
 				"cclockm1": 0.010056,
-				"mclockm1": 0,
+				"mclockm1": 0.003354,
 				"adj1": -0.7444,
 				"cclockm2": 0.009068,
 				"mclockm2": 0.002859,
@@ -7811,7 +8869,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 6,
 			"size": 3,
-			"slot": "Double",
+			"slot": "2",
 			"length": 277,
 			"basecfreq": 1809,
 			"basemfreq": 2027,
@@ -7824,10 +8882,10 @@ var data = {
 			"1": {
 				"price": 320,
 				"sellPrice": 107,
-				"wattage": 150,
+				"wattage": 276,
 				"score": 3707,
 				"cclockm1": 0.01285,
-				"mclockm1": 1.660576,
+				"mclockm1": 0.000352,
 				"adj1": 8.34888,
 				"cclockm2": 0.011422,
 				"mclockm2": 0.000222,
@@ -7850,7 +8908,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 8,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 276,
 			"basecfreq": 1268,
 			"basemfreq": 1750,
@@ -7863,10 +8921,10 @@ var data = {
 			"1": {
 				"price": 320,
 				"sellPrice": 107,
-				"wattage": 150,
+				"wattage": 276,
 				"score": 3707,
 				"cclockm1": 0.01285,
-				"mclockm1": 1.660576,
+				"mclockm1": 0.000352,
 				"adj1": 8.34888,
 				"cclockm2": 0.011422,
 				"mclockm2": 0.000222,
@@ -7889,7 +8947,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 8,
 			"size": 4,
-			"slot": "Double",
+			"slot": "2",
 			"length": 276,
 			"basecfreq": 1268,
 			"basemfreq": 1750,
@@ -7902,10 +8960,10 @@ var data = {
 			"1": {
 				"price": 325,
 				"sellPrice": 108,
-				"wattage": 300,
+				"wattage": 147,
 				"score": 3717,
 				"cclockm1": 0.018288,
-				"mclockm1": 6,
+				"mclockm1": 0.002945,
 				"adj1": 3.655719,
 				"cclockm2": 0.015332,
 				"mclockm2": 0.002047,
@@ -7928,7 +8986,7 @@ var data = {
 			"manufacturer": "DFL",
 			"level": 1,
 			"size": 4,
-			"slot": "Double",
+			"slot": "1",
 			"length": 147,
 			"basecfreq": 1000,
 			"basemfreq": 1250,
@@ -7941,10 +8999,10 @@ var data = {
 			"1": {
 				"price": 340,
 				"sellPrice": 113,
-				"wattage": 120,
+				"wattage": 250,
 				"score": 3719,
 				"cclockm1": 0.012399,
-				"mclockm1": 0,
+				"mclockm1": 0.0033,
 				"adj1": -3.41774,
 				"cclockm2": 0.011958,
 				"mclockm2": 0.002489,
@@ -7955,7 +9013,7 @@ var data = {
 			"manufacturer": "NVIDIA",
 			"level": 6,
 			"size": 6,
-			"slot": "Double",
+			"slot": "2",
 			"length": 250,
 			"basecfreq": 1709,
 			"basemfreq": 2002,
@@ -7968,10 +9026,10 @@ var data = {
 			"1": {
 				"price": 320,
 				"sellPrice": 107,
-				"wattage": 120,
+				"wattage": 174,
 				"score": 3719,
 				"cclockm1": 0.012399,
-				"mclockm1": 0,
+				"mclockm1": 0.0033,
 				"adj1": -3.41774,
 				"cclockm2": 0.011958,
 				"mclockm2": 0.002489,
@@ -7982,7 +9040,7 @@ var data = {
 			"manufacturer": "ZOTAC",
 			"level": 6,
 			"size": 6,
-			"slot": "Double",
+			"slot": "2",
 			"length": 174,
 			"basecfreq": 1709,
 			"basemfreq": 2002,
@@ -7995,10 +9053,10 @@ var data = {
 			"1": {
 				"price": 325,
 				"sellPrice": 108,
-				"wattage": 150,
+				"wattage": 276,
 				"score": 3758,
 				"cclockm1": 0.01285,
-				"mclockm1": 1.660576,
+				"mclockm1": 0.000352,
 				"adj1": 8.34888,
 				"cclockm2": 0.011422,
 				"mclockm2": 0.000222,
@@ -8021,7 +9079,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 8,
 			"size": 4,
-			"slot": "Double",
+			"slot": "2",
 			"length": 276,
 			"basecfreq": 1293,
 			"basemfreq": 1775,
@@ -8034,10 +9092,10 @@ var data = {
 			"1": {
 				"price": 325,
 				"sellPrice": 108,
-				"wattage": 150,
+				"wattage": 276,
 				"score": 3758,
 				"cclockm1": 0.01285,
-				"mclockm1": 1.660576,
+				"mclockm1": 0.000352,
 				"adj1": 8.34888,
 				"cclockm2": 0.011422,
 				"mclockm2": 0.000222,
@@ -8060,7 +9118,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 8,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 276,
 			"basecfreq": 1293,
 			"basemfreq": 1775,
@@ -8073,10 +9131,10 @@ var data = {
 			"1": {
 				"price": 325,
 				"sellPrice": 108,
-				"wattage": 150,
+				"wattage": 232,
 				"score": 3761,
 				"cclockm1": 0.01285,
-				"mclockm1": 1.660576,
+				"mclockm1": 0.000352,
 				"adj1": 8.34888,
 				"cclockm2": 0.011422,
 				"mclockm2": 0.000222,
@@ -8099,7 +9157,7 @@ var data = {
 			"manufacturer": "GIGABYTE",
 			"level": 8,
 			"size": 4,
-			"slot": "Double",
+			"slot": "2",
 			"length": 232,
 			"basecfreq": 1295,
 			"basemfreq": 1750,
@@ -8112,10 +9170,10 @@ var data = {
 			"1": {
 				"price": 330,
 				"sellPrice": 110,
-				"wattage": 120,
+				"wattage": 277,
 				"score": 3767,
 				"cclockm1": 0.012399,
-				"mclockm1": 0,
+				"mclockm1": 0.0033,
 				"adj1": -3.41774,
 				"cclockm2": 0.011958,
 				"mclockm2": 0.002489,
@@ -8126,7 +9184,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 9,
 			"size": 6,
-			"slot": "Double",
+			"slot": "2",
 			"length": 277,
 			"basecfreq": 1733,
 			"basemfreq": 2002,
@@ -8139,10 +9197,10 @@ var data = {
 			"1": {
 				"price": 330,
 				"sellPrice": 110,
-				"wattage": 120,
+				"wattage": 240,
 				"score": 3771,
 				"cclockm1": 0.01285,
-				"mclockm1": 1.660576,
+				"mclockm1": 0.000352,
 				"adj1": 8.34888,
 				"cclockm2": 0.011422,
 				"mclockm2": 0.000222,
@@ -8165,7 +9223,7 @@ var data = {
 			"manufacturer": "ASUS",
 			"level": 8,
 			"size": 4,
-			"slot": "Double",
+			"slot": "2",
 			"length": 240,
 			"basecfreq": 1300,
 			"basemfreq": 1750,
@@ -8178,10 +9236,10 @@ var data = {
 			"1": {
 				"price": 330,
 				"sellPrice": 110,
-				"wattage": 120,
+				"wattage": 277,
 				"score": 3793,
 				"cclockm1": 0.012399,
-				"mclockm1": 0,
+				"mclockm1": 0.0033,
 				"adj1": -3.41774,
 				"cclockm2": 0.011958,
 				"mclockm2": 0.002489,
@@ -8192,7 +9250,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 9,
 			"size": 6,
-			"slot": "Double",
+			"slot": "2",
 			"length": 277,
 			"basecfreq": 1746,
 			"basemfreq": 2002,
@@ -8205,10 +9263,10 @@ var data = {
 			"1": {
 				"price": 330,
 				"sellPrice": 110,
-				"wattage": 120,
+				"wattage": 210,
 				"score": 3843,
 				"cclockm1": 0.012399,
-				"mclockm1": 0,
+				"mclockm1": 0.0033,
 				"adj1": -3.41774,
 				"cclockm2": 0.011958,
 				"mclockm2": 0.002489,
@@ -8219,7 +9277,7 @@ var data = {
 			"manufacturer": "ZOTAC",
 			"level": 6,
 			"size": 6,
-			"slot": "Double",
+			"slot": "2",
 			"length": 210,
 			"basecfreq": 1771,
 			"basemfreq": 2002,
@@ -8232,10 +9290,10 @@ var data = {
 			"1": {
 				"price": 340,
 				"sellPrice": 113,
-				"wattage": 275,
+				"wattage": 277,
 				"score": 3885,
 				"cclockm1": 0.02047,
-				"mclockm1": -9.16368,
+				"mclockm1": 0.001108,
 				"adj1": 4.489738,
 				"cclockm2": 0.01724,
 				"mclockm2": 0.000513,
@@ -8258,7 +9316,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 7,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 277,
 			"basecfreq": 1010,
 			"basemfreq": 1500,
@@ -8271,10 +9329,10 @@ var data = {
 			"1": {
 				"price": 340,
 				"sellPrice": 113,
-				"wattage": 150,
+				"wattage": 276,
 				"score": 3911,
 				"cclockm1": 0.018106,
-				"mclockm1": -4.45261,
+				"mclockm1": 0.003184,
 				"adj1": -2.42658,
 				"cclockm2": 0.015019,
 				"mclockm2": 0.002432,
@@ -8297,7 +9355,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 10,
 			"size": 4,
-			"slot": "Double",
+			"slot": "2",
 			"length": 276,
 			"basecfreq": 1279,
 			"basemfreq": 1750,
@@ -8310,10 +9368,10 @@ var data = {
 			"1": {
 				"price": 340,
 				"sellPrice": 113,
-				"wattage": 120,
+				"wattage": 277,
 				"score": 3912,
 				"cclockm1": 0.012399,
-				"mclockm1": 0,
+				"mclockm1": 0.0033,
 				"adj1": -3.41774,
 				"cclockm2": 0.011958,
 				"mclockm2": 0.002489,
@@ -8324,7 +9382,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 9,
 			"size": 6,
-			"slot": "Double",
+			"slot": "2",
 			"length": 277,
 			"basecfreq": 1746,
 			"basemfreq": 2256,
@@ -8337,10 +9395,10 @@ var data = {
 			"1": {
 				"price": 340,
 				"sellPrice": 113,
-				"wattage": 120,
+				"wattage": 277,
 				"score": 3931,
 				"cclockm1": 0.012399,
-				"mclockm1": 0,
+				"mclockm1": 0.0033,
 				"adj1": -3.41774,
 				"cclockm2": 0.011958,
 				"mclockm2": 0.002489,
@@ -8351,7 +9409,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 9,
 			"size": 6,
-			"slot": "Double",
+			"slot": "2",
 			"length": 277,
 			"basecfreq": 1809,
 			"basemfreq": 2027,
@@ -8364,10 +9422,10 @@ var data = {
 			"1": {
 				"price": 340,
 				"sellPrice": 113,
-				"wattage": 120,
+				"wattage": 277,
 				"score": 3931,
 				"cclockm1": 0.012399,
-				"mclockm1": 0,
+				"mclockm1": 0.0033,
 				"adj1": -3.41774,
 				"cclockm2": 0.011958,
 				"mclockm2": 0.002489,
@@ -8378,7 +9436,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 9,
 			"size": 6,
-			"slot": "Double",
+			"slot": "2",
 			"length": 277,
 			"basecfreq": 1809,
 			"basemfreq": 2027,
@@ -8391,10 +9449,10 @@ var data = {
 			"1": {
 				"price": 340,
 				"sellPrice": 113,
-				"wattage": 165,
+				"wattage": 147,
 				"score": 3938,
 				"cclockm1": 0.019121,
-				"mclockm1": -3.71863,
+				"mclockm1": 0.000676,
 				"adj1": 1.405064,
 				"cclockm2": 0.018016,
 				"mclockm2": 0.000474,
@@ -8417,7 +9475,7 @@ var data = {
 			"manufacturer": "Shean",
 			"level": 3,
 			"size": 4,
-			"slot": "Double",
+			"slot": "1",
 			"length": 147,
 			"basecfreq": 1216,
 			"basemfreq": 1753,
@@ -8430,10 +9488,10 @@ var data = {
 			"1": {
 				"price": 345,
 				"sellPrice": 115,
-				"wattage": 150,
+				"wattage": 276,
 				"score": 3976,
 				"cclockm1": 0.018106,
-				"mclockm1": -4.45261,
+				"mclockm1": 0.003184,
 				"adj1": -2.42658,
 				"cclockm2": 0.015019,
 				"mclockm2": 0.002432,
@@ -8456,7 +9514,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 10,
 			"size": 4,
-			"slot": "Double",
+			"slot": "2",
 			"length": 276,
 			"basecfreq": 1303,
 			"basemfreq": 1750,
@@ -8469,10 +9527,10 @@ var data = {
 			"1": {
 				"price": 350,
 				"sellPrice": 117,
-				"wattage": 120,
+				"wattage": 298,
 				"score": 4018,
 				"cclockm1": 0.012399,
-				"mclockm1": 0,
+				"mclockm1": 0.0033,
 				"adj1": -3.41774,
 				"cclockm2": 0.011958,
 				"mclockm2": 0.002489,
@@ -8483,7 +9541,7 @@ var data = {
 			"manufacturer": "ASUS",
 			"level": 6,
 			"size": 6,
-			"slot": "Double",
+			"slot": "2",
 			"length": 298,
 			"basecfreq": 1847,
 			"basemfreq": 2052,
@@ -8496,10 +9554,10 @@ var data = {
 			"1": {
 				"price": 350,
 				"sellPrice": 117,
-				"wattage": 150,
+				"wattage": 267,
 				"score": 4021,
 				"cclockm1": 0.012399,
-				"mclockm1": 0,
+				"mclockm1": 0.0033,
 				"adj1": -3.41774,
 				"cclockm2": 0.011958,
 				"mclockm2": 0.002489,
@@ -8510,7 +9568,7 @@ var data = {
 			"manufacturer": "EVGA",
 			"level": 9,
 			"size": 6,
-			"slot": "Double",
+			"slot": "2",
 			"length": 267,
 			"basecfreq": 1860,
 			"basemfreq": 2002,
@@ -8523,10 +9581,10 @@ var data = {
 			"1": {
 				"price": 350,
 				"sellPrice": 117,
-				"wattage": 120,
+				"wattage": 280,
 				"score": 4021,
 				"cclockm1": 0.012399,
-				"mclockm1": 0,
+				"mclockm1": 0.0033,
 				"adj1": -3.41774,
 				"cclockm2": 0.011958,
 				"mclockm2": 0.002489,
@@ -8537,7 +9595,7 @@ var data = {
 			"manufacturer": "GIGABYTE",
 			"level": 9,
 			"size": 6,
-			"slot": "Double",
+			"slot": "2",
 			"length": 280,
 			"basecfreq": 1860,
 			"basemfreq": 2002,
@@ -8550,10 +9608,10 @@ var data = {
 			"1": {
 				"price": 350,
 				"sellPrice": 117,
-				"wattage": 150,
+				"wattage": 276,
 				"score": 4024,
 				"cclockm1": 0.018106,
-				"mclockm1": -4.45261,
+				"mclockm1": 0.003184,
 				"adj1": -2.42658,
 				"cclockm2": 0.015019,
 				"mclockm2": 0.002432,
@@ -8576,7 +9634,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 10,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 276,
 			"basecfreq": 1279,
 			"basemfreq": 2000,
@@ -8589,10 +9647,10 @@ var data = {
 			"1": {
 				"price": 350,
 				"sellPrice": 117,
-				"wattage": 275,
+				"wattage": 277,
 				"score": 4041,
 				"cclockm1": 0.02047,
-				"mclockm1": -9.16368,
+				"mclockm1": 0.001108,
 				"adj1": 4.489738,
 				"cclockm2": 0.01724,
 				"mclockm2": 0.000513,
@@ -8615,7 +9673,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 7,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 277,
 			"basecfreq": 1060,
 			"basemfreq": 1525,
@@ -8628,10 +9686,10 @@ var data = {
 			"1": {
 				"price": 350,
 				"sellPrice": 117,
-				"wattage": 120,
+				"wattage": 277,
 				"score": 4049,
 				"cclockm1": 0.012399,
-				"mclockm1": 0,
+				"mclockm1": 0.0033,
 				"adj1": -3.41774,
 				"cclockm2": 0.011958,
 				"mclockm2": 0.002489,
@@ -8642,7 +9700,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 6,
 			"size": 6,
-			"slot": "Double",
+			"slot": "2",
 			"length": 277,
 			"basecfreq": 1809,
 			"basemfreq": 2281,
@@ -8655,10 +9713,10 @@ var data = {
 			"1": {
 				"price": 350,
 				"sellPrice": 117,
-				"wattage": 165,
+				"wattage": 279,
 				"score": 4051,
 				"cclockm1": 0.019121,
-				"mclockm1": -3.71863,
+				"mclockm1": 0.000676,
 				"adj1": 1.405064,
 				"cclockm2": 0.018016,
 				"mclockm2": 0.000474,
@@ -8681,7 +9739,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 3,
 			"size": 4,
-			"slot": "Double",
+			"slot": "2",
 			"length": 279,
 			"basecfreq": 1253,
 			"basemfreq": 1753,
@@ -8694,10 +9752,10 @@ var data = {
 			"1": {
 				"price": 355,
 				"sellPrice": 118,
-				"wattage": 120,
+				"wattage": 281,
 				"score": 4083,
 				"cclockm1": 0.012399,
-				"mclockm1": 0,
+				"mclockm1": 0.0033,
 				"adj1": -3.41774,
 				"cclockm2": 0.011958,
 				"mclockm2": 0.002489,
@@ -8708,7 +9766,7 @@ var data = {
 			"manufacturer": "GIGABYTE",
 			"level": 9,
 			"size": 6,
-			"slot": "Double",
+			"slot": "2",
 			"length": 281,
 			"basecfreq": 1873,
 			"basemfreq": 2079,
@@ -8721,10 +9779,10 @@ var data = {
 			"1": {
 				"price": 355,
 				"sellPrice": 118,
-				"wattage": 150,
+				"wattage": 276,
 				"score": 4089,
 				"cclockm1": 0.018106,
-				"mclockm1": -4.45261,
+				"mclockm1": 0.003184,
 				"adj1": -2.42658,
 				"cclockm2": 0.015019,
 				"mclockm2": 0.002432,
@@ -8747,7 +9805,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 10,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 276,
 			"basecfreq": 1303,
 			"basemfreq": 2000,
@@ -8760,10 +9818,10 @@ var data = {
 			"1": {
 				"price": 375,
 				"sellPrice": 125,
-				"wattage": 165,
+				"wattage": 147,
 				"score": 4130,
 				"cclockm1": 0.019121,
-				"mclockm1": -3.71863,
+				"mclockm1": 0.000676,
 				"adj1": 1.405064,
 				"cclockm2": 0.018016,
 				"mclockm2": 0.000474,
@@ -8786,7 +9844,7 @@ var data = {
 			"manufacturer": "Shean",
 			"level": 3,
 			"size": 4,
-			"slot": "Double",
+			"slot": "1",
 			"length": 147,
 			"basecfreq": 1279,
 			"basemfreq": 1753,
@@ -8799,10 +9857,10 @@ var data = {
 			"1": {
 				"price": 385,
 				"sellPrice": 128,
-				"wattage": 275,
+				"wattage": 277,
 				"score": 4212,
 				"cclockm1": 0.020239,
-				"mclockm1": 2.895555,
+				"mclockm1": 0.000167,
 				"adj1": 7.339774,
 				"cclockm2": 0.017197,
 				"mclockm2": 0.0000315,
@@ -8825,7 +9883,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 7,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 277,
 			"basecfreq": 1060,
 			"basemfreq": 1500,
@@ -8838,10 +9896,10 @@ var data = {
 			"1": {
 				"price": 385,
 				"sellPrice": 128,
-				"wattage": 185,
+				"wattage": 276,
 				"score": 4242,
 				"cclockm1": 0.013601,
-				"mclockm1": 14.45007,
+				"mclockm1": 0.001703,
 				"adj1": 7.02402,
 				"cclockm2": 0.012,
 				"mclockm2": 0.001288,
@@ -8864,7 +9922,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 16,
 			"size": 4,
-			"slot": "Double",
+			"slot": "2",
 			"length": 276,
 			"basecfreq": 1366,
 			"basemfreq": 1750,
@@ -8877,10 +9935,10 @@ var data = {
 			"1": {
 				"price": 385,
 				"sellPrice": 128,
-				"wattage": 185,
+				"wattage": 298,
 				"score": 4248,
 				"cclockm1": 0.013601,
-				"mclockm1": 14.45007,
+				"mclockm1": 0.001703,
 				"adj1": 7.02402,
 				"cclockm2": 0.012,
 				"mclockm2": 0.001288,
@@ -8903,7 +9961,7 @@ var data = {
 			"manufacturer": "ASUS",
 			"level": 14,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 298,
 			"basecfreq": 1340,
 			"basemfreq": 2000,
@@ -8916,10 +9974,10 @@ var data = {
 			"1": {
 				"price": 390,
 				"sellPrice": 130,
-				"wattage": 185,
+				"wattage": 232,
 				"score": 4271,
 				"cclockm1": 0.013601,
-				"mclockm1": 14.45007,
+				"mclockm1": 0.001703,
 				"adj1": 7.02402,
 				"cclockm2": 0.012,
 				"mclockm2": 0.001288,
@@ -8942,7 +10000,7 @@ var data = {
 			"manufacturer": "GIGABYTE",
 			"level": 16,
 			"size": 4,
-			"slot": "Double",
+			"slot": "2",
 			"length": 232,
 			"basecfreq": 1380,
 			"basemfreq": 1750,
@@ -8955,10 +10013,10 @@ var data = {
 			"1": {
 				"price": 390,
 				"sellPrice": 130,
-				"wattage": 185,
+				"wattage": 242,
 				"score": 4290,
 				"cclockm1": 0.013601,
-				"mclockm1": 14.45007,
+				"mclockm1": 0.001703,
 				"adj1": 7.02402,
 				"cclockm2": 0.012,
 				"mclockm2": 0.001288,
@@ -8981,7 +10039,7 @@ var data = {
 			"manufacturer": "ASUS",
 			"level": 14,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 242,
 			"basecfreq": 1360,
 			"basemfreq": 2000,
@@ -8994,10 +10052,10 @@ var data = {
 			"1": {
 				"price": 390,
 				"sellPrice": 130,
-				"wattage": 185,
+				"wattage": 276,
 				"score": 4302,
 				"cclockm1": 0.013601,
-				"mclockm1": 14.45007,
+				"mclockm1": 0.001703,
 				"adj1": 7.02402,
 				"cclockm2": 0.012,
 				"mclockm2": 0.001288,
@@ -9020,7 +10078,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 14,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 276,
 			"basecfreq": 1366,
 			"basemfreq": 2000,
@@ -9033,10 +10091,10 @@ var data = {
 			"1": {
 				"price": 390,
 				"sellPrice": 130,
-				"wattage": 185,
+				"wattage": 276,
 				"score": 4304,
 				"cclockm1": 0.013601,
-				"mclockm1": 14.45007,
+				"mclockm1": 0.001703,
 				"adj1": 7.02402,
 				"cclockm2": 0.012,
 				"mclockm2": 0.001288,
@@ -9059,7 +10117,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 16,
 			"size": 4,
-			"slot": "Double",
+			"slot": "2",
 			"length": 276,
 			"basecfreq": 1393,
 			"basemfreq": 1775,
@@ -9072,10 +10130,10 @@ var data = {
 			"1": {
 				"price": 395,
 				"sellPrice": 132,
-				"wattage": 185,
+				"wattage": 232,
 				"score": 4331,
 				"cclockm1": 0.013601,
-				"mclockm1": 14.45007,
+				"mclockm1": 0.001703,
 				"adj1": 7.02402,
 				"cclockm2": 0.012,
 				"mclockm2": 0.001288,
@@ -9098,7 +10156,7 @@ var data = {
 			"manufacturer": "GIGABYTE",
 			"level": 16,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 232,
 			"basecfreq": 1380,
 			"basemfreq": 2000,
@@ -9111,10 +10169,10 @@ var data = {
 			"1": {
 				"price": 395,
 				"sellPrice": 132,
-				"wattage": 275,
+				"wattage": 277,
 				"score": 4334,
 				"cclockm1": 0.020239,
-				"mclockm1": 2.895555,
+				"mclockm1": 0.000167,
 				"adj1": 7.339774,
 				"cclockm2": 0.017197,
 				"mclockm2": 0.0000315,
@@ -9137,7 +10195,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 7,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 277,
 			"basecfreq": 1100,
 			"basemfreq": 1525,
@@ -9150,10 +10208,10 @@ var data = {
 			"1": {
 				"price": 395,
 				"sellPrice": 132,
-				"wattage": 185,
+				"wattage": 276,
 				"score": 4365,
 				"cclockm1": 0.013601,
-				"mclockm1": 14.45007,
+				"mclockm1": 0.001703,
 				"adj1": 7.02402,
 				"cclockm2": 0.012,
 				"mclockm2": 0.001288,
@@ -9176,7 +10234,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 14,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 276,
 			"basecfreq": 1393,
 			"basemfreq": 2025,
@@ -9189,10 +10247,10 @@ var data = {
 			"1": {
 				"price": 405,
 				"sellPrice": 135,
-				"wattage": 185,
+				"wattage": 279,
 				"score": 4438,
 				"cclockm1": 0.013601,
-				"mclockm1": 14.45007,
+				"mclockm1": 0.001703,
 				"adj1": 7.02402,
 				"cclockm2": 0.012,
 				"mclockm2": 0.001288,
@@ -9215,7 +10273,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 14,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 279,
 			"basecfreq": 1431,
 			"basemfreq": 2000,
@@ -9228,10 +10286,10 @@ var data = {
 			"1": {
 				"price": 405,
 				"sellPrice": 135,
-				"wattage": 185,
+				"wattage": 279,
 				"score": 4465,
 				"cclockm1": 0.013601,
-				"mclockm1": 14.45007,
+				"mclockm1": 0.001703,
 				"adj1": 7.02402,
 				"cclockm2": 0.012,
 				"mclockm2": 0.001288,
@@ -9254,7 +10312,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 14,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 279,
 			"basecfreq": 1441,
 			"basemfreq": 2025,
@@ -9267,10 +10325,10 @@ var data = {
 			"1": {
 				"price": 435,
 				"sellPrice": 145,
-				"wattage": 250,
+				"wattage": 277,
 				"score": 4764,
 				"cclockm1": 0.0241,
-				"mclockm1": -13.4455,
+				"mclockm1": 0.004619,
 				"adj1": -3.64611,
 				"cclockm2": 0.02254,
 				"mclockm2": 0.003327,
@@ -9293,7 +10351,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 4,
 			"size": 6,
-			"slot": "Double",
+			"slot": "2",
 			"length": 277,
 			"basecfreq": 1114,
 			"basemfreq": 1753,
@@ -9306,10 +10364,10 @@ var data = {
 			"1": {
 				"price": 510,
 				"sellPrice": 170,
-				"wattage": 150,
+				"wattage": 267,
 				"score": 5366,
 				"cclockm1": 0.01523,
-				"mclockm1": -17.7116,
+				"mclockm1": 0.006421,
 				"adj1": -3.37279,
 				"cclockm2": 0.01535,
 				"mclockm2": 0.004705,
@@ -9332,7 +10390,7 @@ var data = {
 			"manufacturer": "EVGA",
 			"level": 11,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 267,
 			"basecfreq": 1683,
 			"basemfreq": 2002,
@@ -9345,10 +10403,10 @@ var data = {
 			"1": {
 				"price": 530,
 				"sellPrice": 177,
-				"wattage": 150,
+				"wattage": 267,
 				"score": 5366,
 				"cclockm1": 0.01523,
-				"mclockm1": -17.7116,
+				"mclockm1": 0.006421,
 				"adj1": -3.37279,
 				"cclockm2": 0.01535,
 				"mclockm2": 0.004705,
@@ -9371,7 +10429,7 @@ var data = {
 			"manufacturer": "NVIDIA",
 			"level": 11,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 267,
 			"basecfreq": 1683,
 			"basemfreq": 2002,
@@ -9384,10 +10442,10 @@ var data = {
 			"1": {
 				"price": 490,
 				"sellPrice": 163,
-				"wattage": 250,
+				"wattage": 277,
 				"score": 5408,
 				"cclockm1": 0.0241,
-				"mclockm1": -13.4455,
+				"mclockm1": 0.004619,
 				"adj1": -3.64611,
 				"cclockm2": 0.02254,
 				"mclockm2": 0.003327,
@@ -9410,7 +10468,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 4,
 			"size": 6,
-			"slot": "Double",
+			"slot": "2",
 			"length": 277,
 			"basecfreq": 1279,
 			"basemfreq": 1774,
@@ -9423,10 +10481,10 @@ var data = {
 			"1": {
 				"price": 515,
 				"sellPrice": 172,
-				"wattage": 150,
+				"wattage": 210,
 				"score": 5429,
 				"cclockm1": 0.01523,
-				"mclockm1": -17.7116,
+				"mclockm1": 0.006421,
 				"adj1": -3.37279,
 				"cclockm2": 0.01535,
 				"mclockm2": 0.004705,
@@ -9449,7 +10507,7 @@ var data = {
 			"manufacturer": "ZOTAC",
 			"level": 11,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 210,
 			"basecfreq": 1708,
 			"basemfreq": 2002,
@@ -9462,10 +10520,10 @@ var data = {
 			"1": {
 				"price": 495,
 				"sellPrice": 165,
-				"wattage": 250,
+				"wattage": 277,
 				"score": 5454,
 				"cclockm1": 0.0241,
-				"mclockm1": -13.4455,
+				"mclockm1": 0.004619,
 				"adj1": -3.64611,
 				"cclockm2": 0.02254,
 				"mclockm2": 0.003327,
@@ -9488,7 +10546,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 4,
 			"size": 6,
-			"slot": "Double",
+			"slot": "2",
 			"length": 277,
 			"basecfreq": 1291,
 			"basemfreq": 1774,
@@ -9501,10 +10559,10 @@ var data = {
 			"1": {
 				"price": 520,
 				"sellPrice": 173,
-				"wattage": 150,
+				"wattage": 279,
 				"score": 5462,
 				"cclockm1": 0.01523,
-				"mclockm1": -17.7116,
+				"mclockm1": 0.006421,
 				"adj1": -3.37279,
 				"cclockm2": 0.01535,
 				"mclockm2": 0.004705,
@@ -9527,7 +10585,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 11,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 279,
 			"basecfreq": 1721,
 			"basemfreq": 2002,
@@ -9540,10 +10598,10 @@ var data = {
 			"1": {
 				"price": 530,
 				"sellPrice": 177,
-				"wattage": 215,
+				"wattage": 267,
 				"score": 5653,
 				"cclockm1": 0.01523,
-				"mclockm1": -17.7116,
+				"mclockm1": 0.006421,
 				"adj1": -3.37279,
 				"cclockm2": 0.01535,
 				"mclockm2": 0.004705,
@@ -9566,7 +10624,7 @@ var data = {
 			"manufacturer": "EVGA",
 			"level": 11,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 267,
 			"basecfreq": 1797,
 			"basemfreq": 2002,
@@ -9579,10 +10637,10 @@ var data = {
 			"1": {
 				"price": 540,
 				"sellPrice": 180,
-				"wattage": 150,
+				"wattage": 279,
 				"score": 5676,
 				"cclockm1": 0.01523,
-				"mclockm1": -17.7116,
+				"mclockm1": 0.006421,
 				"adj1": -3.37279,
 				"cclockm2": 0.01535,
 				"mclockm2": 0.004705,
@@ -9605,7 +10663,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 11,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 279,
 			"basecfreq": 1797,
 			"basemfreq": 2027,
@@ -9618,10 +10676,10 @@ var data = {
 			"1": {
 				"price": 550,
 				"sellPrice": 183,
-				"wattage": 150,
+				"wattage": 298,
 				"score": 5749,
 				"cclockm1": 0.01523,
-				"mclockm1": -17.7116,
+				"mclockm1": 0.006421,
 				"adj1": -3.37279,
 				"cclockm2": 0.01535,
 				"mclockm2": 0.004705,
@@ -9644,7 +10702,7 @@ var data = {
 			"manufacturer": "ASUS",
 			"level": 11,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 298,
 			"basecfreq": 1835,
 			"basemfreq": 2002,
@@ -9657,10 +10715,10 @@ var data = {
 			"1": {
 				"price": 550,
 				"sellPrice": 183,
-				"wattage": 150,
+				"wattage": 287,
 				"score": 5749,
 				"cclockm1": 0.01523,
-				"mclockm1": -17.7116,
+				"mclockm1": 0.006421,
 				"adj1": -3.37279,
 				"cclockm2": 0.01535,
 				"mclockm2": 0.004705,
@@ -9683,7 +10741,7 @@ var data = {
 			"manufacturer": "GIGABYTE",
 			"level": 11,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 287,
 			"basecfreq": 1835,
 			"basemfreq": 2002,
@@ -9696,10 +10754,10 @@ var data = {
 			"1": {
 				"price": 550,
 				"sellPrice": 183,
-				"wattage": 250,
+				"wattage": 325,
 				"score": 5794,
 				"cclockm1": 0.01523,
-				"mclockm1": -17.7116,
+				"mclockm1": 0.006421,
 				"adj1": -3.37279,
 				"cclockm2": 0.01535,
 				"mclockm2": 0.004705,
@@ -9722,7 +10780,7 @@ var data = {
 			"manufacturer": "ZOTAC",
 			"level": 11,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 325,
 			"basecfreq": 1835,
 			"basemfreq": 2052,
@@ -9735,10 +10793,10 @@ var data = {
 			"1": {
 				"price": 555,
 				"sellPrice": 185,
-				"wattage": 150,
+				"wattage": 279,
 				"score": 5834,
 				"cclockm1": 0.01523,
-				"mclockm1": -17.7116,
+				"mclockm1": 0.006421,
 				"adj1": -3.37279,
 				"cclockm2": 0.01535,
 				"mclockm2": 0.004705,
@@ -9761,7 +10819,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 11,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 279,
 			"basecfreq": 1860,
 			"basemfreq": 2027,
@@ -9774,10 +10832,10 @@ var data = {
 			"1": {
 				"price": 580,
 				"sellPrice": 193,
-				"wattage": 210,
+				"wattage": 283,
 				"score": 6339,
 				"cclockm1": 0.008593,
-				"mclockm1": 18.94406,
+				"mclockm1": 0.015392,
 				"adj1": 18.69885,
 				"cclockm2": 0.007137,
 				"mclockm2": 0.012182,
@@ -9800,7 +10858,7 @@ var data = {
 			"manufacturer": "AMD",
 			"level": 16,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 283,
 			"basecfreq": 1471,
 			"basemfreq": 800,
@@ -9813,10 +10871,10 @@ var data = {
 			"1": {
 				"price": 610,
 				"sellPrice": 203,
-				"wattage": 180,
+				"wattage": 298,
 				"score": 6380,
 				"cclockm1": 0.012341,
-				"mclockm1": 6.288826,
+				"mclockm1": 0.009107,
 				"adj1": 2.382808,
 				"cclockm2": 0.012517,
 				"mclockm2": 0.007293,
@@ -9839,7 +10897,7 @@ var data = {
 			"manufacturer": "ASUS",
 			"level": 19,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 298,
 			"basecfreq": 1683,
 			"basemfreq": 2002,
@@ -9852,10 +10910,10 @@ var data = {
 			"1": {
 				"price": 610,
 				"sellPrice": 203,
-				"wattage": 180,
+				"wattage": 279,
 				"score": 6380,
 				"cclockm1": 0.012341,
-				"mclockm1": 6.288826,
+				"mclockm1": 0.009107,
 				"adj1": 2.382808,
 				"cclockm2": 0.012517,
 				"mclockm2": 0.007293,
@@ -9878,7 +10936,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 19,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 279,
 			"basecfreq": 1683,
 			"basemfreq": 2002,
@@ -9891,10 +10949,10 @@ var data = {
 			"1": {
 				"price": 610,
 				"sellPrice": 203,
-				"wattage": 180,
+				"wattage": 279,
 				"score": 6380,
 				"cclockm1": 0.012341,
-				"mclockm1": 6.288826,
+				"mclockm1": 0.009107,
 				"adj1": 2.382808,
 				"cclockm2": 0.012517,
 				"mclockm2": 0.007293,
@@ -9917,7 +10975,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 19,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 279,
 			"basecfreq": 1683,
 			"basemfreq": 2002,
@@ -9930,10 +10988,10 @@ var data = {
 			"1": {
 				"price": 640,
 				"sellPrice": 213,
-				"wattage": 180,
+				"wattage": 267,
 				"score": 6380,
 				"cclockm1": 0.012341,
-				"mclockm1": 6.288826,
+				"mclockm1": 0.009107,
 				"adj1": 2.382808,
 				"cclockm2": 0.012517,
 				"mclockm2": 0.007293,
@@ -9956,7 +11014,7 @@ var data = {
 			"manufacturer": "NVIDIA",
 			"level": 19,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 267,
 			"basecfreq": 1683,
 			"basemfreq": 2002,
@@ -9969,10 +11027,10 @@ var data = {
 			"1": {
 				"price": 615,
 				"sellPrice": 205,
-				"wattage": 210,
+				"wattage": 298,
 				"score": 6469,
 				"cclockm1": 0.008593,
-				"mclockm1": 18.94406,
+				"mclockm1": 0.015392,
 				"adj1": 18.69885,
 				"cclockm2": 0.007137,
 				"mclockm2": 0.012182,
@@ -9995,7 +11053,7 @@ var data = {
 			"manufacturer": "ASUS",
 			"level": 16,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 298,
 			"basecfreq": 1573,
 			"basemfreq": 800,
@@ -10008,10 +11066,10 @@ var data = {
 			"1": {
 				"price": 655,
 				"sellPrice": 218,
-				"wattage": 180,
+				"wattage": 267,
 				"score": 6896,
 				"cclockm1": 0.016172,
-				"mclockm1": -13.7882,
+				"mclockm1": 0.012984,
 				"adj1": 0.4788,
 				"cclockm2": 0.016296,
 				"mclockm2": 0.01078,
@@ -10034,7 +11092,7 @@ var data = {
 			"manufacturer": "EVGA",
 			"level": 13,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 267,
 			"basecfreq": 1733,
 			"basemfreq": 1251,
@@ -10047,10 +11105,10 @@ var data = {
 			"1": {
 				"price": 690,
 				"sellPrice": 230,
-				"wattage": 180,
+				"wattage": 267,
 				"score": 6896,
 				"cclockm1": 0.016172,
-				"mclockm1": -13.7882,
+				"mclockm1": 0.012984,
 				"adj1": 0.4788,
 				"cclockm2": 0.016296,
 				"mclockm2": 0.01078,
@@ -10073,7 +11131,7 @@ var data = {
 			"manufacturer": "NVIDIA",
 			"level": 13,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 267,
 			"basecfreq": 1733,
 			"basemfreq": 1251,
@@ -10086,10 +11144,10 @@ var data = {
 			"1": {
 				"price": 660,
 				"sellPrice": 220,
-				"wattage": 295,
+				"wattage": 283,
 				"score": 6923,
 				"cclockm1": 0.011436,
-				"mclockm1": 2.885631,
+				"mclockm1": 0.018545,
 				"adj1": 12.78417,
 				"cclockm2": 0.008806,
 				"mclockm2": 0.015139,
@@ -10112,7 +11170,7 @@ var data = {
 			"manufacturer": "AMD",
 			"level": 17,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 283,
 			"basecfreq": 1546,
 			"basemfreq": 945,
@@ -10125,10 +11183,10 @@ var data = {
 			"1": {
 				"price": 665,
 				"sellPrice": 222,
-				"wattage": 180,
+				"wattage": 211,
 				"score": 6966,
 				"cclockm1": 0.016172,
-				"mclockm1": -13.7882,
+				"mclockm1": 0.012984,
 				"adj1": 0.4788,
 				"cclockm2": 0.016296,
 				"mclockm2": 0.01078,
@@ -10151,7 +11209,7 @@ var data = {
 			"manufacturer": "ZOTAC",
 			"level": 13,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 211,
 			"basecfreq": 1759,
 			"basemfreq": 1251,
@@ -10164,10 +11222,10 @@ var data = {
 			"1": {
 				"price": 665,
 				"sellPrice": 222,
-				"wattage": 295,
+				"wattage": 298,
 				"score": 6994,
 				"cclockm1": 0.011436,
-				"mclockm1": 2.885631,
+				"mclockm1": 0.018545,
 				"adj1": 12.78417,
 				"cclockm2": 0.008806,
 				"mclockm2": 0.015139,
@@ -10190,7 +11248,7 @@ var data = {
 			"manufacturer": "ASUS",
 			"level": 17,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 298,
 			"basecfreq": 1590,
 			"basemfreq": 945,
@@ -10203,10 +11261,10 @@ var data = {
 			"1": {
 				"price": 665,
 				"sellPrice": 222,
-				"wattage": 180,
+				"wattage": 279,
 				"score": 6998,
 				"cclockm1": 0.016172,
-				"mclockm1": -13.7882,
+				"mclockm1": 0.012984,
 				"adj1": 0.4788,
 				"cclockm2": 0.016296,
 				"mclockm2": 0.01078,
@@ -10229,7 +11287,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 13,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 279,
 			"basecfreq": 1771,
 			"basemfreq": 1251,
@@ -10242,10 +11300,10 @@ var data = {
 			"1": {
 				"price": 690,
 				"sellPrice": 230,
-				"wattage": 180,
+				"wattage": 279,
 				"score": 7224,
 				"cclockm1": 0.016172,
-				"mclockm1": -13.7882,
+				"mclockm1": 0.012984,
 				"adj1": 0.4788,
 				"cclockm2": 0.016296,
 				"mclockm2": 0.01078,
@@ -10268,7 +11326,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 13,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 279,
 			"basecfreq": 1847,
 			"basemfreq": 1263,
@@ -10281,10 +11339,10 @@ var data = {
 			"1": {
 				"price": 690,
 				"sellPrice": 230,
-				"wattage": 180,
+				"wattage": 277,
 				"score": 7239,
 				"cclockm1": 0.016172,
-				"mclockm1": -13.7882,
+				"mclockm1": 0.012984,
 				"adj1": 0.4788,
 				"cclockm2": 0.016296,
 				"mclockm2": 0.01078,
@@ -10307,7 +11365,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 13,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 277,
 			"basecfreq": 1771,
 			"basemfreq": 1376,
@@ -10320,10 +11378,10 @@ var data = {
 			"1": {
 				"price": 690,
 				"sellPrice": 230,
-				"wattage": 180,
+				"wattage": 287,
 				"score": 7270,
 				"cclockm1": 0.016172,
-				"mclockm1": -13.7882,
+				"mclockm1": 0.012984,
 				"adj1": 0.4788,
 				"cclockm2": 0.016296,
 				"mclockm2": 0.01078,
@@ -10346,7 +11404,7 @@ var data = {
 			"manufacturer": "GIGABYTE",
 			"level": 13,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 287,
 			"basecfreq": 1873,
 			"basemfreq": 1251,
@@ -10359,10 +11417,10 @@ var data = {
 			"1": {
 				"price": 700,
 				"sellPrice": 233,
-				"wattage": 180,
+				"wattage": 298,
 				"score": 7337,
 				"cclockm1": 0.016172,
-				"mclockm1": -13.7882,
+				"mclockm1": 0.012984,
 				"adj1": 0.4788,
 				"cclockm2": 0.016296,
 				"mclockm2": 0.01078,
@@ -10385,7 +11443,7 @@ var data = {
 			"manufacturer": "ASUS",
 			"level": 13,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 298,
 			"basecfreq": 1898,
 			"basemfreq": 1251,
@@ -10398,10 +11456,10 @@ var data = {
 			"1": {
 				"price": 730,
 				"sellPrice": 243,
-				"wattage": 175,
+				"wattage": 229,
 				"score": 7359,
 				"cclockm1": 0.032361,
-				"mclockm1": 0,
+				"mclockm1": 0.00444,
 				"adj1": -12.2516,
 				"cclockm2": 0.030916,
 				"mclockm2": 0.002867,
@@ -10412,7 +11470,7 @@ var data = {
 			"manufacturer": "NVIDIA",
 			"level": 23,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 229,
 			"basecfreq": 1620,
 			"basemfreq": 1750,
@@ -10425,10 +11483,10 @@ var data = {
 			"1": {
 				"price": 705,
 				"sellPrice": 235,
-				"wattage": 180,
+				"wattage": 279,
 				"score": 7395,
 				"cclockm1": 0.016172,
-				"mclockm1": -13.7882,
+				"mclockm1": 0.012984,
 				"adj1": 0.4788,
 				"cclockm2": 0.016296,
 				"mclockm2": 0.01078,
@@ -10451,7 +11509,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 13,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 279,
 			"basecfreq": 1911,
 			"basemfreq": 1263,
@@ -10464,10 +11522,10 @@ var data = {
 			"1": {
 				"price": 710,
 				"sellPrice": 237,
-				"wattage": 180,
+				"wattage": 277,
 				"score": 7466,
 				"cclockm1": 0.016172,
-				"mclockm1": -13.7882,
+				"mclockm1": 0.012984,
 				"adj1": 0.4788,
 				"cclockm2": 0.016296,
 				"mclockm2": 0.01078,
@@ -10490,7 +11548,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 13,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 277,
 			"basecfreq": 1847,
 			"basemfreq": 1388,
@@ -10503,10 +11561,10 @@ var data = {
 			"1": {
 				"price": 720,
 				"sellPrice": 240,
-				"wattage": 270,
+				"wattage": 325,
 				"score": 7563,
 				"cclockm1": 0.016172,
-				"mclockm1": -13.7882,
+				"mclockm1": 0.012984,
 				"adj1": 0.4788,
 				"cclockm2": 0.016296,
 				"mclockm2": 0.01078,
@@ -10529,7 +11587,7 @@ var data = {
 			"manufacturer": "ZOTAC",
 			"level": 13,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 325,
 			"basecfreq": 1911,
 			"basemfreq": 1350,
@@ -10542,10 +11600,10 @@ var data = {
 			"1": {
 				"price": 730,
 				"sellPrice": 243,
-				"wattage": 180,
+				"wattage": 293,
 				"score": 7680,
 				"cclockm1": 0.016172,
-				"mclockm1": -13.7882,
+				"mclockm1": 0.012984,
 				"adj1": 0.4788,
 				"cclockm2": 0.016296,
 				"mclockm2": 0.01078,
@@ -10568,7 +11626,7 @@ var data = {
 			"manufacturer": "GIGABYTE",
 			"level": 13,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 293,
 			"basecfreq": 1936,
 			"basemfreq": 1376,
@@ -10581,10 +11639,10 @@ var data = {
 			"1": {
 				"price": 825,
 				"sellPrice": 275,
-				"wattage": 250,
+				"wattage": 270,
 				"score": 8266,
 				"cclockm1": 0.02549,
-				"mclockm1": -38.5277,
+				"mclockm1": 0.01673,
 				"adj1": -9.4038,
 				"cclockm2": 0.02617,
 				"mclockm2": 0.01563,
@@ -10607,7 +11665,7 @@ var data = {
 			"manufacturer": "EVGA",
 			"level": 21,
 			"size": 11,
-			"slot": "Double",
+			"slot": "2",
 			"length": 270,
 			"basecfreq": 1582,
 			"basemfreq": 1376,
@@ -10620,10 +11678,10 @@ var data = {
 			"1": {
 				"price": 870,
 				"sellPrice": 290,
-				"wattage": 250,
+				"wattage": 267,
 				"score": 8266,
 				"cclockm1": 0.02549,
-				"mclockm1": -38.5277,
+				"mclockm1": 0.01673,
 				"adj1": -9.4038,
 				"cclockm2": 0.02617,
 				"mclockm2": 0.01563,
@@ -10646,7 +11704,7 @@ var data = {
 			"manufacturer": "NVIDIA",
 			"level": 21,
 			"size": 11,
-			"slot": "Double",
+			"slot": "2",
 			"length": 267,
 			"basecfreq": 1582,
 			"basemfreq": 1376,
@@ -10659,10 +11717,10 @@ var data = {
 			"1": {
 				"price": 825,
 				"sellPrice": 275,
-				"wattage": 175,
+				"wattage": 302,
 				"score": 8372,
 				"cclockm1": 0.032361,
-				"mclockm1": 0,
+				"mclockm1": 0.00444,
 				"adj1": -12.2516,
 				"cclockm2": 0.030916,
 				"mclockm2": 0.002867,
@@ -10673,7 +11731,7 @@ var data = {
 			"manufacturer": "EVGA",
 			"level": 23,
 			"size": 8,
-			"slot": "Double",
+			"slot": "3",
 			"length": 302,
 			"basecfreq": 1815,
 			"basemfreq": 1750,
@@ -10686,10 +11744,10 @@ var data = {
 			"1": {
 				"price": 830,
 				"sellPrice": 277,
-				"wattage": 175,
+				"wattage": 290,
 				"score": 8382,
 				"cclockm1": 0.032361,
-				"mclockm1": 0,
+				"mclockm1": 0.00444,
 				"adj1": -12.2516,
 				"cclockm2": 0.030916,
 				"mclockm2": 0.002867,
@@ -10700,7 +11758,7 @@ var data = {
 			"manufacturer": "GIGABYTE",
 			"level": 23,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 290,
 			"basecfreq": 1815,
 			"basemfreq": 1768,
@@ -10713,10 +11771,10 @@ var data = {
 			"1": {
 				"price": 840,
 				"sellPrice": 280,
-				"wattage": 250,
+				"wattage": 211,
 				"score": 8428,
 				"cclockm1": 0.02549,
-				"mclockm1": -38.5277,
+				"mclockm1": 0.01673,
 				"adj1": -9.4038,
 				"cclockm2": 0.02617,
 				"mclockm2": 0.01563,
@@ -10739,7 +11797,7 @@ var data = {
 			"manufacturer": "ZOTAC",
 			"level": 21,
 			"size": 11,
-			"slot": "Double",
+			"slot": "2",
 			"length": 211,
 			"basecfreq": 1620,
 			"basemfreq": 1376,
@@ -10752,10 +11810,10 @@ var data = {
 			"1": {
 				"price": 805,
 				"sellPrice": 268,
-				"wattage": 250,
+				"wattage": 290,
 				"score": 8431,
 				"cclockm1": 0.02549,
-				"mclockm1": -38.5277,
+				"mclockm1": 0.01673,
 				"adj1": -9.4038,
 				"cclockm2": 0.02617,
 				"mclockm2": 0.01563,
@@ -10778,7 +11836,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 21,
 			"size": 11,
-			"slot": "Double",
+			"slot": "2",
 			"length": 290,
 			"basecfreq": 1620,
 			"basemfreq": 1377,
@@ -10787,14 +11845,53 @@ var data = {
 			"lighting": "RGB",
 			"multigpu": "sli"
 		},
+		"AMD Radeon VII": {
+			"1": {
+				"price": 840,
+				"sellPrice": 220,
+				"wattage": 280,
+				"score": 8588,
+				"cclockm1": 0.024516,
+				"mclockm1": 0.005211,
+				"adj1": 11.86176,
+				"cclockm2": 0.019012,
+				"mclockm2": 0.004113,
+				"adj2": 9.089432
+			},
+			"2": {
+				"price": 1680,
+				"sellPrice": 440,
+				"wattage": 600,
+				"score": 16465,
+				"cclockm1": 0.059179,
+				"mclockm1": 0.00259,
+				"adj1": 8.50538,
+				"cclockm2": 0.046742,
+				"mclockm2": 0.001671,
+				"adj2": 5.82402
+			},
+			"fullName": "AMD Radeon VII",
+			"partName": "Radeon VII",
+			"manufacturer": "AMD",
+			"level": 24,
+			"size": 16,
+			"slot": "2",
+			"length": 280,
+			"basecfreq": 1750,
+			"basemfreq": 1000,
+			"maxcfreq": 1950,
+			"maxmfreq": 1200,
+			"lighting": "Red",
+			"multigpu": "cf"
+		},
 		"ASUS ROG Strix GeForce GTX 1080 Ti OC Edition": {
 			"1": {
 				"price": 870,
 				"sellPrice": 290,
-				"wattage": 250,
+				"wattage": 298,
 				"score": 8696,
 				"cclockm1": 0.02549,
-				"mclockm1": -38.5277,
+				"mclockm1": 0.01673,
 				"adj1": -9.4038,
 				"cclockm2": 0.02617,
 				"mclockm2": 0.01563,
@@ -10817,7 +11914,7 @@ var data = {
 			"manufacturer": "ASUS",
 			"level": 21,
 			"size": 11,
-			"slot": "Double",
+			"slot": "2",
 			"length": 298,
 			"basecfreq": 1683,
 			"basemfreq": 1376,
@@ -10830,10 +11927,10 @@ var data = {
 			"1": {
 				"price": 830,
 				"sellPrice": 277,
-				"wattage": 250,
+				"wattage": 290,
 				"score": 8733,
 				"cclockm1": 0.02549,
-				"mclockm1": -38.5277,
+				"mclockm1": 0.01673,
 				"adj1": -9.4038,
 				"cclockm2": 0.02617,
 				"mclockm2": 0.01563,
@@ -10856,7 +11953,7 @@ var data = {
 			"manufacturer": "MSI",
 			"level": 21,
 			"size": 11,
-			"slot": "Double",
+			"slot": "2",
 			"length": 290,
 			"basecfreq": 1683,
 			"basemfreq": 1390,
@@ -10869,10 +11966,10 @@ var data = {
 			"1": {
 				"price": 875,
 				"sellPrice": 292,
-				"wattage": 280,
+				"wattage": 300,
 				"score": 8747,
 				"cclockm1": 0.02549,
-				"mclockm1": -38.5277,
+				"mclockm1": 0.01673,
 				"adj1": -9.4038,
 				"cclockm2": 0.02617,
 				"mclockm2": 0.01563,
@@ -10895,7 +11992,7 @@ var data = {
 			"manufacturer": "EVGA",
 			"level": 21,
 			"size": 11,
-			"slot": "Double",
+			"slot": "2",
 			"length": 300,
 			"basecfreq": 1695,
 			"basemfreq": 1376,
@@ -10908,10 +12005,10 @@ var data = {
 			"1": {
 				"price": 880,
 				"sellPrice": 293,
-				"wattage": 250,
+				"wattage": 293,
 				"score": 8803,
 				"cclockm1": 0.02549,
-				"mclockm1": -38.5277,
+				"mclockm1": 0.01673,
 				"adj1": -9.4038,
 				"cclockm2": 0.02617,
 				"mclockm2": 0.01563,
@@ -10934,7 +12031,7 @@ var data = {
 			"manufacturer": "GIGABYTE",
 			"level": 21,
 			"size": 11,
-			"slot": "Double",
+			"slot": "2",
 			"length": 293,
 			"basecfreq": 1708,
 			"basemfreq": 1376,
@@ -10947,10 +12044,10 @@ var data = {
 			"1": {
 				"price": 910,
 				"sellPrice": 303,
-				"wattage": 320,
+				"wattage": 325,
 				"score": 9084,
 				"cclockm1": 0.02549,
-				"mclockm1": -38.5277,
+				"mclockm1": 0.01673,
 				"adj1": -9.4038,
 				"cclockm2": 0.02617,
 				"mclockm2": 0.01563,
@@ -10973,7 +12070,7 @@ var data = {
 			"manufacturer": "ZOTAC",
 			"level": 21,
 			"size": 11,
-			"slot": "Double",
+			"slot": "2",
 			"length": 325,
 			"basecfreq": 1759,
 			"basemfreq": 1400,
@@ -10986,10 +12083,10 @@ var data = {
 			"1": {
 				"price": 910,
 				"sellPrice": 303,
-				"wattage": 250,
+				"wattage": 293,
 				"score": 9110,
 				"cclockm1": 0.02549,
-				"mclockm1": -38.5277,
+				"mclockm1": 0.01673,
 				"adj1": -9.4038,
 				"cclockm2": 0.02617,
 				"mclockm2": 0.01563,
@@ -11012,7 +12109,7 @@ var data = {
 			"manufacturer": "GIGABYTE",
 			"level": 21,
 			"size": 11,
-			"slot": "Double",
+			"slot": "2",
 			"length": 293,
 			"basecfreq": 1746,
 			"basemfreq": 1431,
@@ -11025,10 +12122,10 @@ var data = {
 			"1": {
 				"price": 950,
 				"sellPrice": 317,
-				"wattage": 215,
+				"wattage": 267,
 				"score": 9459,
 				"cclockm1": 0.033804,
-				"mclockm1": -53.8782,
+				"mclockm1": 0.01013,
 				"adj1": -14.5626,
 				"cclockm2": 0.032748,
 				"mclockm2": 0.009282,
@@ -11051,7 +12148,7 @@ var data = {
 			"manufacturer": "NVIDIA",
 			"level": 25,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 267,
 			"basecfreq": 1710,
 			"basemfreq": 1750,
@@ -11064,10 +12161,10 @@ var data = {
 			"1": {
 				"price": 1030,
 				"sellPrice": 343,
-				"wattage": 215,
+				"wattage": 302,
 				"score": 10278,
 				"cclockm1": 0.033804,
-				"mclockm1": -53.8782,
+				"mclockm1": 0.01013,
 				"adj1": -14.5626,
 				"cclockm2": 0.032748,
 				"mclockm2": 0.009282,
@@ -11090,7 +12187,7 @@ var data = {
 			"manufacturer": "EVGA",
 			"level": 25,
 			"size": 8,
-			"slot": "Double",
+			"slot": "3",
 			"length": 302,
 			"basecfreq": 1860,
 			"basemfreq": 1750,
@@ -11103,10 +12200,10 @@ var data = {
 			"1": {
 				"price": 1050,
 				"sellPrice": 350,
-				"wattage": 215,
+				"wattage": 290,
 				"score": 10469,
 				"cclockm1": 0.033804,
-				"mclockm1": -53.8782,
+				"mclockm1": 0.01013,
 				"adj1": -14.5626,
 				"cclockm2": 0.032748,
 				"mclockm2": 0.009282,
@@ -11129,7 +12226,7 @@ var data = {
 			"manufacturer": "GIGABYTE",
 			"level": 25,
 			"size": 8,
-			"slot": "Double",
+			"slot": "2",
 			"length": 290,
 			"basecfreq": 1890,
 			"basemfreq": 1767,
@@ -11142,10 +12239,10 @@ var data = {
 			"1": {
 				"price": 1130,
 				"sellPrice": 377,
-				"wattage": 250,
+				"wattage": 269,
 				"score": 10685,
 				"cclockm1": 0.049184,
-				"mclockm1": -124.174,
+				"mclockm1": 0.008357,
 				"adj1": -21.5075,
 				"cclockm2": 0.045342,
 				"mclockm2": 0.007908,
@@ -11168,7 +12265,7 @@ var data = {
 			"manufacturer": "NVIDIA",
 			"level": 27,
 			"size": 11,
-			"slot": "Double",
+			"slot": "2",
 			"length": 269,
 			"basecfreq": 1545,
 			"basemfreq": 1750,
@@ -11181,10 +12278,10 @@ var data = {
 			"1": {
 				"price": 1300,
 				"sellPrice": 433,
-				"wattage": 250,
+				"wattage": 302,
 				"score": 12311,
 				"cclockm1": 0.049184,
-				"mclockm1": -124.174,
+				"mclockm1": 0.008357,
 				"adj1": -21.5075,
 				"cclockm2": 0.045342,
 				"mclockm2": 0.007908,
@@ -11207,7 +12304,7 @@ var data = {
 			"manufacturer": "EVGA",
 			"level": 27,
 			"size": 11,
-			"slot": "Double",
+			"slot": "3",
 			"length": 302,
 			"basecfreq": 1755,
 			"basemfreq": 1750,
@@ -11220,10 +12317,10 @@ var data = {
 			"1": {
 				"price": 1310,
 				"sellPrice": 437,
-				"wattage": 250,
+				"wattage": 290,
 				"score": 12450,
 				"cclockm1": 0.049184,
-				"mclockm1": -124.174,
+				"mclockm1": 0.008357,
 				"adj1": -21.5075,
 				"cclockm2": 0.045342,
 				"mclockm2": 0.007908,
@@ -11246,7 +12343,7 @@ var data = {
 			"manufacturer": "GIGABYTE",
 			"level": 27,
 			"size": 11,
-			"slot": "Double",
+			"slot": "2",
 			"length": 290,
 			"basecfreq": 1770,
 			"basemfreq": 1767,
@@ -11260,6 +12357,7 @@ var data = {
 		"GIGABYTE GA-AB350M-Gaming 3": {
 			"fullName": "GIGABYTE GA-AB350M-Gaming 3",
 			"partName": "GA-AB350M-Gaming 3",
+			"manufacturer": "GIGABYTE",
 			"price": 85,
 			"sellPrice": 28,
 			"level": 7,
@@ -11271,9 +12369,25 @@ var data = {
 			"oc": "Yes",
 			"lighting": "N/A"
 		},
+		"GIGABYTE B450 AORUS M": {
+			"fullName": "GIGABYTE B450 AORUS M",
+			"partName": "B450 AORUS M",
+			"manufacturer": "GIGABYTE",
+			"price": 85,
+			"sellPrice": 28,
+			"level": 18,
+			"socket": "AM4",
+			"size": "Micro-ATX",
+			"speeds": ["2133", "2400", "2666", "2933", "3200"],
+			"maxspeed": 3200,
+			"multigpu": "slicf",
+			"oc": "Yes",
+			"lighting": "RGB"
+		},
 		"Mortoni H170 Mtech": {
 			"fullName": "Mortoni H170 Mtech",
 			"partName": "H170 Mtech",
+			"manufacturer": "Mortoni",
 			"price": 100,
 			"sellPrice": 33,
 			"level": 1,
@@ -11288,6 +12402,7 @@ var data = {
 		"GIGABYTE GA-AB350-Gaming 3": {
 			"fullName": "GIGABYTE GA-AB350-Gaming 3",
 			"partName": "GA-AB350-Gaming 3",
+			"manufacturer": "GIGABYTE",
 			"price": 110,
 			"sellPrice": 37,
 			"level": 7,
@@ -11302,6 +12417,7 @@ var data = {
 		"EVGA X299 Micro": {
 			"fullName": "EVGA X299 Micro",
 			"partName": "X299 Micro",
+			"manufacturer": "EVGA",
 			"price": 120,
 			"sellPrice": 40,
 			"level": 30,
@@ -11316,6 +12432,7 @@ var data = {
 		"GIGABYTE B360N AORUS GAMING WIFI": {
 			"fullName": "GIGABYTE B360N AORUS GAMING WIFI",
 			"partName": "B360N AORUS GAMING WIFI",
+			"manufacturer": "GIGABYTE",
 			"price": 120,
 			"sellPrice": 40,
 			"level": 16,
@@ -11327,9 +12444,40 @@ var data = {
 			"oc": "No",
 			"lighting": "RGB"
 		},
+		"GIGABYTE B360 AORUS GAMING 3": {
+			"fullName": "GIGABYTE B360 AORUS GAMING 3",
+			"partName": "B360 AORUS GAMING 3",
+			"manufacturer": "GIGABYTE",
+			"price": 120,
+			"sellPrice": 40,
+			"level": 15,
+			"socket": "1151V2",
+			"size": "S-ATX",
+			"speeds": ["2133", "2400", "2666"],
+			"maxspeed": 2666,
+			"multigpu": "slicf",
+			"oc": "No",
+			"lighting": "RGB"
+		},
+		"GIGABYTE H370 AORUS GAMING 3": {
+			"fullName": "GIGABYTE H370 AORUS GAMING 3",
+			"partName": "H370 AORUS GAMING 3",
+			"manufacturer": "GIGABYTE",
+			"price": 140,
+			"sellPrice": 47,
+			"level": 16,
+			"socket": "1151V2",
+			"size": "S-ATX",
+			"speeds": ["2133", "2400", "2666"],
+			"maxspeed": 2666,
+			"multigpu": "slicf",
+			"oc": "No",
+			"lighting": "RGB"
+		},
 		"MSI B450 TOMAHAWK": {
 			"fullName": "MSI B450 TOMAHAWK",
 			"partName": "B450 TOMAHAWK",
+			"manufacturer": "MSI",
 			"price": 150,
 			"sellPrice": 50,
 			"level": 19,
@@ -11344,6 +12492,7 @@ var data = {
 		"Mortoni H170 Mtech plus": {
 			"fullName": "Mortoni H170 Mtech plus",
 			"partName": "H170 Mtech plus",
+			"manufacturer": "Mortoni",
 			"price": 150,
 			"sellPrice": 50,
 			"level": 1,
@@ -11358,6 +12507,7 @@ var data = {
 		"Mortoni A320M Mtech plus": {
 			"fullName": "Mortoni A320M Mtech plus",
 			"partName": "A320M Mtech plus",
+			"manufacturer": "Mortoni",
 			"price": 150,
 			"sellPrice": 50,
 			"level": 3,
@@ -11372,6 +12522,7 @@ var data = {
 		"ASUS TUF Z370-PRO GAMING": {
 			"fullName": "ASUS TUF Z370-PRO GAMING",
 			"partName": "TUF Z370-PRO GAMING",
+			"manufacturer": "ASUS",
 			"price": 155,
 			"sellPrice": 52,
 			"level": 15,
@@ -11383,9 +12534,25 @@ var data = {
 			"oc": "Yes",
 			"lighting": "N/A"
 		},
+		"GIGABYTE B360M AORUS GAMING 3": {
+			"fullName": "GIGABYTE B360M AORUS GAMING 3",
+			"partName": "B360M AORUS GAMING 3",
+			"manufacturer": "GIGABYTE",
+			"price": 160,
+			"sellPrice": 53,
+			"level": 16,
+			"socket": "1151V2",
+			"size": "Micro-ATX",
+			"speeds": ["2133", "2400", "2666"],
+			"maxspeed": 2666,
+			"multigpu": "slicf",
+			"oc": "No",
+			"lighting": "RGB"
+		},
 		"ASUS TUF Z370-PLUS GAMING": {
 			"fullName": "ASUS TUF Z370-PLUS GAMING",
 			"partName": "TUF Z370-PLUS GAMING",
+			"manufacturer": "ASUS",
 			"price": 165,
 			"sellPrice": 55,
 			"level": 15,
@@ -11400,6 +12567,7 @@ var data = {
 		"ASUS PRIME X470-PRO": {
 			"fullName": "ASUS PRIME X470-PRO",
 			"partName": "PRIME X470-PRO",
+			"manufacturer": "ASUS",
 			"price": 165,
 			"sellPrice": 55,
 			"level": 18,
@@ -11414,6 +12582,7 @@ var data = {
 		"ASUS PRIME Z370-A": {
 			"fullName": "ASUS PRIME Z370-A",
 			"partName": "PRIME Z370-A",
+			"manufacturer": "ASUS",
 			"price": 170,
 			"sellPrice": 57,
 			"level": 15,
@@ -11428,6 +12597,7 @@ var data = {
 		"GIGABYTE GA-B250M-Gaming 5": {
 			"fullName": "GIGABYTE GA-B250M-Gaming 5",
 			"partName": "GA-B250M-Gaming 5",
+			"manufacturer": "GIGABYTE",
 			"price": 170,
 			"sellPrice": 57,
 			"level": 4,
@@ -11442,6 +12612,7 @@ var data = {
 		"GIGABYTE Z370 AORUS Ultra Gaming": {
 			"fullName": "GIGABYTE Z370 AORUS Ultra Gaming",
 			"partName": "Z370 AORUS Ultra Gaming",
+			"manufacturer": "GIGABYTE",
 			"price": 170,
 			"sellPrice": 57,
 			"level": 16,
@@ -11456,6 +12627,7 @@ var data = {
 		"MSI Z270 Gaming Pro Carbon": {
 			"fullName": "MSI Z270 Gaming Pro Carbon",
 			"partName": "Z270 Gaming Pro Carbon",
+			"manufacturer": "MSI",
 			"price": 175,
 			"sellPrice": 58,
 			"level": 7,
@@ -11470,6 +12642,7 @@ var data = {
 		"MSI B450I GAMING PLUS AC": {
 			"fullName": "MSI B450I GAMING PLUS AC",
 			"partName": "B450I GAMING PLUS AC",
+			"manufacturer": "MSI",
 			"price": 180,
 			"sellPrice": 60,
 			"level": 20,
@@ -11484,6 +12657,7 @@ var data = {
 		"ASUS ROG Strix Z370-G Gaming (Wi-Fi AC)": {
 			"fullName": "ASUS ROG Strix Z370-G Gaming (Wi-Fi AC)",
 			"partName": "ROG Strix Z370-G Gaming (Wi-Fi AC)",
+			"manufacturer": "ASUS",
 			"price": 185,
 			"sellPrice": 62,
 			"level": 17,
@@ -11498,6 +12672,7 @@ var data = {
 		"GIGABYTE GA-AX370-Gaming 5": {
 			"fullName": "GIGABYTE GA-AX370-Gaming 5",
 			"partName": "GA-AX370-Gaming 5",
+			"manufacturer": "GIGABYTE",
 			"price": 185,
 			"sellPrice": 62,
 			"level": 7,
@@ -11512,6 +12687,7 @@ var data = {
 		"ASUS ROG Strix X470-F Gaming": {
 			"fullName": "ASUS ROG Strix X470-F Gaming",
 			"partName": "ROG Strix X470-F Gaming",
+			"manufacturer": "ASUS",
 			"price": 190,
 			"sellPrice": 63,
 			"level": 18,
@@ -11526,6 +12702,7 @@ var data = {
 		"MSI Z370 Gaming Pro Carbon": {
 			"fullName": "MSI Z370 Gaming Pro Carbon",
 			"partName": "Z370 Gaming Pro Carbon",
+			"manufacturer": "MSI",
 			"price": 190,
 			"sellPrice": 63,
 			"level": 17,
@@ -11540,6 +12717,7 @@ var data = {
 		"DFL H170 4TUNE X": {
 			"fullName": "DFL H170 4TUNE X",
 			"partName": "H170 4TUNE X",
+			"manufacturer": "DFL",
 			"price": 190,
 			"sellPrice": 63,
 			"level": 1,
@@ -11554,6 +12732,7 @@ var data = {
 		"DFL A320M 4TUNE X": {
 			"fullName": "DFL A320M 4TUNE X",
 			"partName": "A320M 4TUNE X",
+			"manufacturer": "DFL",
 			"price": 190,
 			"sellPrice": 63,
 			"level": 3,
@@ -11568,6 +12747,7 @@ var data = {
 		"ASUS ROG Strix Z370-I Gaming": {
 			"fullName": "ASUS ROG Strix Z370-I Gaming",
 			"partName": "ROG Strix Z370-I Gaming",
+			"manufacturer": "ASUS",
 			"price": 200,
 			"sellPrice": 67,
 			"level": 25,
@@ -11582,6 +12762,7 @@ var data = {
 		"EVGA Z370 FTW": {
 			"fullName": "EVGA Z370 FTW",
 			"partName": "Z370 FTW",
+			"manufacturer": "EVGA",
 			"price": 200,
 			"sellPrice": 67,
 			"level": 19,
@@ -11596,6 +12777,7 @@ var data = {
 		"EVGA X299 FTW K": {
 			"fullName": "EVGA X299 FTW K",
 			"partName": "X299 FTW K",
+			"manufacturer": "EVGA",
 			"price": 200,
 			"sellPrice": 67,
 			"level": 30,
@@ -11610,6 +12792,7 @@ var data = {
 		"MSI MPG Z390 GAMING PRO CARBON": {
 			"fullName": "MSI MPG Z390 GAMING PRO CARBON",
 			"partName": "MPG Z390 GAMING PRO CARBON",
+			"manufacturer": "MSI",
 			"price": 200,
 			"sellPrice": 67,
 			"level": 21,
@@ -11624,6 +12807,7 @@ var data = {
 		"ASUS ROG Strix X470-I Gaming": {
 			"fullName": "ASUS ROG Strix X470-I Gaming",
 			"partName": "ROG Strix X470-I Gaming",
+			"manufacturer": "ASUS",
 			"price": 210,
 			"sellPrice": 70,
 			"level": 18,
@@ -11638,6 +12822,7 @@ var data = {
 		"ASUS ROG Strix Z370-E Gaming": {
 			"fullName": "ASUS ROG Strix Z370-E Gaming",
 			"partName": "ROG Strix Z370-E Gaming",
+			"manufacturer": "ASUS",
 			"price": 210,
 			"sellPrice": 70,
 			"level": 17,
@@ -11652,6 +12837,7 @@ var data = {
 		"GIGABYTE GA-AX370-Gaming K7": {
 			"fullName": "GIGABYTE GA-AX370-Gaming K7",
 			"partName": "GA-AX370-Gaming K7",
+			"manufacturer": "GIGABYTE",
 			"price": 210,
 			"sellPrice": 70,
 			"level": 7,
@@ -11666,6 +12852,7 @@ var data = {
 		"EVGA Z270 FTW K": {
 			"fullName": "EVGA Z270 FTW K",
 			"partName": "Z270 FTW K",
+			"manufacturer": "EVGA",
 			"price": 240,
 			"sellPrice": 80,
 			"level": 7,
@@ -11680,6 +12867,7 @@ var data = {
 		"GIGABYTE X470 AORUS GAMING 7 WIFI": {
 			"fullName": "GIGABYTE X470 AORUS GAMING 7 WIFI",
 			"partName": "X470 AORUS GAMING 7 WIFI",
+			"manufacturer": "GIGABYTE",
 			"price": 240,
 			"sellPrice": 80,
 			"level": 19,
@@ -11694,6 +12882,7 @@ var data = {
 		"NZXT N7 Z370 (White)": {
 			"fullName": "NZXT N7 Z370 (White)",
 			"partName": "N7 Z370 (White)",
+			"manufacturer": "NZXT",
 			"price": 240,
 			"sellPrice": 80,
 			"level": 16,
@@ -11708,6 +12897,7 @@ var data = {
 		"NZXT N7 Z370 (Black)": {
 			"fullName": "NZXT N7 Z370 (Black)",
 			"partName": "N7 Z370 (Black)",
+			"manufacturer": "NZXT",
 			"price": 240,
 			"sellPrice": 80,
 			"level": 16,
@@ -11722,6 +12912,7 @@ var data = {
 		"GIGABYTE Z370 AORUS Gaming 7": {
 			"fullName": "GIGABYTE Z370 AORUS Gaming 7",
 			"partName": "Z370 AORUS Gaming 7",
+			"manufacturer": "GIGABYTE",
 			"price": 250,
 			"sellPrice": 83,
 			"level": 20,
@@ -11736,6 +12927,7 @@ var data = {
 		"ASUS ROG Maximus X Hero (Wi-Fi AC)": {
 			"fullName": "ASUS ROG Maximus X Hero (Wi-Fi AC)",
 			"partName": "ROG Maximus X Hero (Wi-Fi AC)",
+			"manufacturer": "ASUS",
 			"price": 260,
 			"sellPrice": 87,
 			"level": 20,
@@ -11750,6 +12942,7 @@ var data = {
 		"ASUS ROG Crosshair VII Hero (WI-FI)": {
 			"fullName": "ASUS ROG Crosshair VII Hero (WI-FI)",
 			"partName": "ROG Crosshair VII Hero (WI-FI)",
+			"manufacturer": "ASUS",
 			"price": 275,
 			"sellPrice": 92,
 			"level": 20,
@@ -11764,6 +12957,7 @@ var data = {
 		"NZXT N7 Z390 (White)": {
 			"fullName": "NZXT N7 Z390 (White)",
 			"partName": "N7 Z390 (White)",
+			"manufacturer": "NZXT",
 			"price": 275,
 			"sellPrice": 92,
 			"level": 20,
@@ -11778,6 +12972,7 @@ var data = {
 		"NZXT N7 Z390 (Black)": {
 			"fullName": "NZXT N7 Z390 (Black)",
 			"partName": "N7 Z390 (Black)",
+			"manufacturer": "NZXT",
 			"price": 275,
 			"sellPrice": 92,
 			"level": 20,
@@ -11792,6 +12987,7 @@ var data = {
 		"ASUS ROG Maximus X Code": {
 			"fullName": "ASUS ROG Maximus X Code",
 			"partName": "ROG Maximus X Code",
+			"manufacturer": "ASUS",
 			"price": 280,
 			"sellPrice": 93,
 			"level": 21,
@@ -11806,6 +13002,7 @@ var data = {
 		"ASUS ROG Strix X299-E Gaming": {
 			"fullName": "ASUS ROG Strix X299-E Gaming",
 			"partName": "ROG Strix X299-E Gaming",
+			"manufacturer": "ASUS",
 			"price": 300,
 			"sellPrice": 100,
 			"level": 24,
@@ -11820,6 +13017,7 @@ var data = {
 		"EVGA Z270 Classified K": {
 			"fullName": "EVGA Z270 Classified K",
 			"partName": "Z270 Classified K",
+			"manufacturer": "EVGA",
 			"price": 300,
 			"sellPrice": 100,
 			"level": 9,
@@ -11834,6 +13032,7 @@ var data = {
 		"ASUS ROG Strix X399-E Gaming": {
 			"fullName": "ASUS ROG Strix X399-E Gaming",
 			"partName": "ROG Strix X399-E Gaming",
+			"manufacturer": "ASUS",
 			"price": 310,
 			"sellPrice": 103,
 			"level": 22,
@@ -11848,6 +13047,7 @@ var data = {
 		"GIGABYTE X299 DESIGNARE EX": {
 			"fullName": "GIGABYTE X299 DESIGNARE EX",
 			"partName": "X299 DESIGNARE EX",
+			"manufacturer": "GIGABYTE",
 			"price": 330,
 			"sellPrice": 110,
 			"level": 29,
@@ -11862,6 +13062,7 @@ var data = {
 		"ASUS TUF X299 MARK 1": {
 			"fullName": "ASUS TUF X299 MARK 1",
 			"partName": "TUF X299 MARK 1",
+			"manufacturer": "ASUS",
 			"price": 340,
 			"sellPrice": 113,
 			"level": 24,
@@ -11876,6 +13077,7 @@ var data = {
 		"ASUS ROG Maximus X Formula": {
 			"fullName": "ASUS ROG Maximus X Formula",
 			"partName": "ROG Maximus X Formula",
+			"manufacturer": "ASUS",
 			"price": 350,
 			"sellPrice": 117,
 			"level": 21,
@@ -11890,6 +13092,7 @@ var data = {
 		"MSI X399 Gaming Pro Carbon AC": {
 			"fullName": "MSI X399 Gaming Pro Carbon AC",
 			"partName": "X399 Gaming Pro Carbon AC",
+			"manufacturer": "MSI",
 			"price": 380,
 			"sellPrice": 126,
 			"level": 22,
@@ -11904,6 +13107,7 @@ var data = {
 		"GIGABYTE X399 AORUS Gaming 7": {
 			"fullName": "GIGABYTE X399 AORUS Gaming 7",
 			"partName": "X399 AORUS Gaming 7",
+			"manufacturer": "GIGABYTE",
 			"price": 390,
 			"sellPrice": 130,
 			"level": 22,
@@ -11918,6 +13122,7 @@ var data = {
 		"ASUS ROG Maximus X Apex": {
 			"fullName": "ASUS ROG Maximus X Apex",
 			"partName": "ROG Maximus X Apex",
+			"manufacturer": "ASUS",
 			"price": 400,
 			"sellPrice": 133,
 			"level": 27,
@@ -11932,6 +13137,7 @@ var data = {
 		"GIGABYTE X399 DESIGNARE EX": {
 			"fullName": "GIGABYTE X399 DESIGNARE EX",
 			"partName": "X399 DESIGNARE EX",
+			"manufacturer": "GIGABYTE",
 			"price": 400,
 			"sellPrice": 133,
 			"level": 23,
@@ -11946,6 +13152,7 @@ var data = {
 		"GIGABYTE X299 AORUS Gaming 9": {
 			"fullName": "GIGABYTE X299 AORUS Gaming 9",
 			"partName": "X299 AORUS Gaming 9",
+			"manufacturer": "GIGABYTE",
 			"price": 400,
 			"sellPrice": 133,
 			"level": 28,
@@ -11960,6 +13167,7 @@ var data = {
 		"GIGABYTE GA-Z270X-Gaming 8": {
 			"fullName": "GIGABYTE GA-Z270X-Gaming 8",
 			"partName": "GA-Z270X-Gaming 8",
+			"manufacturer": "GIGABYTE",
 			"price": 430,
 			"sellPrice": 143,
 			"level": 19,
@@ -11974,6 +13182,7 @@ var data = {
 		"ASUS PRIME X299-DELUXE": {
 			"fullName": "ASUS PRIME X299-DELUXE",
 			"partName": "PRIME X299-DELUXE",
+			"manufacturer": "ASUS",
 			"price": 450,
 			"sellPrice": 150,
 			"level": 24,
@@ -11988,6 +13197,7 @@ var data = {
 		"ASUS ROG ZENITH EXTREME": {
 			"fullName": "ASUS ROG ZENITH EXTREME",
 			"partName": "ROG ZENITH EXTREME",
+			"manufacturer": "ASUS",
 			"price": 470,
 			"sellPrice": 157,
 			"level": 23,
@@ -12002,6 +13212,7 @@ var data = {
 		"ASUS ROG Rampage VI Apex": {
 			"fullName": "ASUS ROG Rampage VI Apex",
 			"partName": "ROG Rampage VI Apex",
+			"manufacturer": "ASUS",
 			"price": 600,
 			"sellPrice": 200,
 			"level": 24,
@@ -12016,6 +13227,7 @@ var data = {
 		"ASUS ROG Rampage VI Extreme": {
 			"fullName": "ASUS ROG Rampage VI Extreme",
 			"partName": "ROG Rampage VI Extreme",
+			"manufacturer": "ASUS",
 			"price": 640,
 			"sellPrice": 213,
 			"level": 25,
@@ -12029,2236 +13241,2049 @@ var data = {
 		}
 	},
 	"ram": {
-		"Mortoni Value Supreme 2GB 2133 MHz": {
-			"name": "Mortoni Value Supreme 2GB 2133 MHz",
+		"Mortoni Value Supreme 2GB 2133 Mhz": {
+			"fullName": "Mortoni Value Supreme 2GB 2133 Mhz",
+			"partName": "Value Supreme",
+			"manufacturer": "Mortoni",
 			"price": 20,
-			"resellprice": 7,
+			"sellPrice": 7,
 			"level": 1,
 			"size": 2,
-			"frequency": 2133,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2282
+			"baseFreq": 2133,
+			"voltage": 1.3,
+			"maxvolt": 1.65,
+			"maxFreq": 2282,
+			"lighting": "N/A"
 		},
-		"Shean TITAN 2GB 2133 MHz": {
-			"name": "Shean TITAN 2GB 2133 MHz",
+		"Shean TITAN 2GB 2133 Mhz": {
+			"fullName": "Shean TITAN 2GB 2133 Mhz",
+			"partName": "TITAN",
+			"manufacturer": "Shean",
 			"price": 20,
-			"resellprice": 7,
+			"sellPrice": 7,
 			"level": 1,
 			"size": 2,
-			"frequency": 2133,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2282
+			"baseFreq": 2133,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2282,
+			"lighting": "N/A"
 		},
-		"ADATA Premier Series 4GB 2133 MHz": {
-			"name": "ADATA Premier Series 4GB 2133 MHz",
+		"ADATA Premier Series 4GB 2133 Mhz": {
+			"fullName": "ADATA Premier Series 4GB 2133 Mhz",
+			"partName": "Premier Series",
+			"manufacturer": "ADATA",
 			"price": 35,
-			"resellprice": 12,
+			"sellPrice": 12,
 			"level": 2,
 			"size": 4,
-			"frequency": 2133,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2282
+			"baseFreq": 2133,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2282,
+			"lighting": "N/A"
 		},
-		"Mortoni Value Supreme 4GB 2133 MHz": {
-			"name": "Mortoni Value Supreme 4GB 2133 MHz",
+		"Mortoni Value Supreme 4GB 2133 Mhz": {
+			"fullName": "Mortoni Value Supreme 4GB 2133 Mhz",
+			"partName": "Value Supreme",
+			"manufacturer": "Mortoni",
 			"price": 35,
-			"resellprice": 12,
+			"sellPrice": 12,
 			"level": 1,
 			"size": 4,
-			"frequency": 2133,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2282
+			"baseFreq": 2133,
+			"voltage": 1.3,
+			"maxvolt": 1.65,
+			"maxFreq": 2282,
+			"lighting": "N/A"
 		},
-		"Shean TITAN 4GB 2133 MHz": {
-			"name": "Shean TITAN 4GB 2133 MHz",
+		"Shean TITAN 4GB 2133 Mhz": {
+			"fullName": "Shean TITAN 4GB 2133 Mhz",
+			"partName": "TITAN",
+			"manufacturer": "Shean",
 			"price": 35,
-			"resellprice": 12,
+			"sellPrice": 12,
 			"level": 1,
 			"size": 4,
-			"frequency": 2133,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2282
+			"baseFreq": 2133,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2282,
+			"lighting": "N/A"
 		},
-		"ADATA XPG GAMMIX D10 4GB 2400 MHz": {
-			"name": "ADATA XPG GAMMIX D10 4GB 2400 MHz",
+		"ADATA XPG GAMMIX D10 4GB 2400 Mhz": {
+			"fullName": "ADATA XPG GAMMIX D10 4GB 2400 Mhz",
+			"partName": "XPG GAMMIX D10",
+			"manufacturer": "ADATA",
 			"price": 40,
-			"resellprice": 13,
+			"sellPrice": 13,
 			"level": 5,
 			"size": 4,
-			"frequency": 2400,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2568
+			"baseFreq": 2400,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2568,
+			"lighting": "N/A"
 		},
-		"DFL MOTIV8OR 4GB 2400 MHz": {
-			"name": "DFL MOTIV8OR 4GB 2400 MHz",
+		"Team Group T-Force DARK (Silver) 4GB 2400 Mhz": {
+			"fullName": "Team Group T-Force DARK (Silver) 4GB 2400 Mhz",
+			"partName": "T-Force DARK (Silver)",
+			"manufacturer": "Team Group",
 			"price": 40,
-			"resellprice": 13,
+			"sellPrice": 13,
+			"level": 2,
+			"size": 4,
+			"baseFreq": 2400,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2568,
+			"lighting": "N/A"
+		},
+		"Team Group T-Force DARK (Red) 4GB 2400 Mhz": {
+			"fullName": "Team Group T-Force DARK (Red) 4GB 2400 Mhz",
+			"partName": "T-Force DARK (Red)",
+			"manufacturer": "Team Group",
+			"price": 40,
+			"sellPrice": 13,
+			"level": 2,
+			"size": 4,
+			"baseFreq": 2400,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2568,
+			"lighting": "N/A"
+		},
+		"DFL MOTIV8OR 4GB 2400 Mhz": {
+			"fullName": "DFL MOTIV8OR 4GB 2400 Mhz",
+			"partName": "MOTIV8OR",
+			"manufacturer": "DFL",
+			"price": 40,
+			"sellPrice": 13,
 			"level": 1,
 			"size": 4,
-			"frequency": 2400,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2568
+			"baseFreq": 2400,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2568,
+			"lighting": "N/A"
 		},
-		"Team Group T-Force DARK (Silver) 4GB 2400 MHz": {
-			"name": "Team Group T-Force DARK (Silver) 4GB 2400 MHz",
-			"price": 40,
-			"resellprice": 13,
-			"level": 2,
-			"size": 4,
-			"frequency": 2400,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2568
-		},
-		"Team Group T-Force DARK (Red) 4GB 2400 MHz": {
-			"name": "Team Group T-Force DARK (Red) 4GB 2400 MHz",
-			"price": 40,
-			"resellprice": 13,
-			"level": 2,
-			"size": 4,
-			"frequency": 2400,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2568
-		},
-		"ADATA XPG GAMMIX D10 4GB 2666 MHz": {
-			"name": "ADATA XPG GAMMIX D10 4GB 2666 MHz",
+		"ADATA XPG GAMMIX D10 4GB 2666 Mhz": {
+			"fullName": "ADATA XPG GAMMIX D10 4GB 2666 Mhz",
+			"partName": "XPG GAMMIX D10",
+			"manufacturer": "ADATA",
 			"price": 45,
-			"resellprice": 15,
+			"sellPrice": 15,
 			"level": 5,
 			"size": 4,
-			"frequency": 2666,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2852
+			"baseFreq": 2666,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2852,
+			"lighting": "N/A"
 		},
-		"Team Group T-Force DARK (Red) 4GB 2666 MHz": {
-			"name": "Team Group T-Force DARK (Red) 4GB 2666 MHz",
+		"Team Group T-Force DARK (Red) 4GB 2666 Mhz": {
+			"fullName": "Team Group T-Force DARK (Red) 4GB 2666 Mhz",
+			"partName": "T-Force DARK (Red)",
+			"manufacturer": "Team Group",
 			"price": 45,
-			"resellprice": 15,
+			"sellPrice": 15,
 			"level": 2,
 			"size": 4,
-			"frequency": 2666,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2852
+			"baseFreq": 2666,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2852,
+			"lighting": "N/A"
 		},
-		"CORSAIR Dominator Platinum 4GB 2666 MHz": {
-			"name": "CORSAIR Dominator Platinum 4GB 2666 MHz",
+		"CORSAIR Dominator Platinum 4GB 2666 Mhz": {
+			"fullName": "CORSAIR Dominator Platinum 4GB 2666 Mhz",
+			"partName": "Dominator Platinum",
+			"manufacturer": "CORSAIR",
 			"price": 50,
-			"resellprice": 17,
+			"sellPrice": 17,
 			"level": 6,
 			"size": 4,
-			"frequency": 2666,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2852
+			"baseFreq": 2666,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2852,
+			"lighting": "White"
 		},
-		"Team Group T-Force Delta II RGB Series (Black) 4GB 2400 MHz": {
-			"name": "Team Group T-Force Delta II RGB Series (Black) 4GB 2400 MHz",
+		"Team Group T-Force Delta II RGB Series (Black) 4GB 2400 Mhz": {
+			"fullName": "Team Group T-Force Delta II RGB Series (Black) 4GB 2400 Mhz",
+			"partName": "T-Force Delta II RGB Series (Black)",
+			"manufacturer": "Team Group",
 			"price": 50,
-			"resellprice": 17,
+			"sellPrice": 17,
 			"level": 14,
 			"size": 4,
-			"frequency": 2400,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2568
+			"baseFreq": 2400,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2568,
+			"lighting": "RGB"
 		},
-		"Team Group T-Force Delta II RGB Series (White) 4GB 2400 MHz": {
-			"name": "Team Group T-Force Delta II RGB Series (White) 4GB 2400 MHz",
+		"Team Group T-Force Delta II RGB Series (White) 4GB 2400 Mhz": {
+			"fullName": "Team Group T-Force Delta II RGB Series (White) 4GB 2400 Mhz",
+			"partName": "T-Force Delta II RGB Series (White)",
+			"manufacturer": "Team Group",
 			"price": 50,
-			"resellprice": 17,
+			"sellPrice": 17,
 			"level": 14,
 			"size": 4,
-			"frequency": 2400,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2568
+			"baseFreq": 2400,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2568,
+			"lighting": "RGB"
 		},
-		"Team Group T-Force DARK (Red) 4GB 2800 MHz": {
-			"name": "Team Group T-Force DARK (Red) 4GB 2800 MHz",
+		"Team Group T-Force DARK (Red) 4GB 2800 Mhz": {
+			"fullName": "Team Group T-Force DARK (Red) 4GB 2800 Mhz",
+			"partName": "T-Force DARK (Red)",
+			"manufacturer": "Team Group",
 			"price": 50,
-			"resellprice": 17,
+			"sellPrice": 17,
 			"level": 4,
 			"size": 4,
-			"frequency": 2800,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2996
+			"baseFreq": 2800,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2996,
+			"lighting": "N/A"
 		},
-		"Team Group T-Force DARK (Silver) 4GB 3000 MHz": {
-			"name": "Team Group T-Force DARK (Silver) 4GB 3000 MHz",
+		"Team Group T-Force DARK (Silver) 4GB 3000 Mhz": {
+			"fullName": "Team Group T-Force DARK (Silver) 4GB 3000 Mhz",
+			"partName": "T-Force DARK (Silver)",
+			"manufacturer": "Team Group",
 			"price": 55,
-			"resellprice": 18,
+			"sellPrice": 18,
 			"level": 6,
 			"size": 4,
-			"frequency": 3000,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3210
+			"baseFreq": 3000,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3210,
+			"lighting": "N/A"
 		},
-		"ADATA Premier Series 8GB 2133 MHz": {
-			"name": "ADATA Premier Series 8GB 2133 MHz",
+		"ADATA Premier Series 8GB 2133 Mhz": {
+			"fullName": "ADATA Premier Series 8GB 2133 Mhz",
+			"partName": "Premier Series",
+			"manufacturer": "ADATA",
 			"price": 60,
-			"resellprice": 20,
+			"sellPrice": 20,
 			"level": 2,
 			"size": 8,
-			"frequency": 2133,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2282
+			"baseFreq": 2133,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2282,
+			"lighting": "N/A"
 		},
-		"CORSAIR Dominator Platinum 4GB 3000 MHz": {
-			"name": "CORSAIR Dominator Platinum 4GB 3000 MHz",
+		"CORSAIR Dominator Platinum 4GB 3000 Mhz": {
+			"fullName": "CORSAIR Dominator Platinum 4GB 3000 Mhz",
+			"partName": "Dominator Platinum",
+			"manufacturer": "CORSAIR",
 			"price": 60,
-			"resellprice": 20,
+			"sellPrice": 20,
 			"level": 6,
 			"size": 4,
-			"frequency": 3000,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3210
+			"baseFreq": 3000,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3210,
+			"lighting": "White"
 		},
-		"G.SKILL FORTIS 8GB 2133 MHz": {
-			"name": "G.SKILL FORTIS 8GB 2133 MHz",
+		"G.SKILL FORTIS 8GB 2133 Mhz": {
+			"fullName": "G.SKILL FORTIS 8GB 2133 Mhz",
+			"partName": "FORTIS",
+			"manufacturer": "G.SKILL",
 			"price": 60,
-			"resellprice": 20,
+			"sellPrice": 20,
 			"level": 2,
 			"size": 8,
-			"frequency": 2133,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2282
+			"baseFreq": 2133,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2282,
+			"lighting": "N/A"
 		},
-		"Patriot Viper LED (Red LED) 4GB 3000 MHz": {
-			"name": "Patriot Viper LED (Red LED) 4GB 3000 MHz",
+		"Patriot Viper LED (Red LED) 4GB 3000 Mhz": {
+			"fullName": "Patriot Viper LED (Red LED) 4GB 3000 Mhz",
+			"partName": "Viper LED (Red LED)",
+			"manufacturer": "Patriot",
 			"price": 60,
-			"resellprice": 20,
+			"sellPrice": 20,
 			"level": 21,
 			"size": 4,
-			"frequency": 3000,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3210
+			"baseFreq": 3000,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3210,
+			"lighting": "Red"
 		},
-		"Shean TITAN XL 8GB 2133 MHz": {
-			"name": "Shean TITAN XL 8GB 2133 MHz",
+		"Shean TITAN XL 8GB 2133 Mhz": {
+			"fullName": "Shean TITAN XL 8GB 2133 Mhz",
+			"partName": "TITAN XL",
+			"manufacturer": "Shean",
 			"price": 60,
-			"resellprice": 20,
+			"sellPrice": 20,
 			"level": 1,
 			"size": 8,
-			"frequency": 2133,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2282
+			"baseFreq": 2133,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2282,
+			"lighting": "N/A"
 		},
-		"CORSAIR Dominator Platinum 4GB 3200 MHz": {
-			"name": "CORSAIR Dominator Platinum 4GB 3200 MHz",
+		"CORSAIR Dominator Platinum 4GB 3200 Mhz": {
+			"fullName": "CORSAIR Dominator Platinum 4GB 3200 Mhz",
+			"partName": "Dominator Platinum",
+			"manufacturer": "CORSAIR",
 			"price": 65,
-			"resellprice": 22,
+			"sellPrice": 22,
 			"level": 8,
 			"size": 4,
-			"frequency": 3200,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3424
+			"baseFreq": 3200,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3424,
+			"lighting": "White"
 		},
-		"Team Group T-Force Delta II RGB Series (Black) 4GB 3000 MHz": {
-			"name": "Team Group T-Force Delta II RGB Series (Black) 4GB 3000 MHz",
+		"Team Group T-Force Delta II RGB Series (Black) 4GB 3000 Mhz": {
+			"fullName": "Team Group T-Force Delta II RGB Series (Black) 4GB 3000 Mhz",
+			"partName": "T-Force Delta II RGB Series (Black)",
+			"manufacturer": "Team Group",
 			"price": 65,
-			"resellprice": 22,
+			"sellPrice": 22,
 			"level": 14,
 			"size": 4,
-			"frequency": 3000,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3210
+			"baseFreq": 3000,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3210,
+			"lighting": "RGB"
 		},
-		"ADATA XPG GAMMIX D10 8GB 2400 MHz": {
-			"name": "ADATA XPG GAMMIX D10 8GB 2400 MHz",
+		"ADATA XPG GAMMIX D10 8GB 2400 Mhz": {
+			"fullName": "ADATA XPG GAMMIX D10 8GB 2400 Mhz",
+			"partName": "XPG GAMMIX D10",
+			"manufacturer": "ADATA",
 			"price": 70,
-			"resellprice": 23,
+			"sellPrice": 23,
 			"level": 5,
 			"size": 8,
-			"frequency": 2400,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2568
+			"baseFreq": 2400,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2568,
+			"lighting": "N/A"
 		},
-		"G.SKILL FORTIS 8GB 2400 MHz": {
-			"name": "G.SKILL FORTIS 8GB 2400 MHz",
+		"G.SKILL FORTIS 8GB 2400 Mhz": {
+			"fullName": "G.SKILL FORTIS 8GB 2400 Mhz",
+			"partName": "FORTIS",
+			"manufacturer": "G.SKILL",
 			"price": 70,
-			"resellprice": 23,
+			"sellPrice": 23,
 			"level": 2,
 			"size": 8,
-			"frequency": 2400,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2568
+			"baseFreq": 2400,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2568,
+			"lighting": "N/A"
 		},
-		"G.SKILL Flare X 8GB 2400 MHz": {
-			"name": "G.SKILL Flare X 8GB 2400 MHz",
+		"G.SKILL Flare X 8GB 2400 Mhz": {
+			"fullName": "G.SKILL Flare X 8GB 2400 Mhz",
+			"partName": "Flare X",
+			"manufacturer": "G.SKILL",
 			"price": 70,
-			"resellprice": 23,
+			"sellPrice": 23,
 			"level": 2,
 			"size": 8,
-			"frequency": 2400,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2568
+			"baseFreq": 2400,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2568,
+			"lighting": "N/A"
 		},
-		"DFL MOTIV8OR 8GB 2400 MHz": {
-			"name": "DFL MOTIV8OR 8GB 2400 MHz",
+		"Team Group T-Force DARK (Silver) 8GB 2400 Mhz": {
+			"fullName": "Team Group T-Force DARK (Silver) 8GB 2400 Mhz",
+			"partName": "T-Force DARK (Silver)",
+			"manufacturer": "Team Group",
 			"price": 70,
-			"resellprice": 23,
+			"sellPrice": 23,
+			"level": 2,
+			"size": 8,
+			"baseFreq": 2400,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2568,
+			"lighting": "N/A"
+		},
+		"Team Group T-Force DARK (Red) 8GB 2400 Mhz": {
+			"fullName": "Team Group T-Force DARK (Red) 8GB 2400 Mhz",
+			"partName": "T-Force DARK (Red)",
+			"manufacturer": "Team Group",
+			"price": 70,
+			"sellPrice": 23,
+			"level": 2,
+			"size": 8,
+			"baseFreq": 2400,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2568,
+			"lighting": "N/A"
+		},
+		"DFL MOTIV8OR 8GB 2400 Mhz": {
+			"fullName": "DFL MOTIV8OR 8GB 2400 Mhz",
+			"partName": "MOTIV8OR",
+			"manufacturer": "DFL",
+			"price": 70,
+			"sellPrice": 23,
 			"level": 1,
 			"size": 8,
-			"frequency": 2400,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2568
+			"baseFreq": 2400,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2568,
+			"lighting": "N/A"
 		},
-		"Team Group T-Force DARK (Silver) 8GB 2400 MHz": {
-			"name": "Team Group T-Force DARK (Silver) 8GB 2400 MHz",
-			"price": 70,
-			"resellprice": 23,
-			"level": 2,
-			"size": 8,
-			"frequency": 2400,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2568
-		},
-		"Team Group T-Force DARK (Red) 8GB 2400 MHz": {
-			"name": "Team Group T-Force DARK (Red) 8GB 2400 MHz",
-			"price": 70,
-			"resellprice": 23,
-			"level": 2,
-			"size": 8,
-			"frequency": 2400,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2568
-		},
-		"ADATA XPG Dazzle (Red LED) 8GB 2400 MHz": {
-			"name": "ADATA XPG Dazzle (Red LED) 8GB 2400 MHz",
+		"ADATA XPG Dazzle (Red LED) 8GB 2400 Mhz": {
+			"fullName": "ADATA XPG Dazzle (Red LED) 8GB 2400 Mhz",
+			"partName": "XPG Dazzle (Red LED)",
+			"manufacturer": "ADATA",
 			"price": 75,
-			"resellprice": 25,
+			"sellPrice": 25,
 			"level": 6,
 			"size": 8,
-			"frequency": 2400,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2568
+			"baseFreq": 2400,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2568,
+			"lighting": "Red"
 		},
-		"CORSAIR Dominator Platinum 8GB 2400 MHz": {
-			"name": "CORSAIR Dominator Platinum 8GB 2400 MHz",
+		"CORSAIR Dominator Platinum 8GB 2400 Mhz": {
+			"fullName": "CORSAIR Dominator Platinum 8GB 2400 Mhz",
+			"partName": "Dominator Platinum",
+			"manufacturer": "CORSAIR",
 			"price": 75,
-			"resellprice": 25,
+			"sellPrice": 25,
 			"level": 6,
 			"size": 8,
-			"frequency": 2400,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2568
+			"baseFreq": 2400,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2568,
+			"lighting": "White"
 		},
-		"Patriot Viper LED (White LED) 8GB 2400 MHz": {
-			"name": "Patriot Viper LED (White LED) 8GB 2400 MHz",
+		"Patriot Viper LED (White LED) 8GB 2400 Mhz": {
+			"fullName": "Patriot Viper LED (White LED) 8GB 2400 Mhz",
+			"partName": "Viper LED (White LED)",
+			"manufacturer": "Patriot",
 			"price": 75,
-			"resellprice": 25,
+			"sellPrice": 25,
 			"level": 21,
 			"size": 8,
-			"frequency": 2400,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2568
+			"baseFreq": 2400,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2568,
+			"lighting": "White"
 		},
-		"Patriot Viper LED (Red LED) 8GB 2400 MHz": {
-			"name": "Patriot Viper LED (Red LED) 8GB 2400 MHz",
+		"Patriot Viper LED (Red LED) 8GB 2400 Mhz": {
+			"fullName": "Patriot Viper LED (Red LED) 8GB 2400 Mhz",
+			"partName": "Viper LED (Red LED)",
+			"manufacturer": "Patriot",
 			"price": 75,
-			"resellprice": 25,
+			"sellPrice": 25,
 			"level": 21,
 			"size": 8,
-			"frequency": 2400,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2568
+			"baseFreq": 2400,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2568,
+			"lighting": "Red"
 		},
-		"ADATA XPG Flame 8GB 2666 MHz": {
-			"name": "ADATA XPG Flame 8GB 2666 MHz",
+		"ADATA XPG Flame 8GB 2666 Mhz": {
+			"fullName": "ADATA XPG Flame 8GB 2666 Mhz",
+			"partName": "XPG Flame",
+			"manufacturer": "ADATA",
 			"price": 80,
-			"resellprice": 27,
+			"sellPrice": 27,
 			"level": 13,
 			"size": 8,
-			"frequency": 2666,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2852
+			"baseFreq": 2666,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2852,
+			"lighting": "N/A"
 		},
-		"ADATA XPG GAMMIX D10 8GB 2666 MHz": {
-			"name": "ADATA XPG GAMMIX D10 8GB 2666 MHz",
+		"ADATA XPG GAMMIX D10 8GB 2666 Mhz": {
+			"fullName": "ADATA XPG GAMMIX D10 8GB 2666 Mhz",
+			"partName": "XPG GAMMIX D10",
+			"manufacturer": "ADATA",
 			"price": 80,
-			"resellprice": 27,
+			"sellPrice": 27,
 			"level": 5,
 			"size": 8,
-			"frequency": 2666,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2852
+			"baseFreq": 2666,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2852,
+			"lighting": "N/A"
 		},
-		"CORSAIR Dominator Platinum 4GB 4000 MHz": {
-			"name": "CORSAIR Dominator Platinum 4GB 4000 MHz",
+		"CORSAIR Dominator Platinum 4GB 4000 Mhz": {
+			"fullName": "CORSAIR Dominator Platinum 4GB 4000 Mhz",
+			"partName": "Dominator Platinum",
+			"manufacturer": "CORSAIR",
 			"price": 80,
-			"resellprice": 27,
+			"sellPrice": 27,
 			"level": 14,
 			"size": 4,
-			"frequency": 4000,
-			"maxvoltage": 1.65,
-			"maxfrequency": 4280
+			"baseFreq": 4000,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 4280,
+			"lighting": "White"
 		},
-		"Team Group T-Force Delta II RGB Series (Black) 8GB 2400 MHz": {
-			"name": "Team Group T-Force Delta II RGB Series (Black) 8GB 2400 MHz",
+		"Team Group T-Force Delta II RGB Series (Black) 8GB 2400 Mhz": {
+			"fullName": "Team Group T-Force Delta II RGB Series (Black) 8GB 2400 Mhz",
+			"partName": "T-Force Delta II RGB Series (Black)",
+			"manufacturer": "Team Group",
 			"price": 80,
-			"resellprice": 27,
+			"sellPrice": 27,
 			"level": 14,
 			"size": 8,
-			"frequency": 2400,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2568
+			"baseFreq": 2400,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2568,
+			"lighting": "RGB"
 		},
-		"Team Group T-Force Delta II RGB Series (White) 8GB 2400 MHz": {
-			"name": "Team Group T-Force Delta II RGB Series (White) 8GB 2400 MHz",
+		"Team Group T-Force Delta II RGB Series (White) 8GB 2400 Mhz": {
+			"fullName": "Team Group T-Force Delta II RGB Series (White) 8GB 2400 Mhz",
+			"partName": "T-Force Delta II RGB Series (White)",
+			"manufacturer": "Team Group",
 			"price": 80,
-			"resellprice": 27,
+			"sellPrice": 27,
 			"level": 14,
 			"size": 8,
-			"frequency": 2400,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2568
+			"baseFreq": 2400,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2568,
+			"lighting": "RGB"
 		},
-		"Team Group T-Force DARK (Silver) 8GB 2666 MHz": {
-			"name": "Team Group T-Force DARK (Silver) 8GB 2666 MHz",
+		"Team Group T-Force DARK (Silver) 8GB 2666 Mhz": {
+			"fullName": "Team Group T-Force DARK (Silver) 8GB 2666 Mhz",
+			"partName": "T-Force DARK (Silver)",
+			"manufacturer": "Team Group",
 			"price": 80,
-			"resellprice": 27,
+			"sellPrice": 27,
 			"level": 2,
 			"size": 8,
-			"frequency": 2666,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2852
+			"baseFreq": 2666,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2852,
+			"lighting": "N/A"
 		},
-		"Team Group T-Force DARK (Red) 8GB 2666 MHz": {
-			"name": "Team Group T-Force DARK (Red) 8GB 2666 MHz",
+		"Team Group T-Force DARK (Red) 8GB 2666 Mhz": {
+			"fullName": "Team Group T-Force DARK (Red) 8GB 2666 Mhz",
+			"partName": "T-Force DARK (Red)",
+			"manufacturer": "Team Group",
 			"price": 80,
-			"resellprice": 27,
+			"sellPrice": 27,
 			"level": 2,
 			"size": 8,
-			"frequency": 2666,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2852
+			"baseFreq": 2666,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2852,
+			"lighting": "N/A"
 		},
-		"CORSAIR Dominator Platinum 8GB 2666 MHz": {
-			"name": "CORSAIR Dominator Platinum 8GB 2666 MHz",
+		"CORSAIR Dominator Platinum 8GB 2666 Mhz": {
+			"fullName": "CORSAIR Dominator Platinum 8GB 2666 Mhz",
+			"partName": "Dominator Platinum",
+			"manufacturer": "CORSAIR",
 			"price": 85,
-			"resellprice": 28,
+			"sellPrice": 28,
 			"level": 6,
 			"size": 8,
-			"frequency": 2666,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2852
+			"baseFreq": 2666,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2852,
+			"lighting": "White"
 		},
-		"Patriot Viper LED (Red LED) 8GB 2666 MHz": {
-			"name": "Patriot Viper LED (Red LED) 8GB 2666 MHz",
+		"Patriot Viper LED (Red LED) 8GB 2666 Mhz": {
+			"fullName": "Patriot Viper LED (Red LED) 8GB 2666 Mhz",
+			"partName": "Viper LED (Red LED)",
+			"manufacturer": "Patriot",
 			"price": 85,
-			"resellprice": 28,
+			"sellPrice": 28,
 			"level": 21,
 			"size": 8,
-			"frequency": 2666,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2852
+			"baseFreq": 2666,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2852,
+			"lighting": "Red"
 		},
-		"CORSAIR VENGEANCE RGB PRO (White) 8GB 2666 MHz": {
-			"name": "CORSAIR VENGEANCE RGB PRO (White) 8GB 2666 MHz",
+		"CORSAIR VENGEANCE RGB PRO (White) 8GB 2666 Mhz": {
+			"fullName": "CORSAIR VENGEANCE RGB PRO (White) 8GB 2666 Mhz",
+			"partName": "VENGEANCE RGB PRO (White)",
+			"manufacturer": "CORSAIR",
 			"price": 90,
-			"resellprice": 30,
+			"sellPrice": 30,
 			"level": 22,
 			"size": 8,
-			"frequency": 2666,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2852
+			"baseFreq": 2666,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2852,
+			"lighting": "RGB"
 		},
-		"G.SKILL Ripjaws 4 (Black) 8GB 2800 MHz": {
-			"name": "G.SKILL Ripjaws 4 (Black) 8GB 2800 MHz",
+		"G.SKILL Ripjaws 4 (Black) 8GB 2800 Mhz": {
+			"fullName": "G.SKILL Ripjaws 4 (Black) 8GB 2800 Mhz",
+			"partName": "Ripjaws 4 (Black)",
+			"manufacturer": "G.SKILL",
 			"price": 90,
-			"resellprice": 30,
+			"sellPrice": 30,
 			"level": 4,
 			"size": 8,
-			"frequency": 2800,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2996
+			"baseFreq": 2800,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2996,
+			"lighting": "N/A"
 		},
-		"Patriot Viper RGB (Black) 8GB 2666 MHz": {
-			"name": "Patriot Viper RGB (Black) 8GB 2666 MHz",
+		"Patriot Viper RGB (Black) 8GB 2666 Mhz": {
+			"fullName": "Patriot Viper RGB (Black) 8GB 2666 Mhz",
+			"partName": "Viper RGB (Black)",
+			"manufacturer": "Patriot",
 			"price": 90,
-			"resellprice": 30,
+			"sellPrice": 30,
 			"level": 21,
 			"size": 8,
-			"frequency": 2666,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2852
+			"baseFreq": 2666,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2852,
+			"lighting": "RGB"
 		},
-		"Patriot Viper RGB (White) 8GB 2666 MHz": {
-			"name": "Patriot Viper RGB (White) 8GB 2666 MHz",
+		"Patriot Viper RGB (White) 8GB 2666 Mhz": {
+			"fullName": "Patriot Viper RGB (White) 8GB 2666 Mhz",
+			"partName": "Viper RGB (White)",
+			"manufacturer": "Patriot",
 			"price": 90,
-			"resellprice": 30,
+			"sellPrice": 30,
 			"level": 21,
 			"size": 8,
-			"frequency": 2666,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2852
+			"baseFreq": 2666,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2852,
+			"lighting": "RGB"
 		},
-		"Team Group T-Force Delta II RGB Series (White) 8GB 2666 MHz": {
-			"name": "Team Group T-Force Delta II RGB Series (White) 8GB 2666 MHz",
+		"Team Group T-Force Delta II RGB Series (White) 8GB 2666 Mhz": {
+			"fullName": "Team Group T-Force Delta II RGB Series (White) 8GB 2666 Mhz",
+			"partName": "T-Force Delta II RGB Series (White)",
+			"manufacturer": "Team Group",
 			"price": 90,
-			"resellprice": 30,
+			"sellPrice": 30,
 			"level": 14,
 			"size": 8,
-			"frequency": 2666,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2852
+			"baseFreq": 2666,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2852,
+			"lighting": "RGB"
 		},
-		"CORSAIR Dominator Platinum 8GB 2800 MHz": {
-			"name": "CORSAIR Dominator Platinum 8GB 2800 MHz",
+		"CORSAIR Dominator Platinum 8GB 2800 Mhz": {
+			"fullName": "CORSAIR Dominator Platinum 8GB 2800 Mhz",
+			"partName": "Dominator Platinum",
+			"manufacturer": "CORSAIR",
 			"price": 95,
-			"resellprice": 32,
+			"sellPrice": 32,
 			"level": 6,
 			"size": 8,
-			"frequency": 2800,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2996
+			"baseFreq": 2800,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2996,
+			"lighting": "White"
 		},
-		"ADATA XPG Flame 8GB 3000 MHz": {
-			"name": "ADATA XPG Flame 8GB 3000 MHz",
+		"ADATA XPG Flame 8GB 3000 Mhz": {
+			"fullName": "ADATA XPG Flame 8GB 3000 Mhz",
+			"partName": "XPG Flame",
+			"manufacturer": "ADATA",
 			"price": 100,
-			"resellprice": 33,
+			"sellPrice": 33,
 			"level": 13,
 			"size": 8,
-			"frequency": 3000,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3210
+			"baseFreq": 3000,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3210,
+			"lighting": "N/A"
 		},
-		"G.SKILL Ripjaws 4 (Red) 8GB 3000 MHz": {
-			"name": "G.SKILL Ripjaws 4 (Red) 8GB 3000 MHz",
+		"G.SKILL Ripjaws 4 (Red) 8GB 3000 Mhz": {
+			"fullName": "G.SKILL Ripjaws 4 (Red) 8GB 3000 Mhz",
+			"partName": "Ripjaws 4 (Red)",
+			"manufacturer": "G.SKILL",
 			"price": 100,
-			"resellprice": 33,
+			"sellPrice": 33,
 			"level": 7,
 			"size": 8,
-			"frequency": 3000,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3210
+			"baseFreq": 3000,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3210,
+			"lighting": "N/A"
 		},
-		"G.SKILL Ripjaws 4 (Blue) 8GB 3000 MHz": {
-			"name": "G.SKILL Ripjaws 4 (Blue) 8GB 3000 MHz",
+		"G.SKILL Ripjaws 4 (Blue) 8GB 3000 Mhz": {
+			"fullName": "G.SKILL Ripjaws 4 (Blue) 8GB 3000 Mhz",
+			"partName": "Ripjaws 4 (Blue)",
+			"manufacturer": "G.SKILL",
 			"price": 100,
-			"resellprice": 33,
+			"sellPrice": 33,
 			"level": 7,
 			"size": 8,
-			"frequency": 3000,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3210
+			"baseFreq": 3000,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3210,
+			"lighting": "N/A"
 		},
-		"Team Group T-Force DARK (Red) 8GB 3000 MHz": {
-			"name": "Team Group T-Force DARK (Red) 8GB 3000 MHz",
+		"Team Group T-Force DARK (Red) 8GB 3000 Mhz": {
+			"fullName": "Team Group T-Force DARK (Red) 8GB 3000 Mhz",
+			"partName": "T-Force DARK (Red)",
+			"manufacturer": "Team Group",
 			"price": 100,
-			"resellprice": 33,
+			"sellPrice": 33,
 			"level": 6,
 			"size": 8,
-			"frequency": 3000,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3210
+			"baseFreq": 3000,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3210,
+			"lighting": "N/A"
 		},
-		"Team Group T-Force DARK (Silver) 8GB 3000 MHz": {
-			"name": "Team Group T-Force DARK (Silver) 8GB 3000 MHz",
+		"Team Group T-Force DARK (Silver) 8GB 3000 Mhz": {
+			"fullName": "Team Group T-Force DARK (Silver) 8GB 3000 Mhz",
+			"partName": "T-Force DARK (Silver)",
+			"manufacturer": "Team Group",
 			"price": 100,
-			"resellprice": 33,
+			"sellPrice": 33,
 			"level": 6,
 			"size": 8,
-			"frequency": 3000,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3210
+			"baseFreq": 3000,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3210,
+			"lighting": "N/A"
 		},
-		"ADATA XPG Dazzle (Red LED) 8GB 3000 MHz": {
-			"name": "ADATA XPG Dazzle (Red LED) 8GB 3000 MHz",
+		"ADATA XPG Dazzle (Red LED) 8GB 3000 Mhz": {
+			"fullName": "ADATA XPG Dazzle (Red LED) 8GB 3000 Mhz",
+			"partName": "XPG Dazzle (Red LED)",
+			"manufacturer": "ADATA",
 			"price": 105,
-			"resellprice": 35,
+			"sellPrice": 35,
 			"level": 6,
 			"size": 8,
-			"frequency": 3000,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3210
+			"baseFreq": 3000,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3210,
+			"lighting": "Red"
 		},
-		"CORSAIR Dominator Platinum 8GB 3000 MHz": {
-			"name": "CORSAIR Dominator Platinum 8GB 3000 MHz",
+		"CORSAIR Dominator Platinum 8GB 3000 Mhz": {
+			"fullName": "CORSAIR Dominator Platinum 8GB 3000 Mhz",
+			"partName": "Dominator Platinum",
+			"manufacturer": "CORSAIR",
 			"price": 105,
-			"resellprice": 35,
+			"sellPrice": 35,
 			"level": 6,
 			"size": 8,
-			"frequency": 3000,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3210
+			"baseFreq": 3000,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3210,
+			"lighting": "White"
 		},
-		"Patriot Viper LED (Red LED) 8GB 3000 MHz": {
-			"name": "Patriot Viper LED (Red LED) 8GB 3000 MHz",
+		"Patriot Viper LED (Red LED) 8GB 3000 Mhz": {
+			"fullName": "Patriot Viper LED (Red LED) 8GB 3000 Mhz",
+			"partName": "Viper LED (Red LED)",
+			"manufacturer": "Patriot",
 			"price": 105,
-			"resellprice": 35,
+			"sellPrice": 35,
 			"level": 21,
 			"size": 8,
-			"frequency": 3000,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3210
+			"baseFreq": 3000,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3210,
+			"lighting": "Red"
 		},
-		"Team Group T-Force Night Hawk (Red LED) 8GB 3000 MHz": {
-			"name": "Team Group T-Force Night Hawk (Red LED) 8GB 3000 MHz",
+		"Team Group T-Force Night Hawk (Red LED) 8GB 3000 Mhz": {
+			"fullName": "Team Group T-Force Night Hawk (Red LED) 8GB 3000 Mhz",
+			"partName": "T-Force Night Hawk (Red LED)",
+			"manufacturer": "Team Group",
 			"price": 105,
-			"resellprice": 35,
+			"sellPrice": 35,
 			"level": 11,
 			"size": 8,
-			"frequency": 3000,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3210
+			"baseFreq": 3000,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3210,
+			"lighting": "Red"
 		},
-		"Team Group T-Force Night Hawk (Blue LED) 8GB 3000 MHz": {
-			"name": "Team Group T-Force Night Hawk (Blue LED) 8GB 3000 MHz",
+		"Team Group T-Force Night Hawk (Blue LED) 8GB 3000 Mhz": {
+			"fullName": "Team Group T-Force Night Hawk (Blue LED) 8GB 3000 Mhz",
+			"partName": "T-Force Night Hawk (Blue LED)",
+			"manufacturer": "Team Group",
 			"price": 105,
-			"resellprice": 35,
+			"sellPrice": 35,
 			"level": 11,
 			"size": 8,
-			"frequency": 3000,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3210
+			"baseFreq": 3000,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3210,
+			"lighting": "Blue"
 		},
-		"Team Group T-Force Night Hawk (White LED) 8GB 3000 MHz": {
-			"name": "Team Group T-Force Night Hawk (White LED) 8GB 3000 MHz",
+		"Team Group T-Force Night Hawk (White LED) 8GB 3000 Mhz": {
+			"fullName": "Team Group T-Force Night Hawk (White LED) 8GB 3000 Mhz",
+			"partName": "T-Force Night Hawk (White LED)",
+			"manufacturer": "Team Group",
 			"price": 105,
-			"resellprice": 35,
+			"sellPrice": 35,
 			"level": 11,
 			"size": 8,
-			"frequency": 3000,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3210
+			"baseFreq": 3000,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3210,
+			"lighting": "White"
 		},
-		"ADATA SPECTRIX D80 RGB 8GB 3000 MHz": {
-			"name": "ADATA SPECTRIX D80 RGB 8GB 3000 MHz",
+		"ADATA SPECTRIX D80 RGB 8GB 3000 Mhz": {
+			"fullName": "ADATA SPECTRIX D80 RGB 8GB 3000 Mhz",
+			"partName": "SPECTRIX D80 RGB",
+			"manufacturer": "ADATA",
 			"price": 110,
-			"resellprice": 37,
+			"sellPrice": 37,
 			"level": 23,
 			"size": 8,
-			"frequency": 3000,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3210
+			"baseFreq": 3000,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3210,
+			"lighting": "RGB"
 		},
-		"ADATA SPECTRIX D41 RGB (Red) 8GB 3000 MHz": {
-			"name": "ADATA SPECTRIX D41 RGB (Red) 8GB 3000 MHz",
+		"ADATA SPECTRIX D41 RGB (Red) 8GB 3000 Mhz": {
+			"fullName": "ADATA SPECTRIX D41 RGB (Red) 8GB 3000 Mhz",
+			"partName": "SPECTRIX D41 RGB (Red)",
+			"manufacturer": "ADATA",
 			"price": 110,
-			"resellprice": 37,
+			"sellPrice": 37,
 			"level": 19,
 			"size": 8,
-			"frequency": 3000,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3210
+			"baseFreq": 3000,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3210,
+			"lighting": "RGB"
 		},
-		"CORSAIR VENGEANCE RGB PRO (White) 8GB 3000 MHz": {
-			"name": "CORSAIR VENGEANCE RGB PRO (White) 8GB 3000 MHz",
+		"CORSAIR VENGEANCE RGB PRO (White) 8GB 3000 Mhz": {
+			"fullName": "CORSAIR VENGEANCE RGB PRO (White) 8GB 3000 Mhz",
+			"partName": "VENGEANCE RGB PRO (White)",
+			"manufacturer": "CORSAIR",
 			"price": 110,
-			"resellprice": 37,
+			"sellPrice": 37,
 			"level": 22,
 			"size": 8,
-			"frequency": 3000,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3210
+			"baseFreq": 3000,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3210,
+			"lighting": "RGB"
 		},
-		"G.SKILL Ripjaws 4 (Black) 8GB 3200 MHz": {
-			"name": "G.SKILL Ripjaws 4 (Black) 8GB 3200 MHz",
+		"G.SKILL Ripjaws 4 (Black) 8GB 3200 Mhz": {
+			"fullName": "G.SKILL Ripjaws 4 (Black) 8GB 3200 Mhz",
+			"partName": "Ripjaws 4 (Black)",
+			"manufacturer": "G.SKILL",
 			"price": 110,
-			"resellprice": 37,
+			"sellPrice": 37,
 			"level": 7,
 			"size": 8,
-			"frequency": 3200,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3424
+			"baseFreq": 3200,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3424,
+			"lighting": "N/A"
 		},
-		"G.SKILL Flare X 8GB 3200 MHz": {
-			"name": "G.SKILL Flare X 8GB 3200 MHz",
+		"G.SKILL Flare X 8GB 3200 Mhz": {
+			"fullName": "G.SKILL Flare X 8GB 3200 Mhz",
+			"partName": "Flare X",
+			"manufacturer": "G.SKILL",
 			"price": 110,
-			"resellprice": 37,
+			"sellPrice": 37,
 			"level": 7,
 			"size": 8,
-			"frequency": 3200,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3424
+			"baseFreq": 3200,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3424,
+			"lighting": "N/A"
 		},
-		"G.SKILL Sniper X (Silver) 8GB 3200 MHz": {
-			"name": "G.SKILL Sniper X (Silver) 8GB 3200 MHz",
+		"G.SKILL Sniper X (Silver) 8GB 3200 Mhz": {
+			"fullName": "G.SKILL Sniper X (Silver) 8GB 3200 Mhz",
+			"partName": "Sniper X (Silver)",
+			"manufacturer": "G.SKILL",
 			"price": 110,
-			"resellprice": 37,
+			"sellPrice": 37,
 			"level": 7,
 			"size": 8,
-			"frequency": 3200,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3424
+			"baseFreq": 3200,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3424,
+			"lighting": "N/A"
 		},
-		"G.SKILL Trident Z RGB 8GB 3000 MHz": {
-			"name": "G.SKILL Trident Z RGB 8GB 3000 MHz",
+		"G.SKILL Trident Z RGB 8GB 3000 Mhz": {
+			"fullName": "G.SKILL Trident Z RGB 8GB 3000 Mhz",
+			"partName": "Trident Z RGB",
+			"manufacturer": "G.SKILL",
 			"price": 110,
-			"resellprice": 37,
+			"sellPrice": 37,
 			"level": 14,
 			"size": 8,
-			"frequency": 3000,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3210
+			"baseFreq": 3000,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3210,
+			"lighting": "RGB"
 		},
-		"G.SKILL Ripjaws V (Black) 8GB 3200 MHz": {
-			"name": "G.SKILL Ripjaws V (Black) 8GB 3200 MHz",
+		"G.SKILL Ripjaws V (Black) 8GB 3200 Mhz": {
+			"fullName": "G.SKILL Ripjaws V (Black) 8GB 3200 Mhz",
+			"partName": "Ripjaws V (Black)",
+			"manufacturer": "G.SKILL",
 			"price": 110,
-			"resellprice": 37,
+			"sellPrice": 37,
 			"level": 7,
 			"size": 8,
-			"frequency": 3200,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3424
+			"baseFreq": 3200,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3424,
+			"lighting": "N/A"
 		},
-		"Patriot Viper RGB (Black) 8GB 3000 MHz": {
-			"name": "Patriot Viper RGB (Black) 8GB 3000 MHz",
+		"Patriot Viper RGB (Black) 8GB 3000 Mhz": {
+			"fullName": "Patriot Viper RGB (Black) 8GB 3000 Mhz",
+			"partName": "Viper RGB (Black)",
+			"manufacturer": "Patriot",
 			"price": 110,
-			"resellprice": 37,
+			"sellPrice": 37,
 			"level": 21,
 			"size": 8,
-			"frequency": 3000,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3210
+			"baseFreq": 3000,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3210,
+			"lighting": "RGB"
 		},
-		"Patriot Viper RGB (White) 8GB 3000 MHz": {
-			"name": "Patriot Viper RGB (White) 8GB 3000 MHz",
+		"Patriot Viper RGB (White) 8GB 3000 Mhz": {
+			"fullName": "Patriot Viper RGB (White) 8GB 3000 Mhz",
+			"partName": "Viper RGB (White)",
+			"manufacturer": "Patriot",
 			"price": 110,
-			"resellprice": 37,
+			"sellPrice": 37,
 			"level": 21,
 			"size": 8,
-			"frequency": 3000,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3210
+			"baseFreq": 3000,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3210,
+			"lighting": "RGB"
 		},
-		"Team Group T-Force Night Hawk RGB (White) 8GB 3000 MHz": {
-			"name": "Team Group T-Force Night Hawk RGB (White) 8GB 3000 MHz",
+		"Team Group T-Force Night Hawk RGB (White) 8GB 3000 Mhz": {
+			"fullName": "Team Group T-Force Night Hawk RGB (White) 8GB 3000 Mhz",
+			"partName": "T-Force Night Hawk RGB (White)",
+			"manufacturer": "Team Group",
 			"price": 110,
-			"resellprice": 37,
+			"sellPrice": 37,
 			"level": 15,
 			"size": 8,
-			"frequency": 3000,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3210
+			"baseFreq": 3000,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3210,
+			"lighting": "RGB"
 		},
-		"Team Group T-Force Night Hawk RGB (Black) 8GB 3000 MHz": {
-			"name": "Team Group T-Force Night Hawk RGB (Black) 8GB 3000 MHz",
+		"Team Group T-Force Night Hawk RGB (Black) 8GB 3000 Mhz": {
+			"fullName": "Team Group T-Force Night Hawk RGB (Black) 8GB 3000 Mhz",
+			"partName": "T-Force Night Hawk RGB (Black)",
+			"manufacturer": "Team Group",
 			"price": 110,
-			"resellprice": 37,
+			"sellPrice": 37,
 			"level": 15,
 			"size": 8,
-			"frequency": 3000,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3210
+			"baseFreq": 3000,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3210,
+			"lighting": "RGB"
 		},
-		"Team Group T-Force Delta II RGB Series (White) 8GB 3000 MHz": {
-			"name": "Team Group T-Force Delta II RGB Series (White) 8GB 3000 MHz",
+		"Team Group T-Force Delta II RGB Series (White) 8GB 3000 Mhz": {
+			"fullName": "Team Group T-Force Delta II RGB Series (White) 8GB 3000 Mhz",
+			"partName": "T-Force Delta II RGB Series (White)",
+			"manufacturer": "Team Group",
 			"price": 110,
-			"resellprice": 37,
+			"sellPrice": 37,
 			"level": 14,
 			"size": 8,
-			"frequency": 3000,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3210
+			"baseFreq": 3000,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3210,
+			"lighting": "RGB"
 		},
-		"Team Group T-Force Delta II RGB Series (Black) 8GB 3000 MHz": {
-			"name": "Team Group T-Force Delta II RGB Series (Black) 8GB 3000 MHz",
+		"Team Group T-Force Delta II RGB Series (Black) 8GB 3000 Mhz": {
+			"fullName": "Team Group T-Force Delta II RGB Series (Black) 8GB 3000 Mhz",
+			"partName": "T-Force Delta II RGB Series (Black)",
+			"manufacturer": "Team Group",
 			"price": 110,
-			"resellprice": 37,
+			"sellPrice": 37,
 			"level": 14,
 			"size": 8,
-			"frequency": 3000,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3210
+			"baseFreq": 3000,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3210,
+			"lighting": "RGB"
 		},
-		"CORSAIR Dominator Platinum 8GB 3200 MHz": {
-			"name": "CORSAIR Dominator Platinum 8GB 3200 MHz",
+		"CORSAIR Dominator Platinum 8GB 3200 Mhz": {
+			"fullName": "CORSAIR Dominator Platinum 8GB 3200 Mhz",
+			"partName": "Dominator Platinum",
+			"manufacturer": "CORSAIR",
 			"price": 115,
-			"resellprice": 38,
+			"sellPrice": 38,
 			"level": 8,
 			"size": 8,
-			"frequency": 3200,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3424
+			"baseFreq": 3200,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3424,
+			"lighting": "White"
 		},
-		"Patriot Viper LED (White LED) 8GB 3200 MHz": {
-			"name": "Patriot Viper LED (White LED) 8GB 3200 MHz",
+		"Patriot Viper LED (White LED) 8GB 3200 Mhz": {
+			"fullName": "Patriot Viper LED (White LED) 8GB 3200 Mhz",
+			"partName": "Viper LED (White LED)",
+			"manufacturer": "Patriot",
 			"price": 115,
-			"resellprice": 38,
+			"sellPrice": 38,
 			"level": 21,
 			"size": 8,
-			"frequency": 3200,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3424
+			"baseFreq": 3200,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3424,
+			"lighting": "White"
 		},
-		"Team Group T-Force Night Hawk (Red LED) 8GB 3200 MHz": {
-			"name": "Team Group T-Force Night Hawk (Red LED) 8GB 3200 MHz",
+		"Team Group T-Force Night Hawk (Red LED) 8GB 3200 Mhz": {
+			"fullName": "Team Group T-Force Night Hawk (Red LED) 8GB 3200 Mhz",
+			"partName": "T-Force Night Hawk (Red LED)",
+			"manufacturer": "Team Group",
 			"price": 115,
-			"resellprice": 38,
+			"sellPrice": 38,
 			"level": 12,
 			"size": 8,
-			"frequency": 3200,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3424
+			"baseFreq": 3200,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3424,
+			"lighting": "Red"
 		},
-		"Team Group T-Force Night Hawk (Blue LED) 8GB 3200 MHz": {
-			"name": "Team Group T-Force Night Hawk (Blue LED) 8GB 3200 MHz",
+		"Team Group T-Force Night Hawk (Blue LED) 8GB 3200 Mhz": {
+			"fullName": "Team Group T-Force Night Hawk (Blue LED) 8GB 3200 Mhz",
+			"partName": "T-Force Night Hawk (Blue LED)",
+			"manufacturer": "Team Group",
 			"price": 115,
-			"resellprice": 38,
+			"sellPrice": 38,
 			"level": 12,
 			"size": 8,
-			"frequency": 3200,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3424
+			"baseFreq": 3200,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3424,
+			"lighting": "Blue"
 		},
-		"Team Group T-Force Night Hawk (White LED) 8GB 3200 MHz": {
-			"name": "Team Group T-Force Night Hawk (White LED) 8GB 3200 MHz",
+		"Team Group T-Force Night Hawk (White LED) 8GB 3200 Mhz": {
+			"fullName": "Team Group T-Force Night Hawk (White LED) 8GB 3200 Mhz",
+			"partName": "T-Force Night Hawk (White LED)",
+			"manufacturer": "Team Group",
 			"price": 115,
-			"resellprice": 38,
+			"sellPrice": 38,
 			"level": 12,
 			"size": 8,
-			"frequency": 3200,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3424
+			"baseFreq": 3200,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3424,
+			"lighting": "White"
 		},
-		"G.SKILL Sniper X (Black) 8GB 3400 MHz": {
-			"name": "G.SKILL Sniper X (Black) 8GB 3400 MHz",
+		"G.SKILL Sniper X (Black) 8GB 3400 Mhz": {
+			"fullName": "G.SKILL Sniper X (Black) 8GB 3400 Mhz",
+			"partName": "Sniper X (Black)",
+			"manufacturer": "G.SKILL",
 			"price": 116,
-			"resellprice": 39,
+			"sellPrice": 39,
 			"level": 9,
 			"size": 8,
-			"frequency": 3400,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3638
+			"baseFreq": 3400,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3638,
+			"lighting": "N/A"
 		},
-		"ADATA SPECTRIX D80 RGB 8GB 3200 MHz": {
-			"name": "ADATA SPECTRIX D80 RGB 8GB 3200 MHz",
+		"ADATA SPECTRIX D80 RGB 8GB 3200 Mhz": {
+			"fullName": "ADATA SPECTRIX D80 RGB 8GB 3200 Mhz",
+			"partName": "SPECTRIX D80 RGB",
+			"manufacturer": "ADATA",
 			"price": 120,
-			"resellprice": 40,
+			"sellPrice": 40,
 			"level": 23,
 			"size": 8,
-			"frequency": 3200,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3424
+			"baseFreq": 3200,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3424,
+			"lighting": "RGB"
 		},
-		"ADATA SPECTRIX D41 RGB (Red) 8GB 3200 MHz": {
-			"name": "ADATA SPECTRIX D41 RGB (Red) 8GB 3200 MHz",
+		"ADATA SPECTRIX D41 RGB (Red) 8GB 3200 Mhz": {
+			"fullName": "ADATA SPECTRIX D41 RGB (Red) 8GB 3200 Mhz",
+			"partName": "SPECTRIX D41 RGB (Red)",
+			"manufacturer": "ADATA",
 			"price": 120,
-			"resellprice": 40,
+			"sellPrice": 40,
 			"level": 19,
 			"size": 8,
-			"frequency": 3200,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3424
+			"baseFreq": 3200,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3424,
+			"lighting": "RGB"
 		},
-		"CORSAIR VENGEANCE RGB PRO (White) 8GB 3200 MHz": {
-			"name": "CORSAIR VENGEANCE RGB PRO (White) 8GB 3200 MHz",
+		"CORSAIR VENGEANCE RGB PRO (White) 8GB 3200 Mhz": {
+			"fullName": "CORSAIR VENGEANCE RGB PRO (White) 8GB 3200 Mhz",
+			"partName": "VENGEANCE RGB PRO (White)",
+			"manufacturer": "CORSAIR",
 			"price": 120,
-			"resellprice": 40,
+			"sellPrice": 40,
 			"level": 22,
 			"size": 8,
-			"frequency": 3200,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3424
+			"baseFreq": 3200,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3424,
+			"lighting": "RGB"
 		},
-		"GIGABYTE AORUS RGB 8GB 3200 MHz": {
-			"name": "CORSAIR VENGEANCE RGB PRO (White) 8GB 3200 MHz",
+		"GIGABYTE AORUS RGB 8GB 3200 Mhz": {
+			"fullName": "GIGABYTE AORUS RGB 8GB 3200 Mhz",
+			"partName": "AORUS RGB",
+			"manufacturer": "GIGABYTE",
 			"price": 120,
-			"resellprice": 40,
+			"sellPrice": 40,
 			"level": 14,
 			"size": 8,
-			"frequency": 3200,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3424
+			"baseFreq": 3200,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3424,
+			"lighting": "RGB"
 		},
-		"G.SKILL Sniper X (Black) 8GB 3600 MHz": {
-			"name": "G.SKILL Sniper X (Black) 8GB 3600 MHz",
+		"G.SKILL Sniper X (Black) 8GB 3600 Mhz": {
+			"fullName": "G.SKILL Sniper X (Black) 8GB 3600 Mhz",
+			"partName": "Sniper X (Black)",
+			"manufacturer": "G.SKILL",
 			"price": 120,
-			"resellprice": 40,
+			"sellPrice": 40,
 			"level": 11,
 			"size": 8,
-			"frequency": 3600,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3852
+			"baseFreq": 3600,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3852,
+			"lighting": "N/A"
 		},
-		"G.SKILL Sniper X (Silver) 8GB 3600 MHz": {
-			"name": "G.SKILL Sniper X (Silver) 8GB 3600 MHz",
+		"G.SKILL Sniper X (Silver) 8GB 3600 Mhz": {
+			"fullName": "G.SKILL Sniper X (Silver) 8GB 3600 Mhz",
+			"partName": "Sniper X (Silver)",
+			"manufacturer": "G.SKILL",
 			"price": 120,
-			"resellprice": 40,
+			"sellPrice": 40,
 			"level": 11,
 			"size": 8,
-			"frequency": 3600,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3852
+			"baseFreq": 3600,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3852,
+			"lighting": "N/A"
 		},
-		"G.SKILL Trident Z RGB 8GB 3200 MHz": {
-			"name": "G.SKILL Trident Z RGB 8GB 3200 MHz",
+		"G.SKILL Trident Z RGB 8GB 3200 Mhz": {
+			"fullName": "G.SKILL Trident Z RGB 8GB 3200 Mhz",
+			"partName": "Trident Z RGB",
+			"manufacturer": "G.SKILL",
 			"price": 120,
-			"resellprice": 40,
+			"sellPrice": 40,
 			"level": 14,
 			"size": 8,
-			"frequency": 3200,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3424
+			"baseFreq": 3200,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3424,
+			"lighting": "RGB"
 		},
-		"G.SKILL Ripjaws V (Red) 8GB 3600 MHz": {
-			"name": "G.SKILL Ripjaws V (Red) 8GB 3600 MHz",
+		"G.SKILL Ripjaws V (Red) 8GB 3600 Mhz": {
+			"fullName": "G.SKILL Ripjaws V (Red) 8GB 3600 Mhz",
+			"partName": "Ripjaws V (Red)",
+			"manufacturer": "G.SKILL",
 			"price": 120,
-			"resellprice": 40,
+			"sellPrice": 40,
 			"level": 11,
 			"size": 8,
-			"frequency": 3600,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3852
+			"baseFreq": 3600,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3852,
+			"lighting": "N/A"
 		},
-		"G.SKILL Ripjaws V (Black) 8GB 3600 MHz": {
-			"name": "G.SKILL Ripjaws V (Black) 8GB 3600 MHz",
+		"G.SKILL Ripjaws V (Black) 8GB 3600 Mhz": {
+			"fullName": "G.SKILL Ripjaws V (Black) 8GB 3600 Mhz",
+			"partName": "Ripjaws V (Black)",
+			"manufacturer": "G.SKILL",
 			"price": 120,
-			"resellprice": 40,
+			"sellPrice": 40,
 			"level": 11,
 			"size": 8,
-			"frequency": 3600,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3852
+			"baseFreq": 3600,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3852,
+			"lighting": "N/A"
 		},
-		"Patriot Viper RGB (Black) 8GB 3200 MHz": {
-			"name": "Patriot Viper RGB (Black) 8GB 3200 MHz",
+		"Patriot Viper RGB (Black) 8GB 3200 Mhz": {
+			"fullName": "Patriot Viper RGB (Black) 8GB 3200 Mhz",
+			"partName": "Viper RGB (Black)",
+			"manufacturer": "Patriot",
 			"price": 120,
-			"resellprice": 40,
+			"sellPrice": 40,
 			"level": 21,
 			"size": 8,
-			"frequency": 3200,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3424
+			"baseFreq": 3200,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3424,
+			"lighting": "RGB"
 		},
-		"Patriot Viper RGB (White) 8GB 3200 MHz": {
-			"name": "Patriot Viper RGB (White) 8GB 3200 MHz",
+		"Patriot Viper RGB (White) 8GB 3200 Mhz": {
+			"fullName": "Patriot Viper RGB (White) 8GB 3200 Mhz",
+			"partName": "Viper RGB (White)",
+			"manufacturer": "Patriot",
 			"price": 120,
-			"resellprice": 40,
+			"sellPrice": 40,
 			"level": 21,
 			"size": 8,
-			"frequency": 3200,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3424
+			"baseFreq": 3200,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3424,
+			"lighting": "RGB"
 		},
-		"CORSAIR Dominator Platinum 8GB 3600 MHz": {
-			"name": "CORSAIR Dominator Platinum 8GB 3600 MHz",
+		"CORSAIR Dominator Platinum 8GB 3600 Mhz": {
+			"fullName": "CORSAIR Dominator Platinum 8GB 3600 Mhz",
+			"partName": "Dominator Platinum",
+			"manufacturer": "CORSAIR",
 			"price": 125,
-			"resellprice": 42,
+			"sellPrice": 42,
 			"level": 10,
 			"size": 8,
-			"frequency": 3600,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3852
+			"baseFreq": 3600,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3852,
+			"lighting": "White"
 		},
-		"Patriot Viper LED (White LED) 8GB 3600 MHz": {
-			"name": "Patriot Viper LED (White LED) 8GB 3600 MHz",
+		"Patriot Viper LED (White LED) 8GB 3600 Mhz": {
+			"fullName": "Patriot Viper LED (White LED) 8GB 3600 Mhz",
+			"partName": "Viper LED (White LED)",
+			"manufacturer": "Patriot",
 			"price": 125,
-			"resellprice": 42,
+			"sellPrice": 42,
 			"level": 21,
 			"size": 8,
-			"frequency": 3600,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3852
+			"baseFreq": 3600,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3852,
+			"lighting": "White"
 		},
-		"ADATA SPECTRIX D80 RGB 8GB 3600 MHz": {
-			"name": "ADATA SPECTRIX D80 RGB 8GB 3600 MHz",
+		"ADATA SPECTRIX D80 RGB 8GB 3600 Mhz": {
+			"fullName": "ADATA SPECTRIX D80 RGB 8GB 3600 Mhz",
+			"partName": "SPECTRIX D80 RGB",
+			"manufacturer": "ADATA",
 			"price": 130,
-			"resellprice": 43,
+			"sellPrice": 43,
 			"level": 23,
 			"size": 8,
-			"frequency": 3600,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3852
+			"baseFreq": 3600,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3852,
+			"lighting": "RGB"
 		},
-		"ADATA SPECTRIX D41 RGB (Red) 8GB 3600 MHz": {
-			"name": "ADATA SPECTRIX D41 RGB (Red) 8GB 3600 MHz",
+		"ADATA SPECTRIX D41 RGB (Red) 8GB 3600 Mhz": {
+			"fullName": "ADATA SPECTRIX D41 RGB (Red) 8GB 3600 Mhz",
+			"partName": "SPECTRIX D41 RGB (Red)",
+			"manufacturer": "ADATA",
 			"price": 130,
-			"resellprice": 43,
+			"sellPrice": 43,
 			"level": 19,
 			"size": 8,
-			"frequency": 3600,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3852
+			"baseFreq": 3600,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3852,
+			"lighting": "RGB"
 		},
-		"CORSAIR VENGEANCE RGB PRO (White) 8GB 3600 MHz": {
-			"name": "CORSAIR VENGEANCE RGB PRO (White) 8GB 3600 MHz",
+		"CORSAIR VENGEANCE RGB PRO (White) 8GB 3600 Mhz": {
+			"fullName": "CORSAIR VENGEANCE RGB PRO (White) 8GB 3600 Mhz",
+			"partName": "VENGEANCE RGB PRO (White)",
+			"manufacturer": "CORSAIR",
 			"price": 130,
-			"resellprice": 43,
+			"sellPrice": 43,
 			"level": 22,
 			"size": 8,
-			"frequency": 3600,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3852
+			"baseFreq": 3600,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3852,
+			"lighting": "RGB"
 		},
-		"CORSAIR VENGEANCE RGB PRO (Black) 8GB 3600 MHz": {
-			"name": "CORSAIR VENGEANCE RGB PRO (Black) 8GB 3600 MHz",
+		"CORSAIR VENGEANCE RGB PRO (Black) 8GB 3600 Mhz": {
+			"fullName": "CORSAIR VENGEANCE RGB PRO (Black) 8GB 3600 Mhz",
+			"partName": "VENGEANCE RGB PRO (Black)",
+			"manufacturer": "CORSAIR",
 			"price": 130,
-			"resellprice": 43,
+			"sellPrice": 43,
 			"level": 22,
 			"size": 8,
-			"frequency": 3600,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3852
+			"baseFreq": 3600,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3852,
+			"lighting": "RGB"
 		},
-		"G.SKILL Trident Z RGB 8GB 3600 MHz": {
-			"name": "G.SKILL Trident Z RGB 8GB 3600 MHz",
+		"G.SKILL Trident Z RGB 8GB 3600 Mhz": {
+			"fullName": "G.SKILL Trident Z RGB 8GB 3600 Mhz",
+			"partName": "Trident Z RGB",
+			"manufacturer": "G.SKILL",
 			"price": 130,
-			"resellprice": 43,
+			"sellPrice": 43,
 			"level": 14,
 			"size": 8,
-			"frequency": 3600,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3852
+			"baseFreq": 3600,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3852,
+			"lighting": "RGB"
 		},
-		"Patriot Viper RGB (Black) 8GB 3600 MHz": {
-			"name": "Patriot Viper RGB (Black) 8GB 3600 MHz",
+		"Patriot Viper RGB (Black) 8GB 3600 Mhz": {
+			"fullName": "Patriot Viper RGB (Black) 8GB 3600 Mhz",
+			"partName": "Viper RGB (Black)",
+			"manufacturer": "Patriot",
 			"price": 130,
-			"resellprice": 43,
+			"sellPrice": 43,
 			"level": 21,
 			"size": 8,
-			"frequency": 3600,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3852
+			"baseFreq": 3600,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3852,
+			"lighting": "RGB"
 		},
-		"Team Group T-Force DARK (Red) 16GB 2400 MHz": {
-			"name": "Team Group T-Force DARK (Red) 16GB 2400 MHz",
+		"Team Group T-Force DARK (Red) 16GB 2400 Mhz": {
+			"fullName": "Team Group T-Force DARK (Red) 16GB 2400 Mhz",
+			"partName": "T-Force DARK (Red)",
+			"manufacturer": "Team Group",
 			"price": 130,
-			"resellprice": 43,
+			"sellPrice": 43,
 			"level": 2,
 			"size": 16,
-			"frequency": 2400,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2568
+			"baseFreq": 2400,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2568,
+			"lighting": "N/A"
 		},
-		"ADATA XPG Dazzle (Red LED) 16GB 2400 MHz": {
-			"name": "ADATA XPG Dazzle (Red LED) 16GB 2400 MHz",
+		"ADATA XPG Dazzle (Red LED) 16GB 2400 Mhz": {
+			"fullName": "ADATA XPG Dazzle (Red LED) 16GB 2400 Mhz",
+			"partName": "XPG Dazzle (Red LED)",
+			"manufacturer": "ADATA",
 			"price": 135,
-			"resellprice": 45,
+			"sellPrice": 45,
 			"level": 6,
 			"size": 16,
-			"frequency": 2400,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2568
+			"baseFreq": 2400,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2568,
+			"lighting": "Red"
 		},
-		"CORSAIR Dominator Platinum 8GB 3733 MHz": {
-			"name": "CORSAIR Dominator Platinum 8GB 3733 MHz",
+		"CORSAIR Dominator Platinum 8GB 3733 Mhz": {
+			"fullName": "CORSAIR Dominator Platinum 8GB 3733 Mhz",
+			"partName": "Dominator Platinum",
+			"manufacturer": "CORSAIR",
 			"price": 135,
-			"resellprice": 45,
+			"sellPrice": 45,
 			"level": 12,
 			"size": 8,
-			"frequency": 3733,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3994
+			"baseFreq": 3733,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3994,
+			"lighting": "White"
 		},
-		"CORSAIR Dominator Platinum 16GB 2400 MHz": {
-			"name": "CORSAIR Dominator Platinum 16GB 2400 MHz",
+		"CORSAIR Dominator Platinum 16GB 2400 Mhz": {
+			"fullName": "CORSAIR Dominator Platinum 16GB 2400 Mhz",
+			"partName": "Dominator Platinum",
+			"manufacturer": "CORSAIR",
 			"price": 135,
-			"resellprice": 45,
+			"sellPrice": 45,
 			"level": 8,
 			"size": 16,
-			"frequency": 2400,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2568
+			"baseFreq": 2400,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2568,
+			"lighting": "White"
 		},
-		"ADATA XPG Z1 8GB 4000 MHz": {
-			"name": "ADATA XPG Z1 8GB 4000 MHz",
+		"ADATA XPG Z1 8GB 4000 Mhz": {
+			"fullName": "ADATA XPG Z1 8GB 4000 Mhz",
+			"partName": "XPG Z1",
+			"manufacturer": "ADATA",
 			"price": 140,
-			"resellprice": 47,
+			"sellPrice": 47,
 			"level": 14,
 			"size": 8,
-			"frequency": 4000,
-			"maxvoltage": 1.65,
-			"maxfrequency": 4280
+			"baseFreq": 4000,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 4280,
+			"lighting": "N/A"
 		},
-		"G.SKILL Trident Z (Silver) 8GB 4000 MHz": {
-			"name": "G.SKILL Trident Z (Silver) 8GB 4000 MHz",
+		"G.SKILL Trident Z (Silver) 8GB 4000 Mhz": {
+			"fullName": "G.SKILL Trident Z (Silver) 8GB 4000 Mhz",
+			"partName": "Trident Z (Silver)",
+			"manufacturer": "G.SKILL",
 			"price": 140,
-			"resellprice": 47,
+			"sellPrice": 47,
 			"level": 15,
 			"size": 8,
-			"frequency": 4000,
-			"maxvoltage": 1.65,
-			"maxfrequency": 4280
+			"baseFreq": 4000,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 4280,
+			"lighting": "N/A"
 		},
-		"ADATA SPECTRIX D40 RGB 8GB 4000 MHz": {
-			"name": "ADATA SPECTRIX D40 RGB 8GB 4000 MHz",
+		"ADATA SPECTRIX D40 RGB 8GB 4000 Mhz": {
+			"fullName": "ADATA SPECTRIX D40 RGB 8GB 4000 Mhz",
+			"partName": "SPECTRIX D40 RGB",
+			"manufacturer": "ADATA",
 			"price": 150,
-			"resellprice": 50,
+			"sellPrice": 50,
 			"level": 24,
 			"size": 8,
-			"frequency": 4000,
-			"maxvoltage": 1.65,
-			"maxfrequency": 4280
+			"baseFreq": 4000,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 4280,
+			"lighting": "RGB"
 		},
-		"CORSAIR VENGEANCE RGB PRO (Black) 8GB 4000 MHz": {
-			"name": "CORSAIR VENGEANCE RGB PRO (Black) 8GB 4000 MHz",
+		"CORSAIR VENGEANCE RGB PRO (Black) 8GB 4000 Mhz": {
+			"fullName": "CORSAIR VENGEANCE RGB PRO (Black) 8GB 4000 Mhz",
+			"partName": "VENGEANCE RGB PRO (Black)",
+			"manufacturer": "CORSAIR",
 			"price": 150,
-			"resellprice": 50,
+			"sellPrice": 50,
 			"level": 22,
 			"size": 8,
-			"frequency": 4000,
-			"maxvoltage": 1.65,
-			"maxfrequency": 4280
+			"baseFreq": 4000,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 4280,
+			"lighting": "RGB"
 		},
-		"G.SKILL Trident Z RGB 8GB 4000 MHz": {
-			"name": "G.SKILL Trident Z RGB 8GB 4000 MHz",
+		"G.SKILL Trident Z RGB 8GB 4000 Mhz": {
+			"fullName": "G.SKILL Trident Z RGB 8GB 4000 Mhz",
+			"partName": "Trident Z RGB",
+			"manufacturer": "G.SKILL",
 			"price": 150,
-			"resellprice": 50,
+			"sellPrice": 50,
 			"level": 15,
 			"size": 8,
-			"frequency": 4000,
-			"maxvoltage": 1.65,
-			"maxfrequency": 4280
+			"baseFreq": 4000,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 4280,
+			"lighting": "RGB"
 		},
-		"Team Group T-Force DARK (Silver) 16GB 2666 MHz": {
-			"name": "Team Group T-Force DARK (Silver) 16GB 2666 MHz",
+		"Team Group T-Force DARK (Silver) 16GB 2666 Mhz": {
+			"fullName": "Team Group T-Force DARK (Silver) 16GB 2666 Mhz",
+			"partName": "T-Force DARK (Silver)",
+			"manufacturer": "Team Group",
 			"price": 150,
-			"resellprice": 50,
+			"sellPrice": 50,
 			"level": 2,
 			"size": 16,
-			"frequency": 2666,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2852
+			"baseFreq": 2666,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2852,
+			"lighting": "N/A"
 		},
-		"CORSAIR Dominator Platinum 16GB 2666 MHz": {
-			"name": "CORSAIR Dominator Platinum 16GB 2666 MHz",
+		"CORSAIR Dominator Platinum 16GB 2666 Mhz": {
+			"fullName": "CORSAIR Dominator Platinum 16GB 2666 Mhz",
+			"partName": "Dominator Platinum",
+			"manufacturer": "CORSAIR",
 			"price": 155,
-			"resellprice": 52,
+			"sellPrice": 52,
 			"level": 6,
 			"size": 16,
-			"frequency": 2666,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2852
+			"baseFreq": 2666,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2852,
+			"lighting": "White"
 		},
-		"ADATA XPG Z1 8GB 4133 MHz": {
-			"name": "ADATA XPG Z1 8GB 4133 MHz",
+		"ADATA XPG Z1 8GB 4133 Mhz": {
+			"fullName": "ADATA XPG Z1 8GB 4133 Mhz",
+			"partName": "XPG Z1",
+			"manufacturer": "ADATA",
 			"price": 160,
-			"resellprice": 53,
+			"sellPrice": 53,
 			"level": 17,
 			"size": 8,
-			"frequency": 4133,
-			"maxvoltage": 1.65,
-			"maxfrequency": 4422
+			"baseFreq": 4133,
+			"voltage": 1.4,
+			"maxvolt": 1.65,
+			"maxFreq": 4422,
+			"lighting": "N/A"
 		},
-		"ADATA SPECTRIX D80 RGB 8GB 4133 MHz": {
-			"name": "ADATA SPECTRIX D80 RGB 8GB 4133 MHz",
+		"ADATA SPECTRIX D80 RGB 8GB 4133 Mhz": {
+			"fullName": "ADATA SPECTRIX D80 RGB 8GB 4133 Mhz",
+			"partName": "SPECTRIX D80 RGB",
+			"manufacturer": "ADATA",
 			"price": 170,
-			"resellprice": 57,
+			"sellPrice": 57,
 			"level": 23,
 			"size": 8,
-			"frequency": 4133,
-			"maxvoltage": 1.65,
-			"maxfrequency": 4422
+			"baseFreq": 4133,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 4422,
+			"lighting": "RGB"
 		},
-		"ADATA SPECTRIX D40 RGB 8GB 4133 MHz": {
-			"name": "ADATA SPECTRIX D40 RGB 8GB 4133 MHz",
+		"ADATA SPECTRIX D40 RGB 8GB 4133 Mhz": {
+			"fullName": "ADATA SPECTRIX D40 RGB 8GB 4133 Mhz",
+			"partName": "SPECTRIX D40 RGB",
+			"manufacturer": "ADATA",
 			"price": 170,
-			"resellprice": 57,
+			"sellPrice": 57,
 			"level": 24,
 			"size": 8,
-			"frequency": 4133,
-			"maxvoltage": 1.65,
-			"maxfrequency": 4422
+			"baseFreq": 4133,
+			"voltage": 1.4,
+			"maxvolt": 1.65,
+			"maxFreq": 4422,
+			"lighting": "RGB"
 		},
-		"Patriot Viper RGB (Black) 8GB 4133 MHz": {
-			"name": "Patriot Viper RGB (Black) 8GB 4133 MHz",
+		"Patriot Viper RGB (Black) 8GB 4133 Mhz": {
+			"fullName": "Patriot Viper RGB (Black) 8GB 4133 Mhz",
+			"partName": "Viper RGB (Black)",
+			"manufacturer": "Patriot",
 			"price": 170,
-			"resellprice": 57,
+			"sellPrice": 57,
 			"level": 21,
 			"size": 8,
-			"frequency": 4133,
-			"maxvoltage": 1.65,
-			"maxfrequency": 4422
+			"baseFreq": 4133,
+			"voltage": 1.4,
+			"maxvolt": 1.65,
+			"maxFreq": 4422,
+			"lighting": "RGB"
 		},
-		"Team Group T-Force DARK (Silver) 16GB 2800 MHz": {
-			"name": "Team Group T-Force DARK (Silver) 16GB 2800 MHz",
+		"Team Group T-Force DARK (Silver) 16GB 2800 Mhz": {
+			"fullName": "Team Group T-Force DARK (Silver) 16GB 2800 Mhz",
+			"partName": "T-Force DARK (Silver)",
+			"manufacturer": "Team Group",
 			"price": 170,
-			"resellprice": 57,
+			"sellPrice": 57,
 			"level": 4,
 			"size": 16,
-			"frequency": 2800,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2996
+			"baseFreq": 2800,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2996,
+			"lighting": "N/A"
 		},
-		"CORSAIR Dominator Platinum 16GB 2800 MHz": {
-			"name": "CORSAIR Dominator Platinum 16GB 2800 MHz",
+		"CORSAIR Dominator Platinum 16GB 2800 Mhz": {
+			"fullName": "CORSAIR Dominator Platinum 16GB 2800 Mhz",
+			"partName": "Dominator Platinum",
+			"manufacturer": "CORSAIR",
 			"price": 175,
-			"resellprice": 58,
+			"sellPrice": 58,
 			"level": 6,
 			"size": 16,
-			"frequency": 2800,
-			"maxvoltage": 1.65,
-			"maxfrequency": 2996
+			"baseFreq": 2800,
+			"voltage": 1.2,
+			"maxvolt": 1.65,
+			"maxFreq": 2996,
+			"lighting": "White"
 		},
-		"ADATA XPG Z1 8GB 4266 MHz": {
-			"name": "ADATA XPG Z1 8GB 4266 MHz",
+		"ADATA XPG Z1 8GB 4266 Mhz": {
+			"fullName": "ADATA XPG Z1 8GB 4266 Mhz",
+			"partName": "XPG Z1",
+			"manufacturer": "ADATA",
 			"price": 180,
-			"resellprice": 60,
+			"sellPrice": 60,
 			"level": 22,
 			"size": 8,
-			"frequency": 4266,
-			"maxvoltage": 1.65,
-			"maxfrequency": 4564
+			"baseFreq": 4266,
+			"voltage": 1.4,
+			"maxvolt": 1.65,
+			"maxFreq": 4564,
+			"lighting": "N/A"
 		},
-		"ADATA XPG Flame 16GB 3000 MHz": {
-			"name": "ADATA XPG Flame 16GB 3000 MHz",
+		"ADATA XPG Flame 16GB 3000 Mhz": {
+			"fullName": "ADATA XPG Flame 16GB 3000 Mhz",
+			"partName": "XPG Flame",
+			"manufacturer": "ADATA",
 			"price": 190,
-			"resellprice": 63,
+			"sellPrice": 63,
 			"level": 13,
 			"size": 16,
-			"frequency": 3000,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3210
+			"baseFreq": 3000,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3210,
+			"lighting": "N/A"
 		},
-		"ADATA SPECTRIX D40 RGB 8GB 4266 MHz": {
-			"name": "ADATA SPECTRIX D40 RGB 8GB 4266 MHz",
+		"ADATA SPECTRIX D40 RGB 8GB 4266 Mhz": {
+			"fullName": "ADATA SPECTRIX D40 RGB 8GB 4266 Mhz",
+			"partName": "SPECTRIX D40 RGB",
+			"manufacturer": "ADATA",
 			"price": 190,
-			"resellprice": 63,
+			"sellPrice": 63,
 			"level": 24,
 			"size": 8,
-			"frequency": 4266,
-			"maxvoltage": 1.65,
-			"maxfrequency": 4564
+			"baseFreq": 4266,
+			"voltage": 1.4,
+			"maxvolt": 1.65,
+			"maxFreq": 4564,
+			"lighting": "RGB"
 		},
-		"CORSAIR VENGEANCE RGB PRO (Black) 8GB 4266 MHz": {
-			"name": "CORSAIR VENGEANCE RGB PRO (Black) 8GB 4266 MHz",
+		"CORSAIR VENGEANCE RGB PRO (Black) 8GB 4266 Mhz": {
+			"fullName": "CORSAIR VENGEANCE RGB PRO (Black) 8GB 4266 Mhz",
+			"partName": "VENGEANCE RGB PRO (Black)",
+			"manufacturer": "CORSAIR",
 			"price": 190,
-			"resellprice": 63,
+			"sellPrice": 63,
 			"level": 22,
 			"size": 8,
-			"frequency": 4266,
-			"maxvoltage": 1.65,
-			"maxfrequency": 4564
+			"baseFreq": 4266,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 4564,
+			"lighting": "RGB"
 		},
-		"Team Group T-Force DARK (Silver) 16GB 3000 MHz": {
-			"name": "Team Group T-Force DARK (Silver) 16GB 3000 MHz",
+		"Team Group T-Force DARK (Silver) 16GB 3000 Mhz": {
+			"fullName": "Team Group T-Force DARK (Silver) 16GB 3000 Mhz",
+			"partName": "T-Force DARK (Silver)",
+			"manufacturer": "Team Group",
 			"price": 190,
-			"resellprice": 63,
+			"sellPrice": 63,
 			"level": 6,
 			"size": 16,
-			"frequency": 3000,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3210
+			"baseFreq": 3000,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3210,
+			"lighting": "N/A"
 		},
-		"Team Group T-Force DARK (Red) 16GB 3000 MHz": {
-			"name": "Team Group T-Force DARK (Red) 16GB 3000 MHz",
+		"Team Group T-Force DARK (Red) 16GB 3000 Mhz": {
+			"fullName": "Team Group T-Force DARK (Red) 16GB 3000 Mhz",
+			"partName": "T-Force DARK (Red)",
+			"manufacturer": "Team Group",
 			"price": 190,
-			"resellprice": 63,
+			"sellPrice": 63,
 			"level": 6,
 			"size": 16,
-			"frequency": 3000,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3210
+			"baseFreq": 3000,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3210,
+			"lighting": "N/A"
 		},
-		"ADATA XPG Dazzle (Red LED) 16GB 3000 MHz": {
-			"name": "ADATA XPG Dazzle (Red LED) 16GB 3000 MHz",
+		"ADATA XPG Dazzle (Red LED) 16GB 3000 Mhz": {
+			"fullName": "ADATA XPG Dazzle (Red LED) 16GB 3000 Mhz",
+			"partName": "XPG Dazzle (Red LED)",
+			"manufacturer": "ADATA",
 			"price": 195,
-			"resellprice": 65,
+			"sellPrice": 65,
 			"level": 6,
 			"size": 16,
-			"frequency": 3000,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3210
+			"baseFreq": 3000,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3210,
+			"lighting": "Red"
 		},
-		"CORSAIR Dominator Platinum 16GB 3000 MHz": {
-			"name": "CORSAIR Dominator Platinum 16GB 3000 MHz",
+		"CORSAIR Dominator Platinum 16GB 3000 Mhz": {
+			"fullName": "CORSAIR Dominator Platinum 16GB 3000 Mhz",
+			"partName": "Dominator Platinum",
+			"manufacturer": "CORSAIR",
 			"price": 195,
-			"resellprice": 65,
+			"sellPrice": 65,
 			"level": 6,
 			"size": 16,
-			"frequency": 3000,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3210
+			"baseFreq": 3000,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3210,
+			"lighting": "White"
 		},
-		"Team Group T-Force Night Hawk (Blue LED) 16GB 3000 MHz": {
-			"name": "Team Group T-Force Night Hawk (Blue LED) 16GB 3000 MHz",
+		"Team Group T-Force Night Hawk (Blue LED) 16GB 3000 Mhz": {
+			"fullName": "Team Group T-Force Night Hawk (Blue LED) 16GB 3000 Mhz",
+			"partName": "T-Force Night Hawk (Blue LED)",
+			"manufacturer": "Team Group",
 			"price": 195,
-			"resellprice": 65,
+			"sellPrice": 65,
 			"level": 11,
 			"size": 16,
-			"frequency": 3000,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3210
+			"baseFreq": 3000,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3210,
+			"lighting": "Blue"
 		},
-		"Team Group T-Force Night Hawk (White LED) 16GB 3000 MHz": {
-			"name": "Team Group T-Force Night Hawk (White LED) 16GB 3000 MHz",
+		"Team Group T-Force Night Hawk (White LED) 16GB 3000 Mhz": {
+			"fullName": "Team Group T-Force Night Hawk (White LED) 16GB 3000 Mhz",
+			"partName": "T-Force Night Hawk (White LED)",
+			"manufacturer": "Team Group",
 			"price": 195,
-			"resellprice": 65,
+			"sellPrice": 65,
 			"level": 11,
 			"size": 16,
-			"frequency": 3000,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3210
+			"baseFreq": 3000,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3210,
+			"lighting": "White"
 		},
-		"Team Group T-Force Night Hawk (Red LED) 16GB 3000 MHz": {
-			"name": "Team Group T-Force Night Hawk (Red LED) 16GB 3000 MHz",
+		"Team Group T-Force Night Hawk (Red LED) 16GB 3000 Mhz": {
+			"fullName": "Team Group T-Force Night Hawk (Red LED) 16GB 3000 Mhz",
+			"partName": "T-Force Night Hawk (Red LED)",
+			"manufacturer": "Team Group",
 			"price": 195,
-			"resellprice": 65,
+			"sellPrice": 65,
 			"level": 11,
 			"size": 16,
-			"frequency": 3000,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3210
+			"baseFreq": 3000,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3210,
+			"lighting": "Red"
 		},
-		"G.SKILL Ripjaws V (Black) 16GB 3200 MHz": {
-			"name": "G.SKILL Ripjaws V (Black) 16GB 3200 MHz",
+		"G.SKILL Ripjaws V (Black) 16GB 3200 Mhz": {
+			"fullName": "G.SKILL Ripjaws V (Black) 16GB 3200 Mhz",
+			"partName": "Ripjaws V (Black)",
+			"manufacturer": "G.SKILL",
 			"price": 210,
-			"resellprice": 70,
+			"sellPrice": 70,
 			"level": 7,
 			"size": 16,
-			"frequency": 3200,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3424
+			"baseFreq": 3200,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3424,
+			"lighting": "N/A"
 		},
-		"CORSAIR Dominator Platinum 16GB 3200 MHz": {
-			"name": "CORSAIR Dominator Platinum 16GB 3200 MHz",
+		"CORSAIR Dominator Platinum 16GB 3200 Mhz": {
+			"fullName": "CORSAIR Dominator Platinum 16GB 3200 Mhz",
+			"partName": "Dominator Platinum",
+			"manufacturer": "CORSAIR",
 			"price": 215,
-			"resellprice": 72,
+			"sellPrice": 72,
 			"level": 8,
 			"size": 16,
-			"frequency": 3200,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3424
+			"baseFreq": 3200,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3424,
+			"lighting": "White"
 		},
-		"Team Group T-Force Night Hawk (Red LED) 16GB 3200 MHz": {
-			"name": "Team Group T-Force Night Hawk (Red LED) 16GB 3200 MHz",
+		"Team Group T-Force Night Hawk (Red LED) 16GB 3200 Mhz": {
+			"fullName": "Team Group T-Force Night Hawk (Red LED) 16GB 3200 Mhz",
+			"partName": "T-Force Night Hawk (Red LED)",
+			"manufacturer": "Team Group",
 			"price": 215,
-			"resellprice": 72,
+			"sellPrice": 72,
 			"level": 12,
 			"size": 16,
-			"frequency": 3200,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3424
+			"baseFreq": 3200,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3424,
+			"lighting": "Red"
 		},
-		"Team Group T-Force Night Hawk (Blue LED) 16GB 3200 MHz": {
-			"name": "Team Group T-Force Night Hawk (Blue LED) 16GB 3200 MHz",
+		"Team Group T-Force Night Hawk (Blue LED) 16GB 3200 Mhz": {
+			"fullName": "Team Group T-Force Night Hawk (Blue LED) 16GB 3200 Mhz",
+			"partName": "T-Force Night Hawk (Blue LED)",
+			"manufacturer": "Team Group",
 			"price": 215,
-			"resellprice": 72,
+			"sellPrice": 72,
 			"level": 12,
 			"size": 16,
-			"frequency": 3200,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3424
+			"baseFreq": 3200,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3424,
+			"lighting": "Blue"
 		},
-		"Team Group T-Force Night Hawk (White LED) 16GB 3200 MHz": {
-			"name": "Team Group T-Force Night Hawk (White LED) 16GB 3200 MHz",
+		"Team Group T-Force Night Hawk (White LED) 16GB 3200 Mhz": {
+			"fullName": "Team Group T-Force Night Hawk (White LED) 16GB 3200 Mhz",
+			"partName": "T-Force Night Hawk (White LED)",
+			"manufacturer": "Team Group",
 			"price": 215,
-			"resellprice": 72,
+			"sellPrice": 72,
 			"level": 12,
 			"size": 16,
-			"frequency": 3200,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3424
+			"baseFreq": 3200,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3424,
+			"lighting": "White"
 		},
-		"ADATA XPG Z1 8GB 4400 MHz": {
-			"name": "ADATA XPG Z1 8GB 4400 MHz",
+		"ADATA XPG Z1 8GB 4400 Mhz": {
+			"fullName": "ADATA XPG Z1 8GB 4400 Mhz",
+			"partName": "XPG Z1",
+			"manufacturer": "ADATA",
 			"price": 220,
-			"resellprice": 73,
+			"sellPrice": 73,
 			"level": 24,
 			"size": 8,
-			"frequency": 4400,
-			"maxvoltage": 1.65,
-			"maxfrequency": 4708
+			"baseFreq": 4400,
+			"voltage": 1.4,
+			"maxvolt": 1.65,
+			"maxFreq": 4708,
+			"lighting": "N/A"
 		},
-		"G.SKILL Trident Z (Black) 8GB 4400 MHz": {
-			"name": "G.SKILL Trident Z (Black) 8GB 4400 MHz",
+		"G.SKILL Trident Z (Black) 8GB 4400 Mhz": {
+			"fullName": "G.SKILL Trident Z (Black) 8GB 4400 Mhz",
+			"partName": "Trident Z (Black)",
+			"manufacturer": "G.SKILL",
 			"price": 220,
-			"resellprice": 73,
+			"sellPrice": 73,
 			"level": 25,
 			"size": 8,
-			"frequency": 4400,
-			"maxvoltage": 1.65,
-			"maxfrequency": 4708
+			"baseFreq": 4400,
+			"voltage": 1.4,
+			"maxvolt": 1.65,
+			"maxFreq": 4708,
+			"lighting": "N/A"
 		},
-		"G.SKILL Trident Z RGB 16GB 3200 MHz": {
-			"name": "G.SKILL Trident Z RGB 16GB 3200 MHz",
+		"G.SKILL Trident Z RGB 16GB 3200 Mhz": {
+			"fullName": "G.SKILL Trident Z RGB 16GB 3200 Mhz",
+			"partName": "Trident Z RGB",
+			"manufacturer": "G.SKILL",
 			"price": 220,
-			"resellprice": 73,
+			"sellPrice": 73,
 			"level": 14,
 			"size": 16,
-			"frequency": 3200,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3424
+			"baseFreq": 3200,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3424,
+			"lighting": "RGB"
 		},
-		"G.SKILL Ripjaws V (Black) 16GB 3400 MHz": {
-			"name": "G.SKILL Ripjaws V (Black) 16GB 3400 MHz",
+		"G.SKILL Ripjaws V (Black) 16GB 3400 Mhz": {
+			"fullName": "G.SKILL Ripjaws V (Black) 16GB 3400 Mhz",
+			"partName": "Ripjaws V (Black)",
+			"manufacturer": "G.SKILL",
 			"price": 222,
-			"resellprice": 74,
+			"sellPrice": 74,
 			"level": 9,
 			"size": 16,
-			"frequency": 3400,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3638
+			"baseFreq": 3400,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3638,
+			"lighting": "N/A"
 		},
-		"G.SKILL Ripjaws V (Red) 16GB 3400 MHz": {
-			"name": "G.SKILL Ripjaws V (Red) 16GB 3400 MHz",
+		"G.SKILL Ripjaws V (Red) 16GB 3400 Mhz": {
+			"fullName": "G.SKILL Ripjaws V (Red) 16GB 3400 Mhz",
+			"partName": "Ripjaws V (Red)",
+			"manufacturer": "G.SKILL",
 			"price": 222,
-			"resellprice": 74,
+			"sellPrice": 74,
 			"level": 9,
 			"size": 16,
-			"frequency": 3400,
-			"maxvoltage": 1.65,
-			"maxfrequency": 3638
+			"baseFreq": 3400,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 3638,
+			"lighting": "N/A"
 		},
-		"ADATA SPECTRIX D40 RGB 8GB 4400 MHz": {
-			"name": "ADATA SPECTRIX D40 RGB 8GB 4400 MHz",
+		"ADATA SPECTRIX D40 RGB 8GB 4400 Mhz": {
+			"fullName": "ADATA SPECTRIX D40 RGB 8GB 4400 Mhz",
+			"partName": "SPECTRIX D40 RGB",
+			"manufacturer": "ADATA",
 			"price": 230,
-			"resellprice": 77,
+			"sellPrice": 77,
 			"level": 24,
 			"size": 8,
-			"frequency": 4400,
-			"maxvoltage": 1.65,
-			"maxfrequency": 4708
+			"baseFreq": 4400,
+			"voltage": 1.4,
+			"maxvolt": 1.65,
+			"maxFreq": 4708,
+			"lighting": "RGB"
 		},
-		"G.SKILL Trident Z RGB 8GB 4400 MHz": {
-			"name": "G.SKILL Trident Z RGB 8GB 4400 MHz",
+		"G.SKILL Trident Z RGB 8GB 4400 Mhz": {
+			"fullName": "G.SKILL Trident Z RGB 8GB 4400 Mhz",
+			"partName": "Trident Z RGB",
+			"manufacturer": "G.SKILL",
 			"price": 230,
-			"resellprice": 77,
+			"sellPrice": 77,
 			"level": 25,
 			"size": 8,
-			"frequency": 4400,
-			"maxvoltage": 1.65,
-			"maxfrequency": 4708
+			"baseFreq": 4400,
+			"voltage": 1.4,
+			"maxvolt": 1.65,
+			"maxFreq": 4708,
+			"lighting": "RGB"
 		},
-		"G.SKILL Trident Z (Silver) 8GB 4500 MHz": {
-			"name": "G.SKILL Trident Z (Silver) 8GB 4500 MHz",
+		"G.SKILL Trident Z (Silver) 8GB 4500 Mhz": {
+			"fullName": "G.SKILL Trident Z (Silver) 8GB 4500 Mhz",
+			"partName": "Trident Z (Silver)",
+			"manufacturer": "G.SKILL",
 			"price": 252,
-			"resellprice": 84,
+			"sellPrice": 84,
 			"level": 27,
 			"size": 8,
-			"frequency": 4500,
-			"maxvoltage": 1.65,
-			"maxfrequency": 4815
+			"baseFreq": 4500,
+			"voltage": 1.45,
+			"maxvolt": 1.65,
+			"maxFreq": 4815,
+			"lighting": "N/A"
 		},
-		"G.SKILL Trident Z (Black) 8GB 4500 MHz": {
-			"name": "G.SKILL Trident Z (Black) 8GB 4500 MHz",
+		"G.SKILL Trident Z (Black) 8GB 4500 Mhz": {
+			"fullName": "G.SKILL Trident Z (Black) 8GB 4500 Mhz",
+			"partName": "Trident Z (Black)",
+			"manufacturer": "G.SKILL",
 			"price": 252,
-			"resellprice": 84,
+			"sellPrice": 84,
 			"level": 27,
 			"size": 8,
-			"frequency": 4500,
-			"maxvoltage": 1.65,
-			"maxfrequency": 4815
+			"baseFreq": 4500,
+			"voltage": 1.45,
+			"maxvolt": 1.65,
+			"maxFreq": 4815,
+			"lighting": "N/A"
 		},
-		"G.SKILL Trident Z (Silver) 16GB 4000 MHz": {
-			"name": "G.SKILL Trident Z (Silver) 16GB 4000 MHz",
+		"G.SKILL Trident Z (Silver) 16GB 4000 Mhz": {
+			"fullName": "G.SKILL Trident Z (Silver) 16GB 4000 Mhz",
+			"partName": "Trident Z (Silver)",
+			"manufacturer": "G.SKILL",
 			"price": 270,
-			"resellprice": 90,
+			"sellPrice": 90,
 			"level": 15,
 			"size": 16,
-			"frequency": 4000,
-			"maxvoltage": 1.65,
-			"maxfrequency": 4280
+			"baseFreq": 4000,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 4280,
+			"lighting": "N/A"
 		},
-		"G.SKILL Trident Z (Black) 16GB 4000 MHz": {
-			"name": "G.SKILL Trident Z (Black) 16GB 4000 MHz",
+		"G.SKILL Trident Z (Black) 16GB 4000 Mhz": {
+			"fullName": "G.SKILL Trident Z (Black) 16GB 4000 Mhz",
+			"partName": "Trident Z (Black)",
+			"manufacturer": "G.SKILL",
 			"price": 270,
-			"resellprice": 90,
+			"sellPrice": 90,
 			"level": 15,
 			"size": 16,
-			"frequency": 4000,
-			"maxvoltage": 1.65,
-			"maxfrequency": 4280
+			"baseFreq": 4000,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 4280,
+			"lighting": "N/A"
 		},
-		"G.SKILL Trident Z RGB 16GB 3866 MHz": {
-			"name": "G.SKILL Trident Z RGB 16GB 3866 MHz",
+		"G.SKILL Trident Z RGB 16GB 3866 Mhz": {
+			"fullName": "G.SKILL Trident Z RGB 16GB 3866 Mhz",
+			"partName": "Trident Z RGB",
+			"manufacturer": "G.SKILL",
 			"price": 272,
-			"resellprice": 91,
+			"sellPrice": 91,
 			"level": 13,
 			"size": 16,
-			"frequency": 3866,
-			"maxvoltage": 1.65,
-			"maxfrequency": 4136
+			"baseFreq": 3866,
+			"voltage": 1.35,
+			"maxvolt": 1.65,
+			"maxFreq": 4136,
+			"lighting": "RGB"
 		},
-		"ADATA XPG Z1 8GB 4600 MHz": {
-			"name": "ADATA XPG Z1 8GB 4600 MHz",
+		"ADATA XPG Z1 8GB 4600 Mhz": {
+			"fullName": "ADATA XPG Z1 8GB 4600 Mhz",
+			"partName": "XPG Z1",
+			"manufacturer": "ADATA",
 			"price": 280,
-			"resellprice": 93,
+			"sellPrice": 93,
 			"level": 28,
 			"size": 8,
-			"frequency": 4600,
-			"maxvoltage": 1.65,
-			"maxfrequency": 4922
+			"baseFreq": 4600,
+			"voltage": 1.5,
+			"maxvolt": 1.65,
+			"maxFreq": 4922,
+			"lighting": "N/A"
 		},
-		"CORSAIR VENGEANCE RGB PRO (Black) 8GB 4700 MHz": {
-			"name": "CORSAIR VENGEANCE RGB PRO (Black) 8GB 4700 MHz",
+		"CORSAIR VENGEANCE RGB PRO (Black) 8GB 4700 Mhz": {
+			"fullName": "CORSAIR VENGEANCE RGB PRO (Black) 8GB 4700 Mhz",
+			"partName": "VENGEANCE RGB PRO (Black)",
+			"manufacturer": "CORSAIR",
 			"price": 370,
-			"resellprice": 123,
+			"sellPrice": 123,
 			"level": 29,
 			"size": 8,
-			"frequency": 4700,
-			"maxvoltage": 1.65,
-			"maxfrequency": 5029
+			"baseFreq": 4700,
+			"voltage": 1.45,
+			"maxvolt": 1.65,
+			"maxFreq": 5029,
+			"lighting": "RGB"
 		},
-		"G.SKILL Trident Z RGB 8GB 4800 MHz": {
-			"name": "G.SKILL Trident Z RGB 8GB 4800 MHz",
+		"G.SKILL Trident Z RGB 8GB 4800 Mhz": {
+			"fullName": "G.SKILL Trident Z RGB 8GB 4800 Mhz",
+			"partName": "Trident Z RGB",
+			"manufacturer": "G.SKILL",
 			"price": 430,
-			"resellprice": 143,
+			"sellPrice": 143,
 			"level": 30,
 			"size": 8,
-			"frequency": 4800,
-			"maxvoltage": 1.65,
-			"maxfrequency": 5136
+			"baseFreq": 4800,
+			"voltage": 1.5,
+			"maxvolt": 1.65,
+			"maxFreq": 5136,
+			"lighting": "RGB"
 		}
-	}
-}
-function getScore(gpuscore,cpuscore){
-	return Math.floor(1/((0.85/gpuscore)+(0.15/cpuscore)))
-}
-
-function getWattage(gpuwattage,cpuwattage,offset){
-	return gpuwattage + cpuwattage + (offset || 0)
-}
-
-function buildParts(proc,ramspeed,channel,gpu,slicf,mobo,ram,score,wattage,cost,budgetleft){
-	var build = {
-		"processor": proc,
-		"ramspeed": ramspeed,
-		"channel": channel,
-		"gpu": gpu,
-		"slicf": slicf,
-		"mobo": mobo,
-		"ram": ram,
-		"score": score,
-		"wattage": wattage,
-		"cost": cost,
-		"budgetleft": budgetleft
-	}
-	return build
-}
-
-function moboram(mobo,ram){
-	if((mobo == true) && (ram == true)){
-		return "fullcost"
-	}
-	else if((mobo == true) && (ram == false)){
-		return "withmobocost"
-	}
-	else if((mobo == false) && (ram == true)){
-		return "withramcost"
-	}
-	else if((mobo == false) && (ram == false)){
-		return "cost"
-	}
-	return "cost"
-}
-
-function showAvailableRamSpeedRamChannel(procId,selectionOfSpeed,ramchannel){
-	var arrayOfSpeedsOfProc = []
-
-	for(speed in data.procs[procId]['1']){
-		arrayOfSpeedsOfProc.push(speed)
-	}
-	
-	for(i=0;i<25;i++){
-		if(data.procs[procId]["1"][selectionOfSpeed[i].value] !== undefined){
-			selectionOfSpeed[i].style.display = 'block'
-		}else{
-			selectionOfSpeed[i].style.display = 'none'
-		}
-	}
-	
-	for(i=1;i<5;i++){
-		if(data.procs[procId][i.toString()] !== undefined){
-			ramchannel[i - 1].style.display = 'block'
-		}else{
-			ramchannel[i - 1].style.display = 'none'
-		}
-	}
-}
-
-function showAvailableMotherboard(cpuid,gpuid,slicf,motherboardlist){
-	for(mobo in motherboardlist){
-		if(mobo !== "length" && mobo !== "item" && mobo !== "namedItem" && mobo !== "selectedIndex" && mobo !== "add" && mobo !== "remove"){
-			if(cpuid !== ""){
-				if(data.procs[cpuid].socket == data.motherboards[motherboardlist[mobo].innerHTML].socket){
-					if(slicf == "1"){
-						motherboardlist[mobo].style.display = "block"
-					}else{
-						if(data.motherboards[motherboardlist[mobo].innerHTML].multigpu != null && (data.motherboards[motherboardlist[mobo].innerHTML].multigpu).includes(data.gpus[gpuid].multigpu)){
-							motherboardlist[mobo].style.display = "block"
-						}else{
-							motherboardlist[mobo].style.display = "none"
-						}
-					}
-				}else{
-					motherboardlist[mobo].style.display = "none"
-				}
-			}
-		}
-	}
-}
-
-function calculateScore(proc, channel, ramspeed, gpu, slicf){
-	if(!data.procs[proc] || data.procs[proc][channel][ramspeed] == ""){
-		alert("Processor not found. Available processors will show up when searched")
-	}else if(!data.gpus[gpu]){
-		alert("GPU not found. Available gpus will show up when searched")
-	}else if(!data.gpus[gpu][slicf]){
-		alert("Selected GPU is not available for SLI/CrossFire")
-	}else{
-		var score = getScore(data.gpus[gpu][slicf].score,data.procs[proc][channel][ramspeed])
-		var wattage = getWattage(data.gpus[gpu][slicf].wattage,data.procs[proc].wattage,50)
-		document.getElementById('scoreresult').innerHTML = score
-		document.getElementById('cpuresult').innerHTML = data.procs[proc][channel][ramspeed]
-		document.getElementById('gpuresult').innerHTML = data.gpus[gpu][slicf].score
-		document.getElementById('wattageresult').innerHTML = wattage
-		
-	}
-}
-
-function getRandom(min, max) {
-  return Math.round(Math.random() * (max - min) + min);
-}
-
-function generateBuild(budget,reservedbudget,targetscore,scoreoffset,levelforbuild,numberofresult,buildtype,includemotherboard,includeram,overclock,randomness,hardmode){
-	var builds = []
-	var randomBuilds = []
-	var sortedBuilds = []
-	var sortedByPrice = []
-	var sortedByScore = []
-	
-	budget = Number(budget)
-	reservedbudget = Number(reservedbudget)
-	targetscore = Number(targetscore)
-	levelforbuild = Number(levelforbuild)
-	numberofresult = Number(numberofresult)
-	
-	if(reservedbudget == ""){
-		if(includemotherboard == true){
-			reservedbudget = 400
-			if(includeram == true){
-				reservedbudget = 300
-			}
-		}else{
-			reservedbudget = 500
-			if(includeram == true){
-				reservedbudget = 300
-			}
-		}
-	}
-	if(scoreoffset == ""){
-		scoreoffset = 200
-	}else{
-		scoreoffset = Number(scoreoffset)
-	}
-	if(numberofresult == ""){
-		numberofresult = 10
-	}
-	if(hardmode){
-		budget = Math.round(((budget * 100) / 95)) + 1
-	}
-	
-	for(cpu in data.procs){
-		for(gpu in data.gpus){
-			if((data.procs[cpu].level <= levelforbuild)&&(data.gpus[gpu].level <= levelforbuild)){
-				for(ramchannels in data.procs[cpu]){
-					if(ramchannels == "1" || ramchannels == "2" || ramchannels == "3" || ramchannels == "4"){
-						if(data.procs[cpu][ramchannels] !== undefined){
-							for(ramspeeds in data.procs[cpu][ramchannels]){
-								for(numberofgpu in data.gpus[gpu]){
-									if(numberofgpu == "1" || numberofgpu == "2"){
-										var score = getScore(data.gpus[gpu][numberofgpu].score,data.procs[cpu][ramchannels][ramspeeds])
-										if((score >= targetscore) && (score <= (targetscore+scoreoffset))){
-											var settings = moboram(includemotherboard,includeram)
-
-											switch(settings){
-												case "fullcost":
-												for(mobo in data.motherboards){
-													for(ramms in data.ram){
-														if((data.motherboards[mobo].level <= levelforbuild)&&(data.ram[ramms].level <= levelforbuild) && Number(data.ram[ramms].frequency) >= ramspeeds){
-															if(data.motherboards[mobo].socket == data.procs[cpu].socket){
-																if(overclock == true){
-																	if(data.motherboards[mobo].oc == "Yes" && data.procs[cpu].oc == "Yes"){
-																		if(data.motherboards[mobo].speeds.includes(ramspeeds)){
-																			if(data.ram[ramms].frequency >= data.motherboards[mobo].maxspeed){
-																				var fullcost = data.procs[cpu].price + data.gpus[gpu][numberofgpu].price + data.motherboards[mobo].price + Number(data.ram[ramms].price*ramchannels)
-																				if((budget >= fullcost) && (fullcost <= (budget-reservedbudget))){
-																					if(numberofgpu == "1"){
-																						var wattage = getWattage(data.procs[cpu].wattage,data.gpus[gpu][numberofgpu].wattage)
-																						if(buildtype == "any"){
-																							builds.push(buildParts(cpu,ramspeeds,ramchannels,gpu,numberofgpu,mobo,ramms,score,wattage,fullcost,(budget-fullcost)))
-																						}else{
-																							if(data.procs[cpu].type == buildtype){
-																								builds.push(buildParts(cpu,ramspeeds,ramchannels,gpu,numberofgpu,mobo,ramms,score,wattage,fullcost,(budget-fullcost)))
-																							}
-																						}
-																					}else{
-																						var wattage = getWattage(data.procs[cpu].wattage,data.gpus[gpu][numberofgpu].wattage)
-																						if((data.motherboards[mobo].multigpu !== null) && (data.motherboards[mobo].multigpu.includes(data.gpus[gpu].multigpu))){
-																							if(buildtype == "any"){
-																								builds.push(buildParts(cpu,ramspeeds,ramchannels,gpu,numberofgpu,mobo,ramms,score,wattage,fullcost,(budget-fullcost)))
-																							}else{
-																								if(data.procs[cpu].type == buildtype){
-																									builds.push(buildParts(cpu,ramspeeds,ramchannels,gpu,numberofgpu,mobo,ramms,score,wattage,fullcost,(budget-fullcost)))
-																								}
-																							}
-																						}
-																					}
-																				}
-																			}
-																		}
-																	}
-																}else{
-																	if(data.motherboards[mobo].speeds.includes(ramspeeds)){
-																		if(data.ram[ramms].frequency >= data.motherboards[mobo].maxspeed){
-																			var fullcost = data.procs[cpu].price + data.gpus[gpu][numberofgpu].price + data.motherboards[mobo].price + Number(data.ram[ramms].price*ramchannels)
-																			if((budget >= fullcost) && (fullcost <= (budget-reservedbudget))){
-																				if(numberofgpu == "1"){
-																					var wattage = getWattage(data.procs[cpu].wattage,data.gpus[gpu][numberofgpu].wattage)
-																					if(buildtype == "any"){
-																						builds.push(buildParts(cpu,ramspeeds,ramchannels,gpu,numberofgpu,mobo,ramms,score,wattage,fullcost,(budget-fullcost)))
-																					}else{
-																						if(data.procs[cpu].type == buildtype){
-																							builds.push(buildParts(cpu,ramspeeds,ramchannels,gpu,numberofgpu,mobo,ramms,score,wattage,fullcost,(budget-fullcost)))
-																						}
-																					}
-																				}else{
-																					var wattage = getWattage(data.procs[cpu].wattage,data.gpus[gpu][numberofgpu].wattage)
-																					if((data.motherboards[mobo].multigpu !== null) && (data.motherboards[mobo].multigpu.includes(data.gpus[gpu].multigpu))){
-																						if(buildtype == "any"){
-																							builds.push(buildParts(cpu,ramspeeds,ramchannels,gpu,numberofgpu,mobo,ramms,score,wattage,fullcost,(budget-fullcost)))
-																						}else{
-																							if(data.procs[cpu].type == buildtype){
-																								builds.push(buildParts(cpu,ramspeeds,ramchannels,gpu,numberofgpu,mobo,ramms,score,wattage,fullcost,(budget-fullcost)))
-																							}
-																						}
-																					}
-																				}
-																			}
-																		}
-																	}
-																}
-															}
-														}
-													}
-												}
-												break;
-												case "withmobocost":
-												for(mobo in data.motherboards){
-													if((data.motherboards[mobo].level <= levelforbuild)){
-														if(data.motherboards[mobo].socket == data.procs[cpu].socket){
-															if(overclock == true){
-																if(data.motherboards[mobo].oc == "Yes" && data.procs[cpu].oc == "Yes"){
-																	if(data.motherboards[mobo].speeds.includes(ramspeeds)){
-																		var withmobocost = data.procs[cpu].price + data.gpus[gpu][numberofgpu].price + data.motherboards[mobo].price
-																		if((budget >= withmobocost) && (withmobocost <= (budget-reservedbudget))){
-																			if(numberofgpu == "1"){
-																				var wattage = getWattage(data.procs[cpu].wattage,data.gpus[gpu][numberofgpu].wattage)
-																				if(buildtype == "any"){
-																					builds.push(buildParts(cpu,ramspeeds,ramchannels,gpu,numberofgpu,mobo,"-",score,wattage,withmobocost,(budget-withmobocost)))
-																				}else{
-																					if(data.procs[cpu].type == buildtype){
-																						builds.push(buildParts(cpu,ramspeeds,ramchannels,gpu,numberofgpu,mobo,"-",score,wattage,withmobocost,(budget-withmobocost)))
-																					}
-																				}
-																			}else{
-																				var wattage = getWattage(data.procs[cpu].wattage,data.gpus[gpu][numberofgpu].wattage)
-																				if((data.motherboards[mobo].multigpu !== null) && (data.motherboards[mobo].multigpu.includes(data.gpus[gpu].multigpu))){
-																					if(buildtype == "any"){
-																						builds.push(buildParts(cpu,ramspeeds,ramchannels,gpu,numberofgpu,mobo,"-",score,wattage,withmobocost,(budget-withmobocost)))
-																					}else{
-																						if(data.procs[cpu].type == buildtype){
-																							builds.push(buildParts(cpu,ramspeeds,ramchannels,gpu,numberofgpu,mobo,"-",score,wattage,withmobocost,(budget-withmobocost)))
-																						}
-																					}
-																				}
-																			}
-																		}
-																	}
-																}
-															}else{
-																if(data.motherboards[mobo].speeds.includes(ramspeeds)){
-																	var withmobocost = data.procs[cpu].price + data.gpus[gpu][numberofgpu].price + data.motherboards[mobo].price
-																	if((budget >= withmobocost) && (withmobocost <= (budget-reservedbudget))){
-																		if(numberofgpu == "1"){
-																				var wattage = getWattage(data.procs[cpu].wattage,data.gpus[gpu][numberofgpu].wattage)
-																				if(buildtype == "any"){
-																					builds.push(buildParts(cpu,ramspeeds,ramchannels,gpu,numberofgpu,mobo,"-",score,wattage,withmobocost,(budget-withmobocost)))
-																				}else{
-																					if(data.procs[cpu].type == buildtype){
-																						builds.push(buildParts(cpu,ramspeeds,ramchannels,gpu,numberofgpu,mobo,"-",score,wattage,withmobocost,(budget-withmobocost)))
-																					}
-																				}
-																		}else{
-																			var wattage = getWattage(data.procs[cpu].wattage,data.gpus[gpu][numberofgpu].wattage)
-																			if((data.motherboards[mobo].multigpu !== null) && (data.motherboards[mobo].multigpu.includes(data.gpus[gpu].multigpu))){
-																				if(buildtype == "any"){
-																					builds.push(buildParts(cpu,ramspeeds,ramchannels,gpu,numberofgpu,mobo,"-",score,wattage,withmobocost,(budget-withmobocost)))
-																				}else{
-																					if(data.procs[cpu].type == buildtype){
-																						builds.push(buildParts(cpu,ramspeeds,ramchannels,gpu,numberofgpu,mobo,"-",score,wattage,withmobocost,(budget-withmobocost)))
-																					}
-																				}
-																			}
-																		}
-																	}
-																	
-																}
-															}
-														}
-													}
-												}
-												break;
-												case "withramcost":
-												if(overclock == true){
-													if(data.procs[cpu].oc == "Yes"){
-														for(ramms in data.ram){
-															if((data.ram[ramms].level <= levelforbuild) && Number(data.ram[ramms].frequency) >= ramspeeds){
-																var withramcost = data.procs[cpu].price + data.gpus[gpu][numberofgpu].price + Number(data.ram[ramms].price*ramchannels)
-																if((budget >= withramcost) && (withramcost <= (budget-reservedbudget))){
-																	if(numberofgpu == "1"){
-																		var wattage = getWattage(data.procs[cpu].wattage,data.gpus[gpu][numberofgpu].wattage)
-																		if(buildtype == "any"){
-																			builds.push(buildParts(cpu,ramspeeds,ramchannels,gpu,numberofgpu,"-",ramms,score,wattage,withramcost,(budget-withramcost)))
-																		}else{
-																			if(data.procs[cpu].type == buildtype){
-																				builds.push(buildParts(cpu,ramspeeds,ramchannels,gpu,numberofgpu,"-",ramms,score,wattage,withramcost,(budget-withramcost)))
-																			}
-																		}
-																	}else{
-																		var wattage = getWattage(data.procs[cpu].wattage,data.gpus[gpu][numberofgpu].wattage)
-																		if(buildtype == "any"){
-																			builds.push(buildParts(cpu,ramspeeds,ramchannels,gpu,numberofgpu,"-",ramms,score,wattage,withramcost,(budget-withramcost)))
-																		}else{
-																			if(data.procs[cpu].type == buildtype){
-																				builds.push(buildParts(cpu,ramspeeds,ramchannels,gpu,numberofgpu,"-",ramms,score,wattage,withramcost,(budget-withramcost)))
-																			}
-																		}
-																	}
-																}
-															}
-														}
-													}
-												}else{
-													for(ramms in data.ram){
-														if((data.ram[ramms].level <= levelforbuild) && Number(data.ram[ramms].frequency) >= ramspeeds){
-															var withramcost = data.procs[cpu].price + data.gpus[gpu][numberofgpu].price + Number(data.ram[ramms].price*ramchannels)
-															if((budget >= withramcost) && (withramcost <= (budget-reservedbudget))){
-																if(numberofgpu == "1"){
-																	var wattage = getWattage(data.procs[cpu].wattage,data.gpus[gpu][numberofgpu].wattage)
-																	if(buildtype == "any"){
-																		builds.push(buildParts(cpu,ramspeeds,ramchannels,gpu,numberofgpu,"-",ramms,score,wattage,withramcost,(budget-withramcost)))
-																	}else{
-																		if(data.procs[cpu].type == buildtype){
-																			builds.push(buildParts(cpu,ramspeeds,ramchannels,gpu,numberofgpu,"-",ramms,score,wattage,withramcost,(budget-withramcost)))
-																		}
-																	}
-																}else{
-																	var wattage = getWattage(data.procs[cpu].wattage,data.gpus[gpu][numberofgpu].wattage)
-																	if(buildtype == "any"){
-																		builds.push(buildParts(cpu,ramspeeds,ramchannels,gpu,numberofgpu,"-",ramms,score,wattage,withramcost,(budget-withramcost)))
-																	}else{
-																		if(data.procs[cpu].type == buildtype){
-																			builds.push(buildParts(cpu,ramspeeds,ramchannels,gpu,numberofgpu,"-",ramms,score,wattage,withramcost,(budget-withramcost)))
-																		}
-																	}
-																}
-															}
-														}
-													}
-												}
-												break;
-												case "cost":
-												if(overclock == true){
-													if(data.procs[cpu].oc == "Yes"){
-														var cost = data.procs[cpu].price + data.gpus[gpu][numberofgpu].price
-														if((budget >= cost) && (cost <= (budget-reservedbudget))){
-															if(numberofgpu == "1"){
-																var wattage = getWattage(data.procs[cpu].wattage,data.gpus[gpu][numberofgpu].wattage)
-																if(buildtype == "any"){
-																	builds.push(buildParts(cpu,ramspeeds,ramchannels,gpu,numberofgpu,"-","-",score,wattage,cost,(budget-cost)))
-																}else{
-																	if(data.procs[cpu].type == buildtype){
-																		builds.push(buildParts(cpu,ramspeeds,ramchannels,gpu,numberofgpu,"-","-",score,wattage,cost,(budget-cost)))
-																	}
-																}
-															}else{
-																var wattage = getWattage(data.procs[cpu].wattage,data.gpus[gpu][numberofgpu].wattage)
-																if(buildtype == "any"){
-																	builds.push(buildParts(cpu,ramspeeds,ramchannels,gpu,numberofgpu,"-","-",score,wattage,cost,(budget-cost)))
-																}else{
-																	if(data.procs[cpu].type == buildtype){
-																		builds.push(buildParts(cpu,ramspeeds,ramchannels,gpu,numberofgpu,"-","-",score,wattage,cost,(budget-cost)))
-																	}
-																}
-															}
-														}
-														
-													}
-												}else{
-													var cost = data.procs[cpu].price + data.gpus[gpu][numberofgpu].price
-													if((budget >= cost) && (cost <= (budget-reservedbudget))){
-														if(numberofgpu == "1"){
-															var wattage = getWattage(data.procs[cpu].wattage,data.gpus[gpu][numberofgpu].wattage)
-																if(buildtype == "any"){
-																	builds.push(buildParts(cpu,ramspeeds,ramchannels,gpu,numberofgpu,"-","-",score,wattage,cost,(budget-cost)))
-																}else{
-																	if(data.procs[cpu].type == buildtype){
-																		builds.push(buildParts(cpu,ramspeeds,ramchannels,gpu,numberofgpu,"-","-",score,wattage,cost,(budget-cost)))
-																	}
-																}
-														}else{
-															var wattage = getWattage(data.procs[cpu].wattage,data.gpus[gpu][numberofgpu].wattage)
-															if(buildtype == "any"){
-																builds.push(buildParts(cpu,ramspeeds,ramchannels,gpu,numberofgpu,"-","-",score,wattage,cost,(budget-cost)))
-															}else{
-																if(data.procs[cpu].type == buildtype){
-																	builds.push(buildParts(cpu,ramspeeds,ramchannels,gpu,numberofgpu,"-","-",score,wattage,cost,(budget-cost)))
-																}
-															}
-														}
-													}
-													
-												}
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-	
-	sortedByPrice = builds.sort(sortByCost)
-	sortedByScore = builds.sort(sortByScore)
-	if(builds.length <= Number(numberofresult)){
-		numberofresult = builds.length
-		sortedBuilds = builds
-		randomBuilds = builds
-	}else{
-		for(a=0;a<numberofresult;a++){
-			var randomNumber1 = getRandom(0,builds.length-1)
-			randomBuilds.push(builds[randomNumber1])
-			builds.splice(randomNumber1,1)
-		}
-		sortedBuilds.push(sortedByPrice[0])
-		sortedBuilds.push(sortedByPrice[sortedByPrice.length - 1])
-		sortedBuilds.push(sortedByScore[0])
-		sortedBuilds.push(sortedByScore[sortedByScore.length - 1])
-		for(a=0;a<numberofresult-4;a++){
-			var randomNumber2 = getRandom(0,builds.length-1)
-			sortedBuilds.push(builds[randomNumber2])
-			builds.splice(randomNumber2,1)
-		}
-	}
-	randomBuilds.sort(sortByCost)
-	sortedBuilds.sort(sortByCost)
-	if(builds.length == 0){
-		alert("No builds could be came up with")
-	}else{
-		var table = document.getElementById("buildMakerResult")
-		for(i=table.rows.length-1;i>=1;i--){
-			table.deleteRow(i)
-		}
-		for(i=1;i<numberofresult+1;i++){
-			table.insertRow(i)
-			for(a=0;a<11;a++){
-				table.rows[i].insertCell(a)
-			}
-		}
-		if(randomness == true){
-			for(b=1;b<randomBuilds.length+1;b++){
-				table.rows[b].cells[0].innerHTML = randomBuilds[b-1].processor
-				table.rows[b].cells[1].innerHTML = randomBuilds[b-1].ramspeed
-				table.rows[b].cells[2].innerHTML = randomBuilds[b-1].channel
-				table.rows[b].cells[3].innerHTML = randomBuilds[b-1].gpu
-				table.rows[b].cells[4].innerHTML = randomBuilds[b-1].slicf
-				table.rows[b].cells[5].innerHTML = randomBuilds[b-1].mobo
-				table.rows[b].cells[6].innerHTML = randomBuilds[b-1].ram
-				table.rows[b].cells[7].innerHTML = randomBuilds[b-1].score
-				table.rows[b].cells[8].innerHTML = randomBuilds[b-1].wattage
-				table.rows[b].cells[9].innerHTML = randomBuilds[b-1].cost
-				table.rows[b].cells[10].innerHTML = randomBuilds[b-1].budgetleft
-			}
-		}else{
-			for(b=1;b<randomBuilds.length+1;b++){
-				table.rows[b].cells[0].innerHTML = sortedBuilds[b-1].processor
-				table.rows[b].cells[1].innerHTML = sortedBuilds[b-1].ramspeed
-				table.rows[b].cells[2].innerHTML = sortedBuilds[b-1].channel
-				table.rows[b].cells[3].innerHTML = sortedBuilds[b-1].gpu
-				table.rows[b].cells[4].innerHTML = sortedBuilds[b-1].slicf
-				table.rows[b].cells[5].innerHTML = sortedBuilds[b-1].mobo
-				table.rows[b].cells[6].innerHTML = sortedBuilds[b-1].ram
-				table.rows[b].cells[7].innerHTML = sortedBuilds[b-1].score
-				table.rows[b].cells[8].innerHTML = sortedBuilds[b-1].wattage
-				table.rows[b].cells[9].innerHTML = sortedBuilds[b-1].cost
-				table.rows[b].cells[10].innerHTML = sortedBuilds[b-1].budgetleft
-			}
-		}
-	}
-	document.getElementById('buildMakerResult').style.display = "inline-block"
-}
-
-
-function sortByScore(a,b){
-	if(a.score < b.score){
-		return -1;
-	}
-	if(a.score > b.score){
-		return 1;
-	}
-	return 0;
-}
-
-function sortByCost(a,b){
-	if(a.cost < b.cost){
-		return -1;
-	}
-	if(a.cost > b.cost){
-		return 1;
-	}
-	return 0;
-}
-
-function upgradeBuild(currentproc,currentramchannel,currentramspeed,currentgpu,currentslicf,currentmotherboard,upgradebudget,upgradebudgetforotherparts,upgradetargetscore,scoreoffset,currentlevel, numberofresult,hardmode){
-	var currentscore = Math.round(1/((0.85/data.gpus[currentgpu][currentslicf].score)+(0.15/data.procs[currentproc][currentramchannel][currentramspeed])))
-	var cpuinlist = Object.keys(data.procs)
-	var gpuinlist = Object.keys(data.gpus)
-	var upgrades = []
-	var randomupgrades = []
-	var currentscore = Math.round((1/((0.85/data.gpus[currentgpu][currentslicf].score)+(0.15/data.procs[currentproc][currentramchannel][currentramspeed]))))
-	
-	if(scoreoffset == ""){
-		scoreoffset = 200
-	}else{
-		scoreoffset = Number(scoreoffset)
-	}
-	if(hardmode){
-		upgradebudget = Math.round(((upgradebudget * 100) / 66)) + 1
-	}
-
-	if(currentscore >= upgradetargetscore){
-		alert("No upgrade is needed")
-	}else{
-		if(numberofresult == ""){
-			numberofresult = 10
-		}
-		if(upgradebudgetforotherparts == ""){
-			upgradebudgetforotherparts = 0
-		}
-		//Check cpu upgrade first
-		for(cpu in data.procs){
-			//only same socket to prevent motherboard changing
-			if(data.procs[currentproc].socket == data.procs[cpu].socket){
-				var upgradescore = Math.round((1/((0.85/data.gpus[currentgpu][currentslicf].score)+(0.15/data.procs[cpu][currentramchannel][currentramspeed]))))
-				if((upgradescore >= upgradetargetscore) && (upgradescore <= (Number(upgradetargetscore) + scoreoffset))){
-					if(data.procs[cpu].level <= currentlevel){
-						var cost = data.procs[cpu].price
-						if((cost <= upgradebudget) && (cost <= (upgradebudget-(upgradebudgetforotherparts)))){
-							var partsToUpgrade = {
-								"proc": cpu,
-								"ramchannel": currentramchannel,
-								"ramspeed": currentramspeed,
-								"gpu": "-",
-								"slicf": currentslicf,
-								"cost": cost,
-								"budgetleft": upgradebudget - cost,
-								"wattage":  Number(data.procs[cpu].wattage) + Number(data.gpus[currentgpu][currentslicf].wattage),
-								"score": upgradescore
-							}
-							upgrades.push(partsToUpgrade)
-						}
-					}
-				}
-			}
-		}
-		//Check for gpu upgrade
-		for(gpu in data.gpus){
-			for(slicf in data.gpus[gpu]){
-				if(slicf == "1" || slicf == "2"){
-					if(slicf == "1"){
-						var upgradescore = Math.round((1/((0.85/data.gpus[gpu][slicf].score)+(0.15/data.procs[currentproc][currentramchannel][currentramspeed]))))
-						if((upgradescore >= upgradetargetscore) && (upgradescore <= (Number(upgradetargetscore) + scoreoffset))){
-							if(data.gpus[gpu].level <= currentlevel){
-								var cost = data.gpus[gpu][slicf].price
-								if((cost <= upgradebudget) && (cost <= (upgradebudget-(upgradebudgetforotherparts)))){
-									var partsToUpgrade = {
-										"proc": "-",
-										"ramchannel": currentramchannel,
-										"ramspeed": currentramspeed,
-										"gpu": gpu,
-										"slicf": slicf,
-										"cost": cost,
-										"budgetleft": upgradebudget - cost,
-										"wattage":  Number(data.procs[currentproc].wattage) + Number(data.gpus[gpu][slicf].wattage),
-										"score": upgradescore
-									}
-									upgrades.push(partsToUpgrade)
-								}
-							}
-						}
-					}else{
-						if((data.motherboards[currentmotherboard].multigpu != null) && ((data.motherboards[currentmotherboard].multigpu).includes(data.gpus[gpu].multigpu))){
-							var upgradescore = Math.round((1/((0.85/data.gpus[gpu][slicf].score)+(0.15/data.procs[currentproc][currentramchannel][currentramspeed]))))
-							if((upgradescore >= upgradetargetscore) && (upgradescore <= (Number(upgradetargetscore) + scoreoffset))){
-								if(data.gpus[gpu].level <= currentlevel){
-									var cost = data.gpus[gpu][slicf].price
-									if((cost <= upgradebudget) && (cost <= (upgradebudget-(upgradebudgetforotherparts)))){
-										var partsToUpgrade = {
-											"proc": "-",
-											"ramchannel": currentramchannel,
-											"ramspeed": currentramspeed,
-											"gpu": gpu,
-											"slicf": slicf,
-											"cost": cost,
-											"budgetleft": upgradebudget - cost,
-											"wattage":  Number(data.procs[currentproc].wattage) + Number(data.gpus[gpu][slicf].wattage),
-											"score": upgradescore
-										}
-										upgrades.push(partsToUpgrade)
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-		//Check if i could just sli/cf it
-		if(data.gpus[currentgpu]["2"] !== undefined){
-			if(currentslicf != "2"){
-				var slicfedscore = Math.round((1/((0.85/data.gpus[currentgpu]["2"].score)+(0.15/data.procs[currentproc][currentramchannel][currentramspeed]))))
-				if(slicfedscore >= upgradetargetscore){
-					var cost = Number(data.gpus[currentgpu]["1"].price)
-					if((cost <= upgradebudget) && (cost <= (upgradebudget-upgradebudgetforotherparts))){
-						if((data.motherboards[currentmotherboard].multigpu != null) && ((data.motherboards[currentmotherboard].multigpu).includes(data.gpus[currentgpu].multigpu))){
-							var partsToUpgrade = {
-								"proc": "-",
-								"ramchannel": currentramchannel,
-								"ramspeed": currentramspeed,
-								"gpu": currentgpu,
-								"slicf": "2",
-								"cost": cost,
-								"budgetleft": upgradebudget - cost,
-								"wattage":  Number(data.procs[currentproc].wattage) + Number(data.gpus[currentgpu]["2"].wattage),
-								"score": slicfedscore
-							}
-							upgrades.push(partsToUpgrade)
-						}
-					}
-				}
-			}
-		}
-		
-		
-		//Check for both upgrades
-		var indexOfCProc = cpuinlist.indexOf(currentproc)
-		for(cpu in data.procs){
-			if(data.motherboards[currentmotherboard].socket == data.procs[cpu].socket){
-				//DO NOT DOWNGRADE MY FUCKING PROC
-				if(cpuinlist.indexOf(cpu) > indexOfCProc){
-					for(gpu in data.gpus){
-						if((data.procs[cpu].level <= currentlevel) && (data.gpus[gpu].level <= currentlevel)){
-							for(slicf in data.gpus[gpu]){
-								if(slicf == "1" || slicf == "2"){
-									if(slicf == "1"){
-										var upgradescore = Math.round((1/((0.85/data.gpus[gpu][slicf].score)+(0.15/data.procs[cpu][currentramchannel][currentramspeed]))))
-										if((upgradescore >= upgradetargetscore) && (upgradescore <= (Number(upgradetargetscore) + scoreoffset))){
-											var cost = Number(data.procs[cpu].price) + Number(data.gpus[gpu][slicf].price)
-											if((cost <= upgradebudget) && (cost <= (upgradebudget-(upgradebudgetforotherparts)))){
-												var partsToUpgrade = {
-													"proc": cpu,
-													"ramchannel": currentramchannel,
-													"ramspeed": currentramspeed,
-													"gpu": gpu,
-													"slicf": slicf,
-													"cost": cost,
-													"budgetleft": upgradebudget - cost,
-													"wattage":  Number(data.procs[cpu].wattage) + Number(data.gpus[gpu][slicf].wattage),
-													"score": upgradescore
-												}
-												upgrades.push(partsToUpgrade)
-											}
-										}
-									}else{
-										var upgradescore = Math.round((1/((0.85/data.gpus[gpu][slicf].score)+(0.15/data.procs[cpu][currentramchannel][currentramspeed]))))
-										if((upgradescore >= upgradetargetscore) && (upgradescore <= (Number(upgradetargetscore) + scoreoffset))){
-											if(data.motherboards[currentmotherboard].multigpu != null && ((data.motherboards[currentmotherboard].multigpu).includes(data.gpus[gpu].multigpu))){
-												var cost = Number(data.procs[cpu].price) + Number(data.gpus[gpu][slicf].price)
-												if((cost <= upgradebudget) && (cost <= (upgradebudget-(upgradebudgetforotherparts)))){
-													var partsToUpgrade = {
-														"proc": cpu,
-														"ramchannel": currentramchannel,
-														"ramspeed": currentramspeed,
-														"gpu": gpu,
-														"slicf": slicf,
-														"cost": cost,
-														"budgetleft": upgradebudget - cost,
-														"wattage":  Number(data.procs[cpu].wattage) + Number(data.gpus[gpu][slicf].wattage),
-														"score": upgradescore
-													}
-													upgrades.push(partsToUpgrade)
-												}
-											}
-										}
-									}
-								}	
-							}
-						}
-					}
-				}
-			}
-		}
-		
-		if(upgrades.length == 0){
-			alert("No upgrades could be done")
-		}
-		if(upgrades.length <= numberofresult){
-			numberofresult = upgrades.length
-			randomupgrades = upgrades
-		}else{
-			for(i=0;i<numberofresult;i++){
-				var abc = getRandom(0,upgrades.length)
-				randomupgrades.push(upgrades[abc])
-				upgrades.splice(abc,0)
-			}
-		}
-		
-		randomupgrades.sort(sortByCost)
-		var table = document.getElementById('upgraderResult')
-		for(i=table.rows.length-1;i>=1;i--){
-			table.deleteRow(i)
-		}
-		for(i=1;i<=numberofresult;i++){
-			table.insertRow(i)
-			for(a=0;a<9;a++){
-				table.rows[i].insertCell(a)
-				switch(a){
-					case 0:
-						table.rows[i].cells[a].id = "upproc" + i;
-						break;
-					case 1:
-						table.rows[i].cells[a].id = "upramchannel" + i;
-						break;
-					case 2:
-						table.rows[i].cells[a].id = "upramspeed" + i;
-						break;
-					case 3:
-						table.rows[i].cells[a].id = "upgpu" + i;
-						break;
-					case 4:
-						table.rows[i].cells[a].id = "upslicf" + i;
-						break;
-					case 5:
-						table.rows[i].cells[a].id = "upcost" + i;
-						break;
-					case 6:
-						table.rows[i].cells[a].id = "upbudgetleft" + i;
-						break;
-					case 7:
-						table.rows[i].cells[a].id = "upwattage" + i;
-						break;
-					case 8:
-						table.rows[i].cells[a].id = "upscore" + i;
-						break;
-				}
-			}
-		}
-		for(i=0;i<numberofresult;i++){
-			document.getElementById("upproc" + (i+1)).innerHTML = randomupgrades[i].proc
-			document.getElementById("upramspeed" + (i+1)).innerHTML = randomupgrades[i].ramspeed
-			document.getElementById("upramchannel" + (i+1)).innerHTML = randomupgrades[i].ramchannel
-			document.getElementById("upgpu" + (i+1)).innerHTML = randomupgrades[i].gpu
-			document.getElementById("upslicf" + (i+1)).innerHTML = randomupgrades[i].slicf
-			document.getElementById("upscore" + (i+1)).innerHTML = randomupgrades[i].score
-			document.getElementById("upwattage" + (i+1)).innerHTML = randomupgrades[i].wattage
-			document.getElementById("upcost" + (i+1)).innerHTML = randomupgrades[i].cost
-			document.getElementById("upbudgetleft" + (i+1)).innerHTML = randomupgrades[i].budgetleft
-		}
-		
-		table.style.display = "inline-block"
 	}
 }
