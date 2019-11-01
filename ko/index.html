@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
-<title>PCBSTools - PC Building Simulator를 위한 고급적이고 유용한 도구.</title>
+<title>PCBSTools - PC Building Simulator를 위한 고오급지고 유용한 도구.</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
@@ -26,30 +26,40 @@
         bottom: 0;
         height: inherit;
     }
+
+    div.relative1 {
+        position: relative;
+        text-align: center;
+        left: 0px;
+    }
+
+    div.relative2 {
+        position: relative;
+        text-align: center;
+        right: 0px;
+    }
 </style>
-
 <body>
-
     <!-- Navbar -->
     <div class="w3-top">
         <div class="w3-bar w3-theme w3-large">
             <a class="w3-bar-item w3-button w3-right w3-hide-large w3-hover-white w3-large w3-theme-l1"
                 href="javascript:void(0)" onclick="w3_open()"><i class="fa fa-bars"></i></a>
-            <a href="../ko/index.html" class="w3-bar-item w3-button w3-theme-l1">PCBSTools</a>
-            <div class="w3-dropdown-hover">
-                <button class="w3-button">도구 목록</button>
+            <a href="../ko/index.html" class="w3-bar-item w3-button w3-hover-green w3-theme-l1">PCBSTools</a>
+            <div class="w3-dropdown-hover w3-hover-green">
+                <button class="w3-button w3-hover-green">도구 목록</button>
                 <div class="w3-dropdown-content w3-bar-block w3-card-4">
-                    <a href="../ko/partsranking.html" class="w3-bar-item w3-button">부품 순위</a>
+                    <a href="../ko/partsranking.html" class="w3-bar-item w3-button w3-hover-green">부품 순위</a>
                     <a href="../ko/calculator.html" class="w3-bar-item w3-button w3-hover-green">계산기</a>
                 </div>
             </div>
-            <a href="../ko/upcomingfeatures.html" class="w3-bar-item w3-button w3-hide-small w3-hover-white">출시 예정 기능</a>
-            <a href="../ko/support.html" class="w3-bar-item w3-button w3-hide-small w3-hover-white">지원</a>
-            <div class="w3-dropdown-hover">
-                <button class="w3-button">Language</button>
+            <a href="../ko/support.html" class="w3-bar-item w3-button w3-hide-small w3-hover-green">지원</a>
+            <div class="w3-dropdown-hover w3-hover-green">
+                <button class="w3-button w3-hover-green">Language</button>
                 <div class="w3-dropdown-content w3-bar-block w3-card-4">
-                    <a href="../ko/index.html" class="w3-bar-item w3-button">한국어</a>
-                    <a href="../en/index.html" class="w3-bar-item w3-button">English</a>
+                    <a href="../ko/calculator.html" class="w3-bar-item w3-button w3-hover-green">한국어</a>
+                    <a href="../en/calculator.html" class="w3-bar-item w3-button w3-hover-green">English</a>
+                    <a href="#" class="w3-bar-item w3-button w3-hover-green w3-disabled" onclick="alert('La traduction française est désactivée en raison d\'un bogue critique.\nFrench translation is disabled due to critical bug.')">Français</a>
                 </div>
             </div>
         </div>
@@ -64,17 +74,53 @@
     <div class="w3-main w3-center w3-content" style="max-width:1200px">
         <div class="w3-row w3-padding-64">
             <div class="w3-container">
-                <h1 class="w3-text-teal">PCBSTools - PC Building Simulator를 위한 고급적이고 유용한 도구.</h1>
-                <p>PCBSTools 웹사이트는 3DMark 점수 계산에 문제가 있거나, 업그레이드 작업을 할 때 어떤 부품을 골라야 하는가 등의 문제를 가지고 있는 PC 제작가들을 위해 제작되었습니다.</p>
-                <p>이 도구들은 당신의 모든 걱정을 없애줍니다!</p>
-                <p>이 웹사이트는 PC Building Simulator에 있는 흔한 커리어 작업을 해결해 줄 부품 순위, 조립PC 업그레이드, 조립PC 제작, 3DMark 계산기에 해당하는 4개의 도구들을 포함합니다.</p>
+                <h1 class="w3-text-teal">PCBSTools - PC Building Simulator를 위한 고오급지고 유용한 도구.</h1>
+                <p>PC Building Simulator에서 3DMark 점수를 계산하거나 또는 예상하거나 좋은 부품 찾기에 지치셨나요?</p>
+                <p>이 도구들은 여러분의 문제를 모두 없애버립니다!</p>
+                <p>이 웹사이트는 PC Building Simulator에서 대부분의 커리어 작업들을 해결해 줄 부품 순위, 점수 계산기, 조립PC 만들기, 조립PC 업그레이드를 포함한 4개의 도구들을 포함하고 있습니다.</p>
                 <p></p>
-                <p>경고: 이 웹사이트는 PC Building Simulator를 플레이하는 사람들을 위한 것입니다. 만약에 그 게임이 없는 경우, <a href="https://store.steampowered.com/app/621060/PC_Building_Simulator/">스팀 상점</a>에서 해당 게임을 구매하는 것을 고려해주세요!</p>
+                <p>주의: 이 웹사이트는 PC Building Simulator 게임을 플레이하는 유저들을 위한 사이트입니다. 만약 그 게임이 없다면 <a href="https://store.steampowered.com/app/621060/PC_Building_Simulator/">Steam 상점</a>에서 구매하는 것을 고려해보세요!</p>
                 <p></p>
-                <p>저희 도구가 마음에 드셨나요? 저희에게 기부를 고려해주세요!</p>
+                <p>저희 도구가 마음에 드셨나요? 여기에서 기부해주세요!</p>
                 <p><button href="https://www.paypal.me/AhRoon" class="w3-button w3-black w3-hover-green w3-round-large" onclick="window.open('https://www.paypal.me/AhRoon'); return false;">PayPal로 기부하기!</button></p>
             </div>
         </div>
+
+        <section class="w3-row-padding w3-align-left">
+            <div class="w3-left relative1">
+                <p>
+                    <font size="6">최근 변경사항 (v1.5)</font>
+                </p>
+                <ul style="list-style-type:disc;">
+                    <li>[업데이트] PCBS v1.5 최신 버전으로 업데이트되었습니다</li>
+                    <li>[업데이트] JQuery, Chart, DataTable가 최신 버전으로 업데이트되었습니다</li>
+                    <li>[추가] PCBS v1.5에서의 CPU와 GPU가 추가되었습니다</li>
+                    <li>[추가] 최신 버전과 곧 선보이는 기능이 메인 페이지에 추가되었습니다</li>
+                    <li>[교체] 프로필 이미지가 최신 이미지로 교체되었습니다</li>
+                    <li>[개선] 꼬리말(원문: footer)을 개선했습니다. 불필요한 링크가 제거되었으며, 텍스트가 이미지로 교체되었습니다.</li>
+                    <li>[개선] 기존의 스크립트가 두개의 스크립트, list와 script js 파일로 분리되었습니다</li>
+                    <li>[개선] 한글 번역을 개선했습니다</li>
+                    <li>[제거] 계산기 페이지의 SLI/CrossFire 질문에 있던 (기본) 텍스트를 삭제하였습니다</li>
+                    <li>[제거] 곧 선보이는 기능이 메인 페이지에 이미 있기 때문에 곧 선보이는 기능 페이지가 제거되었습니다</li>
+                    <li>[수정] 제작 섹션이 부품 순위에 보이는 것과 관련한 버그 수정</li>
+                    <li>[참고] 프랑스어가 치명적인 버그로 인해 일시적으로 비활성화되었습니다.</li>
+                </ul>
+            </div>
+            <div class="w3-right relative2">
+                <p>
+                    <font size="6">곧 선보이는 기능 (v1.5.1~)</font>
+                </p>
+                <ul style="list-style-type:disc;">
+                    <li>출시되면 PCBS v1.6 업데이트</li>
+                    <li>오버클럭 계산기 추가</li>
+                    <li>수냉 그래픽 추가</li>
+                    <li>더 많은 번역 지원 및 개선<br>(만약 번역에 관심 있으시면 <a
+                            href="https://forms.gle/XGi4gHozazezm3aj8" title="Apply for Translator"
+                            onclick="window.open('https://forms.gle/XGi4gHozazezm3aj8; return false;">여기</a>에서 신청하세요)</li>
+                    <li>프랑스어 관련 버그 수정</li>
+                </ul>
+            </div>
+        </section>
 
         <!-- Credits -->
         <section class="w3-row-padding w3-center w3-light-grey">
@@ -82,51 +128,50 @@
                 <font size="6">제작</font>
             </p>
             <article class="w3-third">
-                <p>Ah_Roon(아룬)</p>
-                <a href="https://steamcommunity.com/id/AhRoonPlayz" title="스팀 프로필 Ah_Roon"
+                <p>Ah_Roon</p>
+                <a href="https://steamcommunity.com/id/AhRoonPlayz" title="Steam Profile Ah_Roon"
                     onclick="window.open('https://steamcommunity.com/id/AhRoonPlayz'); return false;"><img
                         src="img/img_profile_ahroon.jpg" style="width:20%"></a>
-                <p>PC 제작가를 위해 이 웹사이트를 제작함.</p>
+                <p>PC 제작자를 위해 이 웹사이트를 만듬.</p>
             </article>
             <article class="w3-third">
                 <p>biubiu</p>
-                <a href="https://steamcommunity.com/id/kawaiinvshen" title="스팀 프로필 biubiu"
+                <a href="https://steamcommunity.com/id/kawaiinvshen" title="Steam Profile biubiu"
                     onclick="window.open('https://steamcommunity.com/id/kawaiinvshen'); return false;"><img
                         src="img/img_profile_biubiu.jpg" style="width:20%"></a>
-                <p><a href="https://steamcommunity.com/app/621060/discussions/0/3216031607491943889/">벤치마크 계산기</a> 소스 코드를 제공함.</p>
+                <p><a href="https://steamcommunity.com/app/621060/discussions/0/3216031607491943889/">계산기</a>를 위한 소스 코드 제공.</p>
             </article>
             <article class="w3-third">
                 <p>BeyondPower</p>
-                <a href="https://steamcommunity.com/id/skbeyondpower" title="스팀 프로필 BeyondPower"
+                <a href="https://steamcommunity.com/id/skbeyondpower" title="Steam Profile BeyondPower"
                     onclick="window.open('https://steamcommunity.com/id/skbeyondpower'); return false;"><img
                         src="img/img_profile_beyondpower.jpg" style="width:20%"></a>
-                <p>부품 순위 HTML 버전 제작에 기여함.</p>
+                <p>Parts Ranking HTML 버전 제작에 기여.</p>
             </article>
         </section>
 
-        <footer id="myFooter">
+        <footer id="myFooter" class="w3-center">
             <div class="w3-container w3-theme-l2 w3-padding-32">
-                <h4><a href="https://steamcommunity.com/groups/PCBSTools" title="PCBSTools 공식 스팀 그룹" onclick="window.open('https://steamcommunity.com/groups/PCBSTools/discussions'); return false;">스팀 그룹</a> | <a href="../en/support.html" title="PCBSTools 지원 페이지">지원</a> | <a href="https://steamcommunity.com/groups/PCBSTools#announcements" title="PCBSTools 소식 및 공지" onclick="window.open('https://steamcommunity.com/groups/PCBSTools#announcements'); return false;">소식 및 공지</a> | <a href="https://steamcommunity.com/groups/PCBSTools#announcements" title="PCBSTools 토론장" onclick="window.open('https://steamcommunity.com/groups/PCBSTools/discussions'); return false;">토론</a></h4>
+                <h4><a href="https://steamcommunity.com/groups/PCBSTools" title="PCBSTools 공식 스팀 그룹" onclick="window.open('https://steamcommunity.com/groups/PCBSTools'); return false;"><img src="img/img_steam.jpg" style="width:30px"></a> | <a href="https://twitter.com/Ah_Roon_" title="트위터"><img src="img/img_twitter.jpg"" style=" width:30px"></a> | <a href="about://home" title="디스코드 (곧 출시됩니다)" onclick="alert('곧 출시됩니다!');"><img src="img/img_discord.jpg" style="width:30px"></a> | <a href="https://www.paypal.me/AhRoon" title="피자 한 판 사주세요!" onclick="window.open('https://www.paypal.me/AhRoon'); return false;"><img src="img/img_paypal.jpg" style="width:100px"></a></h4>
             </div>
 
             <div class="w3-container w3-theme-l1">
                 <p>사이트 제작 - <a href="https://steamcommunity.com/id/AhRoonPlayz" title="Steam Profile Ah_Roon"
                     onclick="window.open('https://steamcommunity.com/id/AhRoonPlayz'); return false;">Ah_Roon(아룬)</a>
                 &copy; 2018 - 2019<br />
-                벤치마크 계산기 스크립트 원작자 - <a href="https://steamcommunity.com/id/kawaiinvshen"
-                    title="Steam Profile biubiu"
-                    onclick="window.open('https://steamcommunity.com/id/kawaiinvshen'); return false;">biubiu</a> &copy;
+                벤치마크 계산기 스크립트 원작자 - <a href="https://steamcommunity.com/id/kawaiinvshen" title="Steam Profile biubiu" onclick="window.open('https://steamcommunity.com/id/kawaiinvshen'); return false;">biubiu</a> &copy;
                 2018 - 2019 <br />
-                부품 순위 원작자 - <a href="https://steamcommunity.com/id/skbeyondpower"
+                부품 순위 스크립트 원작자 - <a href="https://steamcommunity.com/id/skbeyondpower"
                     title="Steam Profile BeyondPower"
                     onclick="window.open('https://steamcommunity.com/id/skbeyondpower'); return false;">BeyondPower</a>
                 &copy; 2018 - 2019 <br />
                 소스 코드 제공 - <a href="https://www.w3schools.com/" title="w3schools Website"
-                    onclick="window.open('https://www.w3schools.com/'); return false;">w3schools</a>과 <a href="https://steamcommunity.com/id/shona1337" title="Steam Profile Shona" onclick="window.open('https://steamcommunity.com/id/shona1337'); return false;">Shona</a>
+                    onclick="window.open('https://www.w3schools.com/'); return false;">w3schools</a>와 <a href="https://steamcommunity.com/id/shona1337" title="Steam Profile Shona"
+                    onclick="window.open('https://steamcommunity.com/id/shona1337'); return false;">Shona</a>
                 &copy; 2019<br />
                 <br />
-                Claudiu Kiss님과 <a href="https://theirregularcorporation.com" title="The Irregular Corporation Website"
-                    onclick="window.open('https://theirregularcorporation.com'); return false;">Irregular Corporation</a>에게 이런 멋진 게임을 만들어 주신 것에 대해 감사드립니다!<br /></p>
+                이런 최고의 게임을 만들어 주신 Claudiu Kiss님과 <a href="https://theirregularcorporation.com" title="The Irregular Corporation Website"
+                    onclick="window.open('https://theirregularcorporation.com'); return false;">Irregular Corporation</a>에게 감사드립니다!<br /></p>
                 <p></p>
             </div>
         </footer>

@@ -29,27 +29,26 @@
 </style>
 
 <body>
-
     <!-- Navbar -->
     <div class="w3-top">
         <div class="w3-bar w3-theme w3-large">
             <a class="w3-bar-item w3-button w3-right w3-hide-large w3-hover-white w3-large w3-theme-l1"
                 href="javascript:void(0)" onclick="w3_open()"><i class="fa fa-bars"></i></a>
-            <a href="../ko/index.html" class="w3-bar-item w3-button w3-theme-l1">PCBSTools</a>
-            <div class="w3-dropdown-hover">
-                <button class="w3-button">도구 목록</button>
+            <a href="../ko/index.html" class="w3-bar-item w3-button w3-hover-green w3-theme-l1">PCBSTools</a>
+            <div class="w3-dropdown-hover w3-hover-green">
+                <button class="w3-button w3-hover-green">도구 목록</button>
                 <div class="w3-dropdown-content w3-bar-block w3-card-4">
-                    <a href="../ko/partsranking.html" class="w3-bar-item w3-button">부품 순위</a>
+                    <a href="../ko/partsranking.html" class="w3-bar-item w3-button w3-hover-green">부품 순위</a>
                     <a href="../ko/calculator.html" class="w3-bar-item w3-button w3-hover-green">계산기</a>
                 </div>
             </div>
-            <a href="../ko/upcomingfeatures.html" class="w3-bar-item w3-button w3-hide-small w3-hover-white">출시 예정 기능</a>
-            <a href="../ko/support.html" class="w3-bar-item w3-button w3-hide-small w3-hover-white">지원</a>
-            <div class="w3-dropdown-hover">
-                <button class="w3-button">Language</button>
+            <a href="../ko/support.html" class="w3-bar-item w3-button w3-hide-small w3-hover-green">지원</a>
+            <div class="w3-dropdown-hover w3-hover-green">
+                <button class="w3-button w3-hover-green">Language</button>
                 <div class="w3-dropdown-content w3-bar-block w3-card-4">
-                    <a href="../ko/partsranking.html" class="w3-bar-item w3-button">한국어</a>
-                    <a href="../en/partsranking.html" class="w3-bar-item w3-button">English</a>
+                    <a href="../ko/calculator.html" class="w3-bar-item w3-button w3-hover-green">한국어</a>
+                    <a href="../en/calculator.html" class="w3-bar-item w3-button w3-hover-green">English</a>
+                    <a href="#" class="w3-bar-item w3-button w3-hover-green w3-disabled" onclick="alert('La traduction française est désactivée en raison d\'un bogue critique.\nFrench translation is disabled due to critical bug.')">Français</a>
                 </div>
             </div>
         </div>
@@ -65,9 +64,10 @@
         <div class="w3-row w3-padding-64">
             <div class="w3-container">
                 <h1 class="w3-text-teal">부품 순위</h1>
-                <p>대부분이 정확한 부품 순위.</p>
-                <p>팁: 버튼(e.g. 점수, 3DMark 점수, 등등)을 클릭하여 목록을 나열하세요.</p>
-                <p>제대로 표시되기 위해서는 크롬(혹은 크로뮴 기반 브라우저) 또는 파이어폭스를 설치해야 할 수 있습니다.</p>
+                <p>거의 정확한 부품 순위입니다.</p>
+                <p>버튼(e.g. 점수, 3DMark 점수, 등등.)을 누르면 목록을 정렬할 수 있습니다.</p>
+                <p>제대로 표시하기 위해선 크롬(혹은 Chromium 기반 브라우저) 또는 파이어폭스를 설치해야 할 수 있습니다.</p>
+                <p>알려진 문제: 현재 다음, 이전, 페이지 버튼이 제대로 표시되지 않는 현상이 발생하고 있습니다.<br>수정되기 전까진 기본 표시 개수가 '전체'로 강제됩니다.</p>
             </div>
         </div>
         <section class="w3-row-padding w3-center w3-light-grey">
@@ -82,8 +82,8 @@
                         <th>점수</th>
                         <th>3DMark 점수 (오버클럭 없음)</th>
                         <th>3DMark 점수 (오버클럭)</th>
-                        <th>요구 레벨</th>
-                        <th>오버클럭 CPU 점수 증가율</th>
+                        <th>필요 레벨</th>
+                        <th>오버클럭 CPU 점수 증가 수치</th>
                     </tr>
                 </thead>
             </table>
@@ -99,93 +99,95 @@
                         <th>점수</th>
                         <th>3DMark 점수 (싱글)</th>
                         <th>3DMark 점수 (듀얼)</th>
-                        <th>요구 레벨</th>
-                        <th>듀얼 GPU 성능 향상률</th>
+                        <th>목표 레벨</th>
+                        <th>듀얼 GPU 성능 향상 수치</th>
                     </tr>
                 </thead>
             </table>
         
-            <h1>CPU 부품 순위 - 수평 막대 차트</h1>
+            <h1>CPU 부품 순위 - 수평 막대 그래프</h1>
             <canvas id="cpuChart" width="300" height="250"></canvas>
         
-            <h1>GPU 부품 순위 - 수평 막대 차트</h1>
+            <h1>GPU 부품 순위 - 수평 막대 그래프</h1>
             <canvas id="gpuChart" width="200" height="300"></canvas>
         
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.min.js"></script>
+            <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.1/dist/Chart.min.js"></script>
             <script type="text/javascript"
-                src="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.10.18/af-2.3.2/b-1.5.4/b-html5-1.5.4/r-2.2.2/sc-1.5.0/datatables.min.js"></script>
+                src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
             <script>
-                var cpuDataUrl = 'https://api.myjson.com/bins/17rmw8';
-                var gpuDataUrl = 'https://api.myjson.com/bins/1gq6r7';
+                var cpuDataUrl = "https://api.myjson.com/bins/b168s";
+                var gpuDataUrl = "https://api.myjson.com/bins/1hd3cs";
 
                 var cpuData = [], gpuData = [], motherboardData = [], ramData = [];
 
-                var cpuDataEvent = new Event('cpuDataReceived');
-                var gpuDataEvent = new Event('gpuDataReceived');
+                var cpuDataEvent = new Event("cpuDataReceived");
+                var gpuDataEvent = new Event("gpuDataReceived");
 
-                $(document).on("cpuDataReceived", function () {
-                    console.log('CPU 데이터가 수집되었습니다!');
-                    cpuData.sort(function (a, b) {
-                        if (a["Actual Score (No Overclock)"] < b["Actual Score (No Overclock)"]) {
-                            return 1;
-                        } else {
-                            return -1;
-                        }
-                    });
-                    $('#cpuDataTable').DataTable({
-                        data: cpuData,
-                        dataSrc: '',
-                        "lengthMenu": [[5, 10, 25, 50, 100, -1], [5, 10, 25, 50, 100, "All"]],
-                        "iDisplayLength": 25,
-                        columns: [
-                            { data: 'Manufacterer' },
-                            { data: 'CPU Name' },
-                            { data: 'Price' },
-                            { data: 'Sell Price' },
-                            { data: 'Score' },
-                            { data: 'Actual Score (No Overclock)' },
-                            { data: 'Actual Score (Overclock)' },
-                            { data: 'Level Requirement' },
-                            { data: 'Overclock CPU Score Increase' },
-                        ]
-                    });
-                    createCpuChart();
+                $(document).on("cpuDataReceived", function() {
+                    console.log("CPU data received!");
+                    cpuData.sort(function(a, b) {
+                    if (a["Actual Score (No Overclock)"] < b["Actual Score (No Overclock)"]) {
+                        return 1;
+                    } else {
+                        return -1;
+                    }
+                });
+                
+                $("#cpuDataTable").DataTable({
+                    data: cpuData,
+                    dataSrc: "",
+                    lengthMenu: [[-1], ["전체"]],
+                    iDisplayLength: -1,
+                    columns: [
+                        { data: "Manufacterer" },
+                        { data: "CPU Name" },
+                        { data: "Price" },
+                        { data: "Sell Price" },
+                        { data: "Score" },
+                        { data: "Actual Score (No Overclock)" },
+                        { data: "Actual Score (Overclock)" },
+                        { data: "Level Requirement" },
+                        { data: "Overclock CPU Score Increase" }
+                    ]
+                });
+                createCpuChart();
                 });
 
-                $(document).on("gpuDataReceived", function () {
-                    console.log('GPU 데이터가 수집되었습니다!');
-                    gpuData.sort(function (a, b) {
+                $(document).on("gpuDataReceived", function() {
+                    console.log("GPU data received!");
+                    gpuData.sort(function(a, b) {
                         if (a["Actual Score (Single)"] < b["Actual Score (Single)"]) {
                             return 1;
                         } else {
                             return -1;
                         }
-                    });
-                    $('#gpuDataTable').DataTable({
-                        data: gpuData,
-                        dataSrc: '',
-                        "lengthMenu": [[5, 10, 25, 50, 100, -1], [5, 10, 25, 50, 100, "All"]],
-                        "iDisplayLength": 25,
-                        columns: [
-                            { data: 'Manufacterer' },
-                            { data: 'GPU' },
-                            { data: 'Buy Price' },
-                            { data: 'Sell Price' },
-                            { data: 'Score' },
-                            { data: 'Actual Score (Single)' },
-                            { data: 'Actual Score (Dual)' },
-                            { data: 'Level Requirement' },
-                            { data: 'Dual GPU Performance Increase' },
-                        ]
-                    });
-                    createGpuChart();
+                });
+  
+                $("#gpuDataTable").DataTable({
+                    data: gpuData,
+                    dataSrc: "",
+                    lengthMenu: [[-1], ["전체"]],
+                    iDisplayLength: -1,
+                    columns: [
+                        { data: "Manufacterer" },
+                        { data: "GPU" },
+                        { data: "Buy Price" },
+                        { data: "Sell Price" },
+                        { data: "Score" },
+                        { data: "Actual Score (Single)" },
+                        { data: "Actual Score (Dual)" },
+                        { data: "Level Requirement" },
+                        { data: "Dual GPU Performance Increase" }
+                    ]
+                });
+                createGpuChart();
                 });
 
                 $.ajax({
                     url: cpuDataUrl,
                     method: "GET",
-                    success: function (data) {
+                    success: function(data) {
                         cpuData = data;
                         $(document).trigger("cpuDataReceived");
                     }
@@ -194,169 +196,161 @@
                 $.ajax({
                     url: gpuDataUrl,
                     method: "GET",
-                    success: function (data) {
+                    success: function(data) {
                         gpuData = data;
                         $(document).trigger("gpuDataReceived");
                     }
                 });
 
                 function createCpuChart() {
-                    var ctx = document.getElementById("cpuChart").getContext('2d');
-                    var myChart = new Chart(ctx, {
-                        type: 'horizontalBar',
-                        data: {
-                            labels: getCpuData('names'),
-                            datasets: [
-                                {
-                                    label: '3DMark 점수 (오버클럭 없음)',
-                                    data: getCpuData('scores')['cpuScoresNoOverclock'],
-                                    backgroundColor: 'rgba(150, 150, 150, 0.3)',
-                                    borderColor: 'rgba(0, 0, 0, 1)',
-                                    hoverBackgroundColor: 'rgba(0, 0, 0, 0.3)',
-                                    borderWidth: 1
-                                },
-                                {
-                                    label: '3DMark 점수 (오버클럭)',
-                                    data: getCpuData('scores')['cpuScoresOverclock'],
-                                    backgroundColor: 'rgba(200, 100, 100, 0.3)',
-                                    borderColor: 'rgba(0, 0, 0, 0.3)',
-                                    borderWidth: 1
-                                }
-                            ]
-                        },
-                        options: {
-                            layout: {
-
-                            },
-                            scales: {
-                                yAxes: [{
-                                    ticks: {
-                                        beginAtZero: true,
-                                        fontColor: "#000",
-                                        fontSize: 14,
-                                        barPercentage: 0.7,
-                                        categoryPercentage: 1
-                                    }
-                                }]
-                            }
-                        }
-                    });
-                }
-
-                function createGpuChart() {
-                    var ctx = document.getElementById("gpuChart").getContext('2d');
-                    var myChart = new Chart(ctx, {
-                        type: 'horizontalBar',
-                        data: {
-                            labels: getGpuData('names'),
-                            datasets: [
-                                {
-                                    label: '3DMark 점수 (싱글)',
-                                    data: getGpuData('scores')['gpuScoresSingle'],
-                                    backgroundColor: 'rgba(150, 150, 150, 0.3)',
-                                    borderColor: 'rgba(0, 0, 0, 1)',
-                                    hoverBackgroundColor: 'rgba(0, 0, 0, 0.3)',
-                                    borderWidth: 1
-                                },
-                                {
-                                    label: '3DMark 점수 (듀얼)',
-                                    data: getGpuData('scores')['gpuScoresDual'],
-                                    backgroundColor: 'rgba(200, 100, 100, 0.3)',
-                                    borderColor: 'rgba(0, 0, 0, 0.3)',
-                                    borderWidth: 1
-                                }
-                            ]
-                        },
-                        options: {
-                            scales: {
-                                yAxes: [{
-                                    ticks: {
-                                        beginAtZero: true,
-                                        fontColor: "#000",
-                                        fontSize: 14,
-                                        barPercentage: 0.7,
-                                        categoryPercentage: 1
-                                    }
-                                }]
-                            }
-                        }
-                    });
-                }
-
-                function getCpuData(dataSrc) {
-                    var cpuScoresNoOverclock = [];
-                    var cpuScoresOverclock = [];
-                    var cpuNames = [];
-
-                    if (dataSrc === 'scores') {
-                        for (var i = 0; i < cpuData.length; i++) {
-                            cpuScoresNoOverclock.push(cpuData[i]['Actual Score (No Overclock)']);
-                            cpuScoresOverclock.push(cpuData[i]['Actual Score (Overclock)']);
-                        }
-                        return { cpuScoresNoOverclock, cpuScoresOverclock };
-                    } else if (dataSrc === 'names') {
-                        for (var i = 0; i < cpuData.length; i++) {
-                            cpuNames.push(cpuData[i]['CPU Name']);
-                        }
-                        return cpuNames;
+                var ctx = document.getElementById("cpuChart").getContext("2d");
+                var myChart = new Chart(ctx, {
+                type: "horizontalBar",
+                data: {
+                    labels: getCpuData("names"),
+                    datasets: [
+                    {
+                        label: "3DMark Score (No Overclock)",
+                        data: getCpuData("scores")["cpuScoresNoOverclock"],
+                        backgroundColor: "rgba(150, 150, 150, 0.3)",
+                        borderColor: "rgba(0, 0, 0, 1)",
+                        hoverBackgroundColor: "rgba(0, 0, 0, 0.3)",
+                        borderWidth: 1
+                    },
+                    {
+                        label: "3DMark Score (Overclock)",
+                        data: getCpuData("scores")["cpuScoresOverclock"],
+                        backgroundColor: "rgba(200, 100, 100, 0.3)",
+                        borderColor: "rgba(0, 0, 0, 0.3)",
+                        borderWidth: 1
                     }
-
-                }
-
-                function getGpuData(dataSrc) {
-                    var gpuScores = [];
-                    var gpuScoresSingle = [];
-                    var gpuScoresDual = [];
-                    var gpuNames = [];
-
-                    if (dataSrc === 'scores') {
-                        for (var i = 0; i < gpuData.length; i++) {
-                            gpuScores.push(gpuData[i]['Score']);
-                            gpuScoresSingle.push(gpuData[i]['Actual Score (Single)']);
-                            gpuScoresDual.push(parseInt(gpuData[i]['Actual Score (Dual)']));
-                        }
-                        return { gpuScores, gpuScoresSingle, gpuScoresDual };
-                    } else if (dataSrc === 'names') {
-                        for (var i = 0; i < gpuData.length; i++) {
-                            gpuNames.push(gpuData[i].GPU);
-                        }
-                        return gpuNames;
+                    ]
+                },
+                options: {
+                    layout: {},
+                    scales: {
+                        yAxes: [
+                            {
+                                ticks: {
+                                    beginAtZero: true,
+                                    fontColor: "#000",
+                                    fontSize: 14,
+                                    barPercentage: 0.7,
+                                    categoryPercentage: 1
+                                }
+                            }
+                        ]
                     }
-
+                    }
+                });
                 }
-            </script>
+
+        function createGpuChart() {
+        var ctx = document.getElementById("gpuChart").getContext("2d");
+        var myChart = new Chart(ctx, {
+            type: "horizontalBar",
+            data: {
+            labels: getGpuData("names"),
+        datasets: [
+            {
+                label: "3DMark Score (Single)",
+                data: getGpuData("scores")["gpuScoresSingle"],
+                backgroundColor: "rgba(150, 150, 150, 0.3)",
+                borderColor: "rgba(0, 0, 0, 1)",
+                hoverBackgroundColor: "rgba(0, 0, 0, 0.3)",
+                borderWidth: 1
+            },
+            {
+                label: "3DMark Score (Dual)",
+                data: getGpuData("scores")["gpuScoresDual"],
+                backgroundColor: "rgba(200, 100, 100, 0.3)",
+                borderColor: "rgba(0, 0, 0, 0.3)",
+                borderWidth: 1
+            }
+        ]
+    },
+    options: {
+        scales: {
+            yAxes: [
+                {
+                    ticks: {
+                    beginAtZero: true,
+                    fontColor: "#000",
+                    fontSize: 14,
+                    barPercentage: 0.7,
+                    categoryPercentage: 1
+                }
+                }
+            ]
+        }
+    }
+    });
+}
+
+function getCpuData(dataSrc) {
+    var cpuScoresNoOverclock = [];
+    var cpuScoresOverclock = [];
+    var cpuNames = [];
+
+    if (dataSrc === "scores") {
+        for (var i = 0; i < cpuData.length; i++) {
+            cpuScoresNoOverclock.push(cpuData[i]["Actual Score (No Overclock)"]);
+            cpuScoresOverclock.push(cpuData[i]["Actual Score (Overclock)"]);
+        }
+        return { cpuScoresNoOverclock, cpuScoresOverclock };
+        } else if (dataSrc === "names") {
+        for (var i = 0; i < cpuData.length; i++) {
+            cpuNames.push(cpuData[i]["CPU Name"]);
+        }
+        return cpuNames;
+    }
+}
+
+function getGpuData(dataSrc) {
+    var gpuScores = [];
+    var gpuScoresSingle = [];
+    var gpuScoresDual = [];
+    var gpuNames = [];
+
+    if (dataSrc === "scores") {
+        for (var i = 0; i < gpuData.length; i++) {
+            gpuScores.push(gpuData[i]["Score"]);
+            gpuScoresSingle.push(gpuData[i]["Actual Score (Single)"]);
+            gpuScoresDual.push(parseInt(gpuData[i]["Actual Score (Dual)"]));
+        }
+        return { gpuScores, gpuScoresSingle, gpuScoresDual };
+    } else if (dataSrc === "names") {
+        for (var i = 0; i < gpuData.length; i++) {
+            gpuNames.push(gpuData[i].GPU);
+        }
+        return gpuNames;
+    }
+}
+
+        </script>
         </section>
-        <footer id="myFooter">
+        <footer id="myFooter" class="w3-center">
             <div class="w3-container w3-theme-l2 w3-padding-32">
-                <h4><a href="https://steamcommunity.com/groups/PCBSTools" title="PCBSTools 공식 스팀 그룹"
-                        onclick="window.open('https://steamcommunity.com/groups/PCBSTools/discussions'); return false;">스팀
-                        그룹</a> | <a href="../en/support.html" title="PCBSTools 지원 페이지">지원</a> | <a
-                        href="https://steamcommunity.com/groups/PCBSTools#announcements" title="PCBSTools 소식 및 공지"
-                        onclick="window.open('https://steamcommunity.com/groups/PCBSTools#announcements'); return false;">소식 및
-                        공지</a> | <a href="https://steamcommunity.com/groups/PCBSTools#announcements" title="PCBSTools 토론장"
-                        onclick="window.open('https://steamcommunity.com/groups/PCBSTools/discussions'); return false;">토론</a>
-                </h4>
+                <h4><a href="https://steamcommunity.com/groups/PCBSTools" title="PCBSTools 공식 스팀 그룹" onclick="window.open('https://steamcommunity.com/groups/PCBSTools'); return false;"><img src="img/img_steam.jpg" style="width:30px"></a> | <a href="https://twitter.com/Ah_Roon_" title="트위터"><img src="img/img_twitter.jpg"" style=" width:30px"></a> | <a href="about://home" title="디스코드 (곧 출시됩니다)" onclick="alert('곧 출시됩니다!');"><img src="img/img_discord.jpg" style="width:30px"></a> | <a href="https://www.paypal.me/AhRoon" title="피자 한 판 사주세요!" onclick="window.open('https://www.paypal.me/AhRoon'); return false;"><img src="img/img_paypal.jpg" style="width:100px"></a></h4>
             </div>
-        
+
             <div class="w3-container w3-theme-l1">
                 <p>사이트 제작 - <a href="https://steamcommunity.com/id/AhRoonPlayz" title="Steam Profile Ah_Roon"
-                        onclick="window.open('https://steamcommunity.com/id/AhRoonPlayz'); return false;">Ah_Roon(아룬)</a>
-                    &copy; 2018 - 2019<br />
-                    벤치마크 계산기 스크립트 원작자 - <a href="https://steamcommunity.com/id/kawaiinvshen" title="Steam Profile biubiu"
-                        onclick="window.open('https://steamcommunity.com/id/kawaiinvshen'); return false;">biubiu</a> &copy;
-                    2018 - 2019 <br />
-                    부품 순위 원작자 - <a href="https://steamcommunity.com/id/skbeyondpower" title="Steam Profile BeyondPower"
-                        onclick="window.open('https://steamcommunity.com/id/skbeyondpower'); return false;">BeyondPower</a>
-                    &copy; 2018 - 2019 <br />
-                    소스 코드 제공 - <a href="https://www.w3schools.com/" title="w3schools Website"
-                        onclick="window.open('https://www.w3schools.com/'); return false;">w3schools</a>과 <a
-                        href="https://steamcommunity.com/id/shona1337" title="Steam Profile Shona"
-                        onclick="window.open('https://steamcommunity.com/id/shona1337'); return false;">Shona</a>
-                    &copy; 2019<br />
-                    <br />
-                    Claudiu Kiss님과 <a href="https://theirregularcorporation.com" title="The Irregular Corporation Website"
-                        onclick="window.open('https://theirregularcorporation.com'); return false;">Irregular Corporation</a>에게
-                    이런 멋진 게임을 만들어 주신 것에 대해 감사드립니다!<br /></p>
+                    onclick="window.open('https://steamcommunity.com/id/AhRoonPlayz'); return false;">Ah_Roon(아룬)</a>
+                &copy; 2018 - 2019<br />
+                벤치마크 계산기 스크립트 원작자 - <a href="https://steamcommunity.com/id/kawaiinvshen" title="Steam Profile biubiu" onclick="window.open('https://steamcommunity.com/id/kawaiinvshen'); return false;">biubiu</a> &copy;
+                2018 - 2019 <br />
+                부품 순위 스크립트 원작자 - <a href="https://steamcommunity.com/id/skbeyondpower"
+                    title="Steam Profile BeyondPower"
+                    onclick="window.open('https://steamcommunity.com/id/skbeyondpower'); return false;">BeyondPower</a>
+                &copy; 2018 - 2019 <br />
+                소스 코드 제공 - <a href="https://www.w3schools.com/" title="w3schools Website"
+                    onclick="window.open('https://www.w3schools.com/'); return false;">w3schools</a>와 <a href="https://steamcommunity.com/id/shona1337" title="Steam Profile Shona"
+                    onclick="window.open('https://steamcommunity.com/id/shona1337'); return false;">Shona</a>
+                &copy; 2019<br />
+                <br />
+                이런 최고의 게임을 만들어 주신 Claudiu Kiss님과 <a href="https://theirregularcorporation.com" title="The Irregular Corporation Website"
+                    onclick="window.open('https://theirregularcorporation.com'); return false;">Irregular Corporation</a>에게 감사드립니다!<br /></p>
                 <p></p>
             </div>
         </footer>

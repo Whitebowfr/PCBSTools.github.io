@@ -27,7 +27,6 @@
         height: inherit;
     }
 </style>
-
 <body>
 
     <!-- Navbar -->
@@ -43,13 +42,13 @@
                     <a href="../en/calculator.html" class="w3-bar-item w3-button w3-hover-green">Calculator</a>
                 </div>
             </div>
-            <a href="../en/upcomingfeatures.html" class="w3-bar-item w3-button w3-hide-small w3-hover-green">Upcoming Features</a>
             <a href="../en/support.html" class="w3-bar-item w3-button w3-hide-small w3-hover-green">Support</a>
             <div class="w3-dropdown-hover w3-hover-green">
                 <button class="w3-button w3-hover-green">Language</button>
                 <div class="w3-dropdown-content w3-bar-block w3-card-4">
                     <a href="../ko/index.html" class="w3-bar-item w3-button w3-hover-green">한국어</a>
                     <a href="../en/index.html" class="w3-bar-item w3-button w3-hover-green">English</a>
+                    <a href="#" class="w3-bar-item w3-button w3-hover-green w3-disabled" onclick="alert('La traduction française est désactivée en raison d\'un bogue critique.\nFrench translation is disabled due to critical bug.')">Français</a>
                 </div>
             </div>
         </div>
@@ -65,9 +64,9 @@
         <div class="w3-row w3-padding-64">
             <div class="w3-container">
                 <h1 class="w3-text-teal">PCBSTools - Advanced & Useful Tools for PC Building Simulator.</h1>
-                <p>PCBSTools Website was created for PC Builders, who have problem in calculating 3DMark Score, or what parts you should choose when doing Upgrade Jobs, etc.</p>
+                <p>Are you tired of calculating or guessing 3DMark Score, finding best parts in PC Building Simulator?</p>
                 <p>These tools will remove all of your trouble!</p>
-                <p>This website contains 4 tools to resolve common Career Jobs in PC Building Simulator, including Parts Ranking, Build Upgrader, Build Maker, and 3DMark Calculator.</p>
+                <p>This website contains 4 tools to resolve common Career Jobs in PC Building Simulator, including Parts Ranking, Score Calculator, Build Maker, Build Upgrader.</p>
                 <p></p>
                 <p>Warning: This website is for people who plays PC Building Simulator Game. If you don't have it, please consider buying a game on <a href="https://store.steampowered.com/app/621060/PC_Building_Simulator/">Steam Store</a>!</p>
                 <p></p>
@@ -75,6 +74,42 @@
                 <p><button href="https://www.paypal.me/AhRoon" class="w3-button w3-black w3-hover-green w3-round-large" onclick="window.open('https://www.paypal.me/AhRoon'); return false;">Donate via PayPal!</button></p>
             </div>
         </div>
+
+        <section class="w3-row-padding w3-center">
+            <div class="w3-left relative1">
+                <p>
+                    <font size="6">Recent Changelog (v1.5)</font>
+                </p>
+                <ul style="list-style-type:disc;">
+                    <li>[Updated] Updated to latest version of PCBS v1.5</li>
+                    <li>[Updated] Updated JQuery, Chart, DataTable to latest version</li>
+                    <li>[Addition] Added new CPUs & GPUs from PCBS v1.5</li>
+                    <li>[Addition] Added Latest Changelog & Upcoming Features in Main Page</li>
+                    <li>[Replacement] Replaced profile image to recent one</li>
+                    <li>[Improved] Improved Footer. Unnecessary links are removed, and the text is now replaced with image.</li>
+                    <li>[Improved] Seperated script into two script, list and script js file</li>
+                    <li>[Improved] Improved the Korean Translation</li>
+                    <li>[Removal] Removed the (Default) text in SLI/CrossFire question on Calculator</li>
+                    <li>[Removal] Removed Upcoming Changes page<br>since the Upcoming Changes already exist in main page</li>
+                    <li>[Fixes] Fixed the bug regarding of Credit section that appeared in Parts Ranking Page</li>
+                    <li>[Note] French Language is temporarily disabled due to critical bug.</li>
+                </ul>
+            </div>
+            <div class="w3-right relative2">
+                <p>
+                    <font size="6">Upcoming Features (v1.5.1~)</font>
+                </p>
+                <ul style="list-style-type:disc;">
+                    <li>Update PCBS v1.6 when released</li>
+                    <li>Add Overclock Calculator</li>
+                    <li>Add Watercooled GPU</li>
+                    <li>Improve & Support more translations<br>(If you interested in translation apply <a
+                            href="https://forms.gle/XGi4gHozazezm3aj8" title="Apply for Translator"
+                            onclick="window.open('https://forms.gle/XGi4gHozazezm3aj8; return false;">here</a>)</li>
+                    <li>Fix issue regarding of French Translation</li>        
+                </ul>
+            </div>
+        </section>
 
         <!-- Credits -->
         <section class="w3-row-padding w3-center w3-light-grey">
@@ -93,9 +128,7 @@
                 <a href="https://steamcommunity.com/id/kawaiinvshen" title="Steam Profile biubiu"
                     onclick="window.open('https://steamcommunity.com/id/kawaiinvshen'); return false;"><img
                         src="img/img_profile_biubiu.jpg" style="width:20%"></a>
-                <p>Providing Source Code for <a
-                        href="https://steamcommunity.com/app/621060/discussions/0/3216031607491943889/">Benchmark
-                        Calculator</a>.</p>
+                <p>Providing Source Code for <a href="https://steamcommunity.com/app/621060/discussions/0/3216031607491943889/">Calculator</a>.</p>
             </article>
             <article class="w3-third">
                 <p>BeyondPower</p>
@@ -106,9 +139,9 @@
             </article>
         </section>
 
-        <footer id="myFooter">
+        <footer id="myFooter" class="w3-center">
             <div class="w3-container w3-theme-l2 w3-padding-32">
-                <h4><a href="https://steamcommunity.com/groups/PCBSTools" title="PCBSTools Official Steam Group" onclick="window.open('https://steamcommunity.com/groups/PCBSTools/discussions'); return false;">Steam Group</a> | <a href="../en/support.html" title="PCBSTools Support Page">Support</a> | <a href="https://steamcommunity.com/groups/PCBSTools#announcements" title="PCBSTools News & Announcements" onclick="window.open('https://steamcommunity.com/groups/PCBSTools#announcements'); return false;">News & Announcements</a> | <a href="https://steamcommunity.com/groups/PCBSTools#announcements" title="PCBSTools Discussion" onclick="window.open('https://steamcommunity.com/groups/PCBSTools/discussions'); return false;">Discussion</a></h4>
+                <h4><a href="https://steamcommunity.com/groups/PCBSTools" title="PCBSTools Official Steam Group" onclick="window.open('https://steamcommunity.com/groups/PCBSTools'); return false;"><img src="img/img_steam.jpg" style="width:30px"></a> | <a href="https://twitter.com/Ah_Roon_" title="Twitter"><img src="img/img_twitter.jpg"" style=" width:30px"></a> | <a href="about://home" title="Discord (Coming Soon)" onclick="alert('Coming Soon!');"><img src="img/img_discord.jpg" style="width:30px"></a> | <a href="https://www.paypal.me/AhRoon" title="Buy me a pizza!" onclick="window.open('https://www.paypal.me/AhRoon'); return false;"><img src="img/img_paypal.jpg" style="width:100px"></a></h4>
             </div>
 
             <div class="w3-container w3-theme-l1">

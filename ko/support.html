@@ -29,26 +29,27 @@
 </style>
 
 <body>
+
     <!-- Navbar -->
     <div class="w3-top">
         <div class="w3-bar w3-theme w3-large">
             <a class="w3-bar-item w3-button w3-right w3-hide-large w3-hover-white w3-large w3-theme-l1"
                 href="javascript:void(0)" onclick="w3_open()"><i class="fa fa-bars"></i></a>
-            <a href="../ko/index.html" class="w3-bar-item w3-button w3-theme-l1">PCBSTools</a>
-            <div class="w3-dropdown-hover">
-                <button class="w3-button">도구 목록</button>
+            <a href="../ko/index.html" class="w3-bar-item w3-button w3-hover-green w3-theme-l1">PCBSTools</a>
+            <div class="w3-dropdown-hover w3-hover-green">
+                <button class="w3-button w3-hover-green">도구 목록</button>
                 <div class="w3-dropdown-content w3-bar-block w3-card-4">
-                    <a href="../ko/partsranking.html" class="w3-bar-item w3-button">부품 순위</a>
+                    <a href="../ko/partsranking.html" class="w3-bar-item w3-button w3-hover-green">부품 순위</a>
                     <a href="../ko/calculator.html" class="w3-bar-item w3-button w3-hover-green">계산기</a>
                 </div>
             </div>
-            <a href="../ko/upcomingfeatures.html" class="w3-bar-item w3-button w3-hide-small w3-hover-white">출시 예정 기능</a>
-            <a href="../ko/support.html" class="w3-bar-item w3-button w3-hide-small w3-hover-white">지원</a>
-            <div class="w3-dropdown-hover">
-                <button class="w3-button">Language</button>
+            <a href="../ko/support.html" class="w3-bar-item w3-button w3-hide-small w3-hover-green">지원</a>
+            <div class="w3-dropdown-hover w3-hover-green">
+                <button class="w3-button w3-hover-green">Language</button>
                 <div class="w3-dropdown-content w3-bar-block w3-card-4">
-                    <a href="../ko/support.html" class="w3-bar-item w3-button">한국어</a>
-                    <a href="../en/support.html" class="w3-bar-item w3-button">English</a>
+                    <a href="../ko/calculator.html" class="w3-bar-item w3-button w3-hover-green">한국어</a>
+                    <a href="../en/calculator.html" class="w3-bar-item w3-button w3-hover-green">English</a>
+                    <a href="#" class="w3-bar-item w3-button w3-hover-green w3-disabled" onclick="alert('La traduction française est désactivée en raison d\'un bogue critique.\nFrench translation is disabled due to critical bug.')">Français</a>
                 </div>
             </div>
         </div>
@@ -64,45 +65,35 @@
         <div class="w3-row w3-padding-64">
             <div class="w3-container">
                 <h1 class="w3-text-teal">지원</h1>
-                <p>혹시 저희 웹사이트를 사용할 때 문제(예를 들어 버그, 글리치, 에러 등)를 발견하였나요? 저희에게 알려주세요!</p>
+                <p>저희 웹사이트를 이용할 때 버그를 발견하셨거나 건의 사항이 있으신가요? 저희에게 알려주세요!</p>
 				<p></p>
-				<p></p>
-				<h1 class="w3-text-teal">어디에서 신고할 수 있나요?</h1>
-				<p><a href="https://github.com/pcbstools/issuetracker" class="w3-button w3-bar-item" onclick="window.open('https://github.com/pcbstools/issuetracker'); return false;">GitHub에 이슈 올리기</a></p>
+				<h1 class="w3-text-teal">어디에서 버그를 신고하거나 건의 사항을 작성 할 수 있나요?</h1>
+				<p><a href="https://github.com/pcbstools/issuetracker" class="w3-button w3-bar-item" onclick="window.open('https://github.com/pcbstools/issuetracker'); return false;">GitHub에서 이슈 생성하기</a><a href="about://home" class="w3-button w3-bar-item" onclick="alert('Coming Soon!')">디스코드 서버에 메시지 보내기 (곧 출시됩니다)</a></p>
 			</article>
             </div>
         </div>
-        <footer id="myFooter">
+        <footer id="myFooter" class="w3-center">
             <div class="w3-container w3-theme-l2 w3-padding-32">
-                <h4><a href="https://steamcommunity.com/groups/PCBSTools" title="PCBSTools 공식 스팀 그룹"
-                        onclick="window.open('https://steamcommunity.com/groups/PCBSTools/discussions'); return false;">스팀
-                        그룹</a> | <a href="../en/support.html" title="PCBSTools 지원 페이지">지원</a> | <a
-                        href="https://steamcommunity.com/groups/PCBSTools#announcements" title="PCBSTools 소식 및 공지"
-                        onclick="window.open('https://steamcommunity.com/groups/PCBSTools#announcements'); return false;">소식 및
-                        공지</a> | <a href="https://steamcommunity.com/groups/PCBSTools#announcements" title="PCBSTools 토론장"
-                        onclick="window.open('https://steamcommunity.com/groups/PCBSTools/discussions'); return false;">토론</a>
-                </h4>
+                <h4><a href="https://steamcommunity.com/groups/PCBSTools" title="PCBSTools 공식 스팀 그룹" onclick="window.open('https://steamcommunity.com/groups/PCBSTools'); return false;"><img src="img/img_steam.jpg" style="width:30px"></a> | <a href="https://twitter.com/Ah_Roon_" title="트위터"><img src="img/img_twitter.jpg"" style=" width:30px"></a> | <a href="about://home" title="디스코드 (곧 출시됩니다)" onclick="alert('곧 출시됩니다!');"><img src="img/img_discord.jpg" style="width:30px"></a> | <a href="https://www.paypal.me/AhRoon" title="피자 한 판 사주세요!" onclick="window.open('https://www.paypal.me/AhRoon'); return false;"><img src="img/img_paypal.jpg" style="width:100px"></a></h4>
             </div>
-        
+
             <div class="w3-container w3-theme-l1">
                 <p>사이트 제작 - <a href="https://steamcommunity.com/id/AhRoonPlayz" title="Steam Profile Ah_Roon"
-                        onclick="window.open('https://steamcommunity.com/id/AhRoonPlayz'); return false;">Ah_Roon(아룬)</a>
-                    &copy; 2018 - 2019<br />
-                    벤치마크 계산기 스크립트 원작자 - <a href="https://steamcommunity.com/id/kawaiinvshen" title="Steam Profile biubiu"
-                        onclick="window.open('https://steamcommunity.com/id/kawaiinvshen'); return false;">biubiu</a> &copy;
-                    2018 - 2019 <br />
-                    부품 순위 원작자 - <a href="https://steamcommunity.com/id/skbeyondpower" title="Steam Profile BeyondPower"
-                        onclick="window.open('https://steamcommunity.com/id/skbeyondpower'); return false;">BeyondPower</a>
-                    &copy; 2018 - 2019 <br />
-                    소스 코드 제공 - <a href="https://www.w3schools.com/" title="w3schools Website"
-                        onclick="window.open('https://www.w3schools.com/'); return false;">w3schools</a>과 <a
-                        href="https://steamcommunity.com/id/shona1337" title="Steam Profile Shona"
-                        onclick="window.open('https://steamcommunity.com/id/shona1337'); return false;">Shona</a>
-                    &copy; 2019<br />
-                    <br />
-                    Claudiu Kiss님과 <a href="https://theirregularcorporation.com" title="The Irregular Corporation Website"
-                        onclick="window.open('https://theirregularcorporation.com'); return false;">Irregular Corporation</a>에게
-                    이런 멋진 게임을 만들어 주신 것에 대해 감사드립니다!<br /></p>
+                    onclick="window.open('https://steamcommunity.com/id/AhRoonPlayz'); return false;">Ah_Roon(아룬)</a>
+                &copy; 2018 - 2019<br />
+                벤치마크 계산기 스크립트 원작자 - <a href="https://steamcommunity.com/id/kawaiinvshen" title="Steam Profile biubiu" onclick="window.open('https://steamcommunity.com/id/kawaiinvshen'); return false;">biubiu</a> &copy;
+                2018 - 2019 <br />
+                부품 순위 스크립트 원작자 - <a href="https://steamcommunity.com/id/skbeyondpower"
+                    title="Steam Profile BeyondPower"
+                    onclick="window.open('https://steamcommunity.com/id/skbeyondpower'); return false;">BeyondPower</a>
+                &copy; 2018 - 2019 <br />
+                소스 코드 제공 - <a href="https://www.w3schools.com/" title="w3schools Website"
+                    onclick="window.open('https://www.w3schools.com/'); return false;">w3schools</a>와 <a href="https://steamcommunity.com/id/shona1337" title="Steam Profile Shona"
+                    onclick="window.open('https://steamcommunity.com/id/shona1337'); return false;">Shona</a>
+                &copy; 2019<br />
+                <br />
+                이런 최고의 게임을 만들어 주신 Claudiu Kiss님과 <a href="https://theirregularcorporation.com" title="The Irregular Corporation Website"
+                    onclick="window.open('https://theirregularcorporation.com'); return false;">Irregular Corporation</a>에게 감사드립니다!<br /></p>
                 <p></p>
             </div>
         </footer>
