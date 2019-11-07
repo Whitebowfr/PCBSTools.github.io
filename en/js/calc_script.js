@@ -531,7 +531,7 @@ function upgradeBuild() {
     data.gpus[currentGpu][currentSlicf].score
   );
   if (currentScore > score) {
-    alert("No upgrade required!");
+    alert("No upgrade is needed");
     return false;
   }
   for (cpu in data.procs) {

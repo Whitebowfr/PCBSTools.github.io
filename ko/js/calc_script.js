@@ -88,9 +88,9 @@ function scoreCalculatorCal() {
   if (!data.procs[cpu] || data.procs[cpu][ramc][rams] == "") {
     alert("CPU를 찾을 수 없습니다!");
   } else if (!data.gpus[gpu]) {
-    alert("GPU를 찾을 수 없습니다");
+    alert("GPU를 찾을 수 없습니다!");
   } else if (!data.gpus[gpu][slicf]) {
-    alert("선택한 GPU는 SLI/CrossFire가 호환되지 않습니다!");
+    alert("선택한 GPU는 SLI/CrossFire를 지원하지 않습니다!");
   } else {
     var score = getScore(
       data.procs[cpu][ramc][rams],
@@ -531,7 +531,7 @@ function upgradeBuild() {
     data.gpus[currentGpu][currentSlicf].score
   );
   if (currentScore > score) {
-    alert("No upgrade required!");
+    alert("No upgrade is needed");
     return false;
   }
   for (cpu in data.procs) {
