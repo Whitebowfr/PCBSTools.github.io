@@ -133,24 +133,24 @@
     <!-- Navbar -->
     <div class="w3-top">
         <div class="w3-bar w3-theme w3-large">
-          <a class="w3-bar-item w3-button w3-right w3-hide-large w3-hover-white w3-large w3-theme-l1"
-              href="javascript:void(0)" onclick="w3_open()"><i class="fa fa-bars"></i></a>
-          <a href="../fr/index.html" class="w3-bar-item w3-button w3-hover-green w3-theme-l1">PCBSTools</a>
-          <div class="w3-dropdown-hover w3-hover-green">
-              <button class="w3-button w3-hover-green">Liste des outils</button>
-              <div class="w3-dropdown-content w3-bar-block w3-card-4">
-                  <a href="../fr/partsranking.html" class="w3-bar-item w3-button w3-hover-green">Classement des composants</a>
-                  <a href="../fr/calculator.html" class="w3-bar-item w3-button w3-hover-green">Calculateurs</a>
-              </div>
-          </div>
-          <a href="../fr/support.html" class="w3-bar-item w3-button w3-hide-small w3-hover-green">Contact</a>
-          <div class="w3-dropdown-hover w3-hover-green">
-              <button class="w3-button w3-hover-green">Language</button>
-              <div class="w3-dropdown-content w3-bar-block w3-card-4">
-                  <a href="../ko/calculator.html" class="w3-bar-item w3-button w3-hover-green">한국어</a>
-                  <a href="../en/calculator.html" class="w3-bar-item w3-button w3-hover-green">English</a>
-                  <a href="../fr/calculator.html" class="w3-bar-item w3-button w3-hover-green">Français</a>
-              </div>
+            <a class="w3-bar-item w3-button w3-right w3-hide-large w3-hover-white w3-large w3-theme-l1"
+                href="javascript:void(0)" onclick="w3_open()"><i class="fa fa-bars"></i></a>
+            <a href="../fr/index.html" class="w3-bar-item w3-button w3-hover-green w3-theme-l1">PCBSTools</a>
+            <div class="w3-dropdown-hover w3-hover-green">
+                <button class="w3-button w3-hover-green">Liste des outils</button>
+                <div class="w3-dropdown-content w3-bar-block w3-card-4">
+                    <a href="../fr/partsranking.html" class="w3-bar-item w3-button w3-hover-green">Classement des composants</a>
+                    <a href="../fr/calculator.html" class="w3-bar-item w3-button w3-hover-green">Calculateurs</a>
+                </div>
+            </div>
+            <a href="../fr/support.html" class="w3-bar-item w3-button w3-hide-small w3-hover-green">Soutien</a>
+            <div class="w3-dropdown-hover w3-hover-green">
+                <button class="w3-button w3-hover-green">Language</button>
+                <div class="w3-dropdown-content w3-bar-block w3-card-4">
+                    <a href="../ko/calculator.html" class="w3-bar-item w3-button w3-hover-green">한국어</a>
+                    <a href="../en/calculator.html" class="w3-bar-item w3-button w3-hover-green">English</a>
+                    <a href="../fr/calculator.html" class="w3-bar-item w3-button w3-hover-green">Français</a>
+                </div>
             </div>
         </div>
     </div>
@@ -164,8 +164,8 @@
     <div class="w3-main w3-center w3-content" style="max-width:1200px">
         <div class="w3-row w3-padding-64">
             <div class="w3-container">
-              <h1 class="w3-text-teal">Calculateurs</h1>
-              <p>Différents calculateurs pour PCBS</p>
+                <h1 class="w3-text-teal">Calculator</h1>
+                <p>Différents calculateurs pour les meilleurs constructeurs de PC</p>
             </div>
         </div>
 
@@ -173,11 +173,11 @@
 		<script src='js/calc_list.js'></script>
 		<script src='js/calc_script.js'></script>
         <div>
-          <button class="w3-button w3-black w3-hover-green" onclick="showThisCal('first','second','third','forth');">Calculateur de score 3DMark</button>
-          <button class="w3-button w3-black w3-hover-green" onclick="showThisCal('second','first','third','forth');">Créateur de PC</button>
-        <button class="w3-button w3-black w3-hover-green" onclick="showThisCal('third','first','second','forth');">Amélioration de PC</button>
-          <button class="w3-button w3-black w3-hover-green w3-disabled">Calculateur d'overclock (arrive bientôt)</button>
-          <button class="w3-button w3-black w3-hover-green" onclick="showThisCal('forth','first','second','third');">Historique</button>
+            <button class="w3-button w3-black w3-hover-green" onclick="showThisCal('first','second','third','forth');">Calculateur de score 3DMark</button>
+            <button class="w3-button w3-black w3-hover-green" onclick="showThisCal('second','first','third','forth');">Configurateur de PC</button>
+    	    <button class="w3-button w3-black w3-hover-green" onclick="showThisCal('third','first','second','forth');">Améliorateur de PC</button>
+            <button class="w3-button w3-black w3-hover-green w3-disabled">Calculateur d'overclock (arrive bientôt)</button>
+            <button class="w3-button w3-black w3-hover-green" onclick="showThisCal('forth','first','second','third');">Historique</button>
         </div>
 		<div id="content">
 			<datalist id="cpuList">
@@ -490,11 +490,11 @@
 				<option>ASUS ROG Rampage VI Apex</option>
 				<option>ASUS ROG Rampage VI Extreme</option>
 			</datalist>
-
+		
 		    <div id="first">
 				<div id="scoreCalculator">
 					<table>
-						<caption>Calculateur de score 3DMark</caption>
+						<caption>Calculateur de score</caption>
 						<form id="scoreCForm">
 							<tr>
 								<td>CPU:</td>
@@ -539,15 +539,15 @@
 								<td>Channel de la RAM</td>
 								<td>
 									<select name="ramc1">
-										<option value="1">Single (1 RAM)</option>
-										<option value="2">Dual (2 RAMs)</option>
-										<option value="3">Trio (3 RAMs)</option>
-										<option value="4">Quad (4 RAMs)</option>
+										<option value="1">Single</option>
+										<option value="2">Dual</option>
+										<option value="3">Trio</option>
+										<option value="4">Quad</option>
 									</select>
 								</td>
 							</tr>
 							<tr>
-								<td>Carte graphique</td>
+								<td>Carte Graphique</td>
 								<td><input required name="gpu1" list="gpuList"></input></td>
 							</tr>
 							<tr>
@@ -567,11 +567,11 @@
 						<tr></tr>
 						<tr></tr>
 						<tr>
-							<<td>Score du CPU :</td>
+							<td>Score du CPU :</td>
 							<td id="cpuScoreResult1"></td>
 						</tr>
 						<tr>
-							<td>Score de la carte graphique:</td>
+							<td>Score du GPU :</td>
 							<td id="gpuScoreResult1"></td>
 						</tr>
 						<tr>
@@ -579,17 +579,17 @@
 							<td id="totalScoreResult1"></td>
 						</tr>
 						<tr>
-							<td>Consommation estimée (en Watts) :</td>
+							<td>Consommation éstimée :</td>
 							<td id="wattageResult1"></td>
 						</tr>
 						<tr></tr>
 						<tr></tr>
 						<tr>
-							<td>Prix du processeur (neuf):</td>
+							<td>Prix du CPU (neuf):</td>
 							<td id="cpuPrice1"></td>
 						</tr>
 						<tr>
-							<td>Prix du processeur (d'occasion):</td>
+							<td>Prix du CPU (d'occasion):</td>
 							<td id="cpuUsedPrice1"></td>
 						</tr>
 						<tr>
@@ -606,7 +606,7 @@
 			<div id="second">
 				<div id="buildMaker">
 					<table>
-						<caption>Créateur de PC</caption>
+						<caption>Configurateur de PC</caption>
 						<form id="buildForm">
 							<tr>
 								<td>
@@ -626,7 +626,7 @@
 							</tr>
 							<tr>
 								<td>
-									Objectif de score
+									Objectif de Score
 								</td>
 								<td>
 									<input required name="score1"></input>
@@ -634,7 +634,7 @@
 							</tr>
 							<tr>
 								<td>
-									Ecart de score possible
+									Écart de Score possible
 								</td>
 								<td>
 									<input name="offset1" placeholder="200"></input>
@@ -642,7 +642,7 @@
 							</tr>
 							<tr>
 								<td>
-									Niveau (en mode carrière)
+									Niveau (en mode Carrière)
 								</td>
 								<td>
 									<input required name="level1"></input>
@@ -662,7 +662,7 @@
 								</td>
 								<td>
 									<select name="architecture1">
-										<option selected>peu importe</option>
+										<option selected>Tout</option>
 										<option value="skylake">Skylake (LGA 1151)</option>
 										<option value="kabylake">Kabylake (LGA 1151)</option>
 										<option value="coffeelake">Coffeelake (LGA 1151)</option>
@@ -674,7 +674,7 @@
 							</tr>
 							<tr>
 								<td>
-									Inclure la carte mère ?
+									Inclure la carte mère?
 								</td>
 								<td>
 									<input type="checkbox" name="incmobo1"></input>
@@ -682,7 +682,7 @@
 							</tr>
 							<tr>
 								<td>
-									Inclure la RAM ?
+									Inclure la RAM?
 								</td>
 								<td>
 									<input type="checkbox" name="incram1"></input>
@@ -690,14 +690,14 @@
 							</tr>
 							<tr>
 								<td>
-									Besoin d'overclocker ?
+									Overclocking prévu?
 								</td>
 								<td>
 									<input type="checkbox" name="needoc1"></input>
 								</td>
 							</tr>
 							<tr>
-								<td><button type="button" onclick="generateBuild()">Calculer !</button></td>
+								<td><button type="button" onclick="generateBuild()">Calculer!</button></td>
 							</tr>
 						</form>
 					</table>
@@ -705,16 +705,16 @@
 				<div id="buildMakerResults">
 					<table id="buildMakerTable">
 						<tr>
-              <td>CPU</td>
+							<td>CPU</td>
 							<td>Channel de la RAM</td>
 							<td>Fréquence de la RAM</td>
 							<td>GPU</td>
 							<td>SLI/CrossFire</td>
-							<td>Carte Mère</td>
+							<td>Carte mère</td>
 							<td>RAM</td>
 							<td>Coût</td>
 							<td>Budget restant</td>
-							<td>Consommation éstimée (en Watts)</td>
+							<td>Consommation éstimée</td>
 							<td>Score</td>
 							<td>Sauvegarder</td>
 						</tr>
@@ -722,9 +722,9 @@
 				</div>
 				<div id="saveBuildBackground">
 					<form id="saveForm">
-						<input type="search" name="remarks" placeholder="Remarks"></input>
-						<button type="button" onclick="unblurBackground(document.getElementById('buildMaker'));unblurBackground(document.getElementById('buildMakerResults'));hideSaver(document.getElementById('saveBuildBackground'));savePcBuild(document.getElementById('buildMakerTable').rows[temp],'build',document.getElementById('saveForm').remarks.value);">Save</button>
-						<button type="button" onclick="unblurBackground(document.getElementById('buildMaker'));unblurBackground(document.getElementById('buildMakerResults'));hideSaver(document.getElementById('saveBuildBackground'))">Cancel</button>
+						<input type="search" name="remarks" placeholder="Remarques"></input>
+						<button type="button" onclick="unblurBackground(document.getElementById('buildMaker'));unblurBackground(document.getElementById('buildMakerResults'));hideSaver(document.getElementById('saveBuildBackground'));savePcBuild(document.getElementById('buildMakerTable').rows[temp],'build',document.getElementById('saveForm').remarks.value);">Sauvegarder</button>
+						<button type="button" onclick="unblurBackground(document.getElementById('buildMaker'));unblurBackground(document.getElementById('buildMakerResults'));hideSaver(document.getElementById('saveBuildBackground'))">Annuler</button>
 					</form>
 				</div>
 			</div>
@@ -733,25 +733,25 @@
 					<table>
 						<form id="upgradeForm" name="upgradeForm">
 							<caption>
-								Amélioration de PC
+								Améliorateur de PC
 							</caption>
 							<tr>
-								<td>CPU Actuel</td>
+								<td>CPU actuel</td>
 								<td><input required name="currentProc1" list="cpuList" type="search" onchange="showAvailableRamChannel(this.value,currentRamC1);showAvailableRamSpeed(this.value,currentRamS1);showAvailableMotherboard(this.value,currentGpu1.value,currentSlicf1.value,currentMobo1)"></td>
 							</tr>
 							<tr>
-								<td>Channel de la RAM Actuellement</td>
+								<td>Channel de la RAM actuelle</td>
 								<td>
 									<select name="currentRamC1">
-										<option value="1" selected>Single (1 RAM)</option>
-										<option value="2">Dual (2 RAM)</option>
-										<option value="3">Trio (3 RAM)</option>
-										<option value="4">Quad (4 RAM)</option>
+										<option value="1" selected>Single</option>
+										<option value="2">Dual</option>
+										<option value="3">Trio</option>
+										<option value="4">Quad</option>
 									</select>
 								</td>
 							</tr>
 							<tr>
-								<td>Fréquence de la RAM actuellement</td>
+								<td>Fréquence de la RAM actuelle</td>
 								<td>
 									<select name="currentRamS1">
 										<option>1866</option>
@@ -786,11 +786,11 @@
 								</td>
 							</tr>
 							<tr>
-								<td>GPU Actuel</td>
+								<td>GPU actuel </td>
 								<td><input required name="currentGpu1" list="gpuList" onchange="showAvailableMotherboard(currentProc1.value,this.value,currentSlicf1.value,currentMobo1)"></td>
 							</tr>
 							<tr>
-								<td>SLI/CrossFire ?</td>
+								<td>SLI/CrossFire actuellement ?</td>
 								<td>
 									<select name="currentSlicf1" onchange="showAvailableMotherboard(currentProc1.value,currentGpu1.value,this.value,currentMobo1)">
 										<option value="1" selected>Non</option>
@@ -799,7 +799,7 @@
 								</td>
 							</tr>
 							<tr>
-								<td>Carte mère actuelle</td>
+								<td>Carte mère Actuelle</td>
 								<td>
 									<select name="currentMobo1">
 										<option>GIGABYTE GA-AB350M-Gaming 3</option>
@@ -885,19 +885,19 @@
 								<td><input required name="budget2"/></td>
 							</tr>
 							<tr>
-								<td>Budget Pour d'Autres Composants</td>
+								<td>Budget pour d'autres composants</td>
 								<td><input name="resbudget2" placeholder="0"/></td>
 							</tr>
 							<tr>
-								<td>Objectif de Score</td>
+								<td>objectif de score</td>
 								<td><input required name="score2"/></td>
 							</tr>
 							<tr>
-								<td>Ecart de score possible</td>
+								<td>Écart de score possible</td>
 								<td><input name="offset2" placeholder="200"/></td>
 							</tr>
 							<tr>
-								<td>Niveau</td>
+								<td>Niveau (en mode Carrière)</td>
 								<td><input required name="level2"/></td>
 							</tr>
 							<tr>
@@ -905,7 +905,7 @@
 								<td><input name="results2" placeholder="10"/></td>
 							</tr>
 							<tr>
-								<td><button onclick="upgradeBuild()" type="button">Améliorer !</button></td>
+								<td><button onclick="upgradeBuild()" type="button">Améliorer!</button></td>
 							</tr>
 						</form>
 					</table>
@@ -913,16 +913,16 @@
 				<div id="upgradeResults">
 					<table id="buildUpgraderTable">
 						<tr>
-              <td>CPU</td>
-							<td>Channel de la RAM</td>
-							<td>Fréquence de la RAM</td>
+							<td>CPU</td>
+							<td>RAM Channel</td>
+							<td>RAM Speed</td>
 							<td>GPU</td>
 							<td>SLI/CrossFire</td>
-							<td>Carte mère</td>
+							<td>Motherboard</td>
 							<td>RAM</td>
-							<td>Coût</td>
-							<td>Budget Restant</td>
-							<td>Consommation éstimée (en Watts)</td>
+							<td>Cost</td>
+							<td>Budget Left</td>
+							<td>Estimated Wattage</td>
 							<td>Score</td>
 						</tr>
 					</table>
@@ -930,7 +930,7 @@
 			</div>
 			<div id="forth">
 				<div id="scoreCalculatorHistory">
-          <h1>Historique du calculateur de score 3DMark</h1>
+					<h1>Historique du calculateur de score</h1>
 					<table id="scoreCalculatorHistoryTable">
 						<tr>
 							<td>CPU</td>
@@ -941,29 +941,29 @@
 							<td>Carte mère</td>
 							<td>RAM</td>
 							<td>Coût</td>
-							<td>Budget Restant</td>
-							<td>Conso. Estimée</td>
+							<td>Budget restant</td>
+							<td>Consommation éstimée</td>
 							<td>Score</td>
 							<td>Remarques</td>
 						</tr>
 					</table>
 				</div>
 				<div id="buildMakerHistory">
-          <h1>Historique du créateur de PC</h1>
+					<h1>Historique du configurateur de PC</h1>
 					<table id="buildMakerHistoryTable">
 						<tr>
 							<td>CPU</td>
-							<td>Channel de la RAM</td>
-							<td>Fréquence de la RAM</td>
+							<td>RAM Channel</td>
+							<td>RAM Speed</td>
 							<td>GPU</td>
-							<td>SliCf</td>
-							<td>Carte mère</td>
-							<td>Ram</td>
-							<td>Coût</td>
-							<td>Budget Restant</td>
-							<td>Conso. Estimée</td>
+							<td>SLI/CrossFire</td>
+							<td>Motherboard</td>
+							<td>RAM</td>
+							<td>Cost</td>
+							<td>Budget Left</td>
+							<td>Estimated Wattage</td>
 							<td>Score</td>
-							<td>Remarques</td>
+							<td>Remarks</td>
 						</tr>
 					</table>
 				</div>
@@ -972,32 +972,32 @@
 	</div>
 </section>
         <footer id="myFooter" class="w3-center">
-          <div class="w3-container w3-theme-l2 w3-padding-32">
-              <h4><a href="https://steamcommunity.com/groups/PCBSTools" title="Groupe Steam Officiel de PCBSTools" onclick="window.open('https://steamcommunity.com/groups/PCBSTools'); return false;"><img src="img/img_steam.jpg" style="width:30px"></a> | <a href="https://twitter.com/Ah_Roon_" title="Twitter"><img src="img/img_twitter.jpg"" style=" width:30px"></a> | <a href="about://home" title="Discord (arrive bientôt !)" onclick="alert('En développement !');"><img src="img/img_discord.jpg" style="width:30px"></a> | <a href="https://www.paypal.me/AhRoon" title="Achète moi une pizza !" onclick="window.open('https://www.paypal.me/AhRoon'); return false;"><img src="img/img_paypal.jpg" style="width:100px"></a></h4>
-          </div>
+            <div class="w3-container w3-theme-l2 w3-padding-32">
+                <h4><a href="https://steamcommunity.com/groups/PCBSTools" title="Groupe Steam officiel de PCBSTools" onclick="window.open('https://steamcommunity.com/groups/PCBSTools'); return false;"><img src="img/img_steam.jpg" style="width:30px"></a> | <a href="https://twitter.com/Ah_Roon_" title="Twitter officiel" onclick="window.open('https://twitter.com/Ah_Roon_'); return false;"><img src="img/img_twitter.jpg" style=" width:30px"></a> | <a href="https://discord.io/pcbstools" title="Serveur officiel Discord" onclick="window.open('https://discord.io/pcbstools'); return false;"><img src="img/img_discord.jpg" style="width:30px"></a> | <a href="https://www.paypal.me/AhRoon" title="Achetez-moi une pizza!" onclick="window.open('https://www.paypal.me/AhRoon'); return false;"><img src="img/img_paypal.jpg" style="width:100px"></a> | <a href="https://ahroon2979.wixsite.com/mysticprismblog" title="Visitez le site officiel de Mystic Prism Studio!" onclick="window.open('https://ahroon2979.wixsite.com/mysticprismblog'); return false;"><img src="img/img_mps.png" style="width:200px"></a></h4>
+            </div>
 
-          <div class="w3-container w3-theme-l1">
-              <p>Site créé par <a href="https://steamcommunity.com/id/AhRoonPlayz" title="Steam Profile Ah_Roon"
-                  onclick="window.open('https://steamcommunity.com/id/AhRoonPlayz'); return false;">Ah_Roon</a>
-              &copy; 2018 - 2019<br />
-              Auteur originel du script du calculateur - <a href="https://steamcommunity.com/id/kawaiinvshen"
-                  title="Steam Profile biubiu"
-                  onclick="window.open('https://steamcommunity.com/id/kawaiinvshen'); return false;">biubiu</a> &copy;
-              2018 - 2019 <br />
-              Auteur Originel du Scipt du classement des composants - <a href="https://steamcommunity.com/id/skbeyondpower"
-                  title="Steam Profile BeyondPower"
-                  onclick="window.open('https://steamcommunity.com/id/skbeyondpower'); return false;">BeyondPower</a>
-              &copy; 2018 - 2019 <br />
-              Code Source Fourni par <a href="https://www.w3schools.com/" title="w3schools Website"
-                  onclick="window.open('https://www.w3schools.com/'); return false;">w3schools</a>
-              et <a href="https://steamcommunity.com/id/shona1337" title="Steam Profile Shona"
-                  onclick="window.open('https://steamcommunity.com/id/shona1337'); return false;">Shona</a>
-              &copy; 2019<br />
-              <br />
-              Remerciements à Claudiu Kiss & <a href="https://theirregularcorporation.com" title="The Irregular Corporation Website"
-                  onclick="window.open('https://theirregularcorporation.com'); return false;">Irregular Corporation</a> pour avoir fait ce jeu Incroyable !<br /></p>
-              <p></p>
-          </div>
+            <div class="w3-container w3-theme-l1">
+                <p>Site créé par <a href="https://ahroon2979.wixsite.com/mysticprismblog" title="Mystic Prism Studio Official Website"
+                    onclick="window.open('https://ahroon2979.wixsite.com/mysticprismblog'); return false;">Mystic Prism Studio</a>
+                &copy; 2018 - 2019<br />
+                Auteur original du script du calculateur de score - <a href="https://steamcommunity.com/id/kawaiinvshen"
+                    title="Profil Steam de biubiu"
+                    onclick="window.open('https://steamcommunity.com/id/kawaiinvshen'); return false;">biubiu</a> &copy;
+                2018 - 2019 <br />
+                Auteur original du script du classement des composants - <a href="https://steamcommunity.com/id/skbeyondpower"
+                    title="Profil Steam de BeyondPower"
+                    onclick="window.open('https://steamcommunity.com/id/skbeyondpower'); return false;">BeyondPower</a>
+                &copy; 2018 - 2019 <br />
+                Code source fourni par <a href="https://www.w3schools.com/" title="w3schools Website"
+                    onclick="window.open('https://www.w3schools.com/'); return false;">w3schools</a>
+                et <a href="https://steamcommunity.com/id/shona1337" title="Steam Profile Shona"
+                    onclick="window.open('https://steamcommunity.com/id/shona1337'); return false;">Shona</a>
+                &copy; 2019<br />
+                <br />
+                Spéciale dédicace à Claudiu Kiss & <a href="https://theirregularcorporation.com" title="The Irregular Corporation Website"
+                    onclick="window.open('https://theirregularcorporation.com'); return false;">Irregular Corporation</a> pour avoir fait ce jeu incroyable!<br /></p>
+                <p></p>
+            </div>
         </footer>
 
         <!-- END MAIN -->

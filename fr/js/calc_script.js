@@ -86,11 +86,11 @@ function scoreCalculatorCal() {
   var gpu = document.getElementById("scoreCForm").gpu1.value;
   var slicf = document.getElementById("scoreCForm").slicf1.value;
   if (!data.procs[cpu] || data.procs[cpu][ramc][rams] == "") {
-    alert("Aucun CPU trouvé !");
+    alert("CPU non trouvé!");
   } else if (!data.gpus[gpu]) {
-    alert("Aucun GPU trouvé !");
+    alert("GPU non trouvé!");
   } else if (!data.gpus[gpu][slicf]) {
-    alert("La carte graphique sélectionnée n'est pas compatible SLI/CrossFire !");
+    alert("Le GPU sélectionné n\'est pas disponible pour SLI / CrossFire!");
   } else {
     var score = getScore(
       data.procs[cpu][ramc][rams],
@@ -531,7 +531,7 @@ function upgradeBuild() {
     data.gpus[currentGpu][currentSlicf].score
   );
   if (currentScore > score) {
-    alert("Aucune amélioration requise !");
+    alert("No upgrade is needed");
     return false;
   }
   for (cpu in data.procs) {

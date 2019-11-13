@@ -33,23 +33,23 @@
     <!-- Navbar -->
     <div class="w3-top">
         <div class="w3-bar w3-theme w3-large">
-          <a class="w3-bar-item w3-button w3-right w3-hide-large w3-hover-white w3-large w3-theme-l1"
-              href="javascript:void(0)" onclick="w3_open()"><i class="fa fa-bars"></i></a>
-          <a href="../fr/index.html" class="w3-bar-item w3-button w3-hover-green w3-theme-l1">PCBSTools</a>
-          <div class="w3-dropdown-hover w3-hover-green">
-              <button class="w3-button w3-hover-green">Liste des outils</button>
-              <div class="w3-dropdown-content w3-bar-block w3-card-4">
-                  <a href="../fr/partsranking.html" class="w3-bar-item w3-button w3-hover-green">Classement des composants</a>
-                  <a href="../fr/calculator.html" class="w3-bar-item w3-button w3-hover-green">Calculateurs</a>
-              </div>
-          </div>
-          <a href="../fr/support.html" class="w3-bar-item w3-button w3-hide-small w3-hover-green">Contact</a>
-          <div class="w3-dropdown-hover w3-hover-green">
-              <button class="w3-button w3-hover-green">Language</button>
-              <div class="w3-dropdown-content w3-bar-block w3-card-4">
-                  <a href="../ko/partsranking.html" class="w3-bar-item w3-button w3-hover-green">한국어</a>
-                  <a href="../en/partsranking.html" class="w3-bar-item w3-button w3-hover-green">English</a>
-                  <a href="../fr/partsranking.html" class="w3-bar-item w3-button w3-hover-green">Français</a>
+            <a class="w3-bar-item w3-button w3-right w3-hide-large w3-hover-white w3-large w3-theme-l1"
+                href="javascript:void(0)" onclick="w3_open()"><i class="fa fa-bars"></i></a>
+            <a href="../fr/index.html" class="w3-bar-item w3-button w3-hover-green w3-theme-l1">PCBSTools</a>
+            <div class="w3-dropdown-hover w3-hover-green">
+                <button class="w3-button w3-hover-green">Liste des outils</button>
+                <div class="w3-dropdown-content w3-bar-block w3-card-4">
+                    <a href="../fr/partsranking.html" class="w3-bar-item w3-button w3-hover-green">Classement des composants</a>
+                    <a href="../fr/calculator.html" class="w3-bar-item w3-button w3-hover-green">Calculateurs</a>
+                </div>
+            </div>
+            <a href="../fr/support.html" class="w3-bar-item w3-button w3-hide-small w3-hover-green">Soutien</a>
+            <div class="w3-dropdown-hover w3-hover-green">
+                <button class="w3-button w3-hover-green">Language</button>
+                <div class="w3-dropdown-content w3-bar-block w3-card-4">
+                    <a href="../ko/index.html" class="w3-bar-item w3-button w3-hover-green">한국어</a>
+                    <a href="../en/index.html" class="w3-bar-item w3-button w3-hover-green">English</a>
+                    <a href="../fr/index.html" class="w3-bar-item w3-button w3-hover-green">Français (β)</a>
                 </div>
             </div>
         </div>
@@ -64,54 +64,53 @@
     <div class="w3-main w3-center w3-content" style="max-width:2000px">
         <div class="w3-row w3-padding-64">
             <div class="w3-container">
-              h1 class="w3-text-teal">Classement des composants</h1>
-              <p>Classement le plus juste possible.</p>
-              <p>Astuce: Clique sur un bouton(par ex. Score, Score 3DMark, etc.) pour trier la liste.</p>
-              <p>Tu auras besoin d'installer Chrome (ou un navigateur basé sur Chromium) ou Firefox pour pouvoir avoir cette liste affichée correctement.</p>
-              <p>Problème connu: Actuellement, les boutons Suivant, Précédent et Page n'apparaissent pas correctement. <br>La largeur d'écran de base sera 'Tout' jusqu'à ce que nous ayons résolu le problème.</p>
+                <h1 class="w3-text-teal">Classement des composants</h1>
+                <p>Classement des composants le plus précis.</p>
+                <p>Conseil: Cliquez sur un bouton (par exemple, Score, Score 3DMark, etc.) pour trier la liste.</p>
+                <p>Vous devez installer Chrome (ou un navigateur basé sur Chromium) ou Firefox pour s'afficher correctement.</p>
             </div>
         </div>
         <section class="w3-row-padding w3-center w3-light-grey">
-            <h1>Classement des CPUs</h1>
+            <h1>Classement des composants CPU</h1>
             <table id="cpuDataTable" class="display cell-border">
                 <thead>
                     <tr>
-                      <th>Fondeur</th>
-                      <th>Nom du CPU</th>
-                      <th>Prix</th>
-                      <th>Prix de revente</th>
-                      <th>Score</th>
-                      <th>Score 3DMark (sans Overclocking)</th>
-                      <th>Score 3DMark (avec Overclocking)</th>
-                      <th>Niveau requis</th>
-                      <th>Augmentation du score quand overclocké</th>
+                        <th>Le fabricant</th>
+                        <th>Nom de la CPU</th>
+                        <th>Prix</th>
+                        <th>Prix de vente</th>
+                        <th>Score</th>
+                        <th>3DMark Score (Pas d'Overclock)</th>
+                        <th>3DMark Score (Overclock)</th>
+                        <th>Niveau requis</th>
+                        <th>Overclock CPU Score Augmentation</th>
                     </tr>
                 </thead>
             </table>
-
-            <h1>GPU Parts Ranking</h1>
+        
+            <h1>Classement des composants GPU</h1>
             <table id="gpuDataTable" class="display cell-border">
                 <thead>
                     <tr>
-                        <th>Constructeur</th>
-                        <th>Nom du GPU</th>
+                        <th>Le fabricant</th>
+                        <th>Nom de la CPU</th>
                         <th>Prix</th>
-                        <th>Prix de revente</th>
+                        <th>Prix de vente</th>
                         <th>Score</th>
-                        <th>Score 3DMark (Seule)</th>
-                        <th>Score 3DMark (Sli/Cf)</th>
-                        <th>Niveau Requis</th>
-                        <th>Augemntation du score avec deux cartes graphiques</th>
+                        <th>3DMark Score (Single)</th>
+                        <th>3DMark Score (Dual)</th>
+                        <th>Niveau requis</th>
+                        <th>Overclock CPU Score Augmentation</th>
                     </tr>
                 </thead>
             </table>
-
-            <h1>Classement des CPUs - Barre horizontale</h1>
+        
+            <h1>Classement des composants CPU - Barre horizontale</h1>
             <canvas id="cpuChart" width="300" height="250"></canvas>
-
-            <h1>Classement des GPUs - Barre Horizontale</h1>
+        
+            <h1>Classement des composants GPU - Barre horizontale</h1>
             <canvas id="gpuChart" width="200" height="300"></canvas>
-
+        
             <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
             <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.1/dist/Chart.min.js"></script>
             <script type="text/javascript"
@@ -134,11 +133,11 @@
                         return -1;
                     }
                 });
-
+                
                 $("#cpuDataTable").DataTable({
                     data: cpuData,
                     dataSrc: "",
-                    lengthMenu: [[-1], ["All"]],
+                    lengthMenu: [[-1], ["Tout"]],
                     iDisplayLength: -1,
                     columns: [
                         { data: "Manufacterer" },
@@ -164,11 +163,11 @@
                             return -1;
                         }
                 });
-
+  
                 $("#gpuDataTable").DataTable({
                     data: gpuData,
                     dataSrc: "",
-                    lengthMenu: [[-1], ["All"]],
+                    lengthMenu: [[-1], ["Tout"]],
                     iDisplayLength: -1,
                     columns: [
                         { data: "Manufacterer" },
@@ -332,30 +331,30 @@ function getGpuData(dataSrc) {
         </section>
         <footer id="myFooter" class="w3-center">
             <div class="w3-container w3-theme-l2 w3-padding-32">
-                <h4><a href="https://steamcommunity.com/groups/PCBSTools" title="Groupe Steam Officiel de PCBSTools" onclick="window.open('https://steamcommunity.com/groups/PCBSTools'); return false;"><img src="img/img_steam.jpg" style="width:30px"></a> | <a href="https://twitter.com/Ah_Roon_" title="Twitter"><img src="img/img_twitter.jpg"" style=" width:30px"></a> | <a href="about://home" title="Discord (arrive bientôt !)" onclick="alert('En développement !');"><img src="img/img_discord.jpg" style="width:30px"></a> | <a href="https://www.paypal.me/AhRoon" title="Achète moi une pizza !" onclick="window.open('https://www.paypal.me/AhRoon'); return false;"><img src="img/img_paypal.jpg" style="width:100px"></a></h4>
+                <h4><a href="https://steamcommunity.com/groups/PCBSTools" title="Groupe Steam officiel de PCBSTools" onclick="window.open('https://steamcommunity.com/groups/PCBSTools'); return false;"><img src="img/img_steam.jpg" style="width:30px"></a> | <a href="https://twitter.com/Ah_Roon_" title="Twitter officiel" onclick="window.open('https://twitter.com/Ah_Roon_'); return false;"><img src="img/img_twitter.jpg" style=" width:30px"></a> | <a href="https://discord.io/pcbstools" title="Serveur officiel Discord" onclick="window.open('https://discord.io/pcbstools'); return false;"><img src="img/img_discord.jpg" style="width:30px"></a> | <a href="https://www.paypal.me/AhRoon" title="Achetez-moi une pizza!" onclick="window.open('https://www.paypal.me/AhRoon'); return false;"><img src="img/img_paypal.jpg" style="width:100px"></a> | <a href="https://ahroon2979.wixsite.com/mysticprismblog" title="Visitez le site officiel de Mystic Prism Studio!" onclick="window.open('https://ahroon2979.wixsite.com/mysticprismblog'); return false;"><img src="img/img_mps.png" style="width:200px"></a></h4>
             </div>
 
             <div class="w3-container w3-theme-l1">
-              <p>Site créé par <a href="https://steamcommunity.com/id/AhRoonPlayz" title="Steam Profile Ah_Roon"
-                  onclick="window.open('https://steamcommunity.com/id/AhRoonPlayz'); return false;">Ah_Roon</a>
-              &copy; 2018 - 2019<br />
-              Auteur originel du script du calculateur - <a href="https://steamcommunity.com/id/kawaiinvshen"
-                  title="Steam Profile biubiu"
-                  onclick="window.open('https://steamcommunity.com/id/kawaiinvshen'); return false;">biubiu</a> &copy;
-              2018 - 2019 <br />
-              Auteur Originel du Scipt du classement des composants - <a href="https://steamcommunity.com/id/skbeyondpower"
-                  title="Steam Profile BeyondPower"
-                  onclick="window.open('https://steamcommunity.com/id/skbeyondpower'); return false;">BeyondPower</a>
-              &copy; 2018 - 2019 <br />
-              Code Source Fourni par <a href="https://www.w3schools.com/" title="w3schools Website"
-                  onclick="window.open('https://www.w3schools.com/'); return false;">w3schools</a>
-              et <a href="https://steamcommunity.com/id/shona1337" title="Steam Profile Shona"
-                  onclick="window.open('https://steamcommunity.com/id/shona1337'); return false;">Shona</a>
-              &copy; 2019<br />
-              <br />
-              Remerciements à Claudiu Kiss & <a href="https://theirregularcorporation.com" title="The Irregular Corporation Website"
-                  onclick="window.open('https://theirregularcorporation.com'); return false;">Irregular Corporation</a> pour avoir fait ce jeu Incroyable !<br /></p>
-              <p></p>
+                <p>Site créé par <a href="https://ahroon2979.wixsite.com/mysticprismblog" title="Mystic Prism Studio Official Website"
+                    onclick="window.open('https://ahroon2979.wixsite.com/mysticprismblog'); return false;">Mystic Prism Studio</a>
+                &copy; 2018 - 2019<br />
+                Auteur original du script du calculateur de score - <a href="https://steamcommunity.com/id/kawaiinvshen"
+                    title="Profil Steam de biubiu"
+                    onclick="window.open('https://steamcommunity.com/id/kawaiinvshen'); return false;">biubiu</a> &copy;
+                2018 - 2019 <br />
+                Auteur original du script du classement des composants - <a href="https://steamcommunity.com/id/skbeyondpower"
+                    title="Profil Steam de BeyondPower"
+                    onclick="window.open('https://steamcommunity.com/id/skbeyondpower'); return false;">BeyondPower</a>
+                &copy; 2018 - 2019 <br />
+                Code source fourni par <a href="https://www.w3schools.com/" title="w3schools Website"
+                    onclick="window.open('https://www.w3schools.com/'); return false;">w3schools</a>
+                et <a href="https://steamcommunity.com/id/shona1337" title="Steam Profile Shona"
+                    onclick="window.open('https://steamcommunity.com/id/shona1337'); return false;">Shona</a>
+                &copy; 2019<br />
+                <br />
+                Spéciale dédicace à Claudiu Kiss & <a href="https://theirregularcorporation.com" title="The Irregular Corporation Website"
+                    onclick="window.open('https://theirregularcorporation.com'); return false;">Irregular Corporation</a> pour avoir fait ce jeu incroyable!<br /></p>
+                <p></p>
             </div>
         </footer>
 
