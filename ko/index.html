@@ -1,179 +1,90 @@
 <!DOCTYPE html>
 <html lang="ko">
-<title>PCBSTools - PC Building Simulator를 위한 고오급지고 유용한 도구.</title>
+<title>PCBSTools - PC Building Simulator를 위한 고급지고 유용한 도구.</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
-<link rel="stylesheet" href="https://www.w3schools.com/lib/w3-theme-black.css">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Raleway">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<link rel="icon" href="https://i.imgur.com/LFfUniB.png">
 <style>
-    html,
-    body,
-    h1,
-    h2,
-    h3,
-    h4,
-    h5,
-    h6 {
-        font-family: "Roboto", sans-serif;
-    }
+body,h1,h2,h3,h4,h5,h6 {font-family: "Raleway", sans-serif}
 
-    .w3-sidebar {
-        z-index: 3;
-        width: 250px;
-        top: 43px;
-        bottom: 0;
-        height: inherit;
-    }
+body, html {
+  height: 100%;
+  line-height: 1.8;
+}
 
-    div.relative1 {
-        position: relative;
-        text-align: center;
-        left: 0px;
-    }
+.w3-bar .w3-button {
+  padding: 16px;
+}
 
-    div.relative2 {
-        position: relative;
-        text-align: center;
-        right: 0px;
-    }
 </style>
 <body>
-    <!-- Navbar -->
-    <div class="w3-top">
-        <div class="w3-bar w3-theme w3-large">
-            <a class="w3-bar-item w3-button w3-right w3-hide-large w3-hover-white w3-large w3-theme-l1"
-                href="javascript:void(0)" onclick="w3_open()"><i class="fa fa-bars"></i></a>
-            <a href="../ko/index.html" class="w3-bar-item w3-button w3-hover-green w3-theme-l1">PCBSTools</a>
-            <div class="w3-dropdown-hover w3-hover-green">
-                <button class="w3-button w3-hover-green">도구 목록</button>
-                <div class="w3-dropdown-content w3-bar-block w3-card-4">
-                    <a href="../ko/partsranking.html" class="w3-bar-item w3-button w3-hover-green">부품 순위</a>
-                    <a href="../ko/calculator.html" class="w3-bar-item w3-button w3-hover-green">계산기</a>
-                </div>
-            </div>
-            <a href="../ko/support.html" class="w3-bar-item w3-button w3-hide-small w3-hover-green">지원</a>
-            <div class="w3-dropdown-hover w3-hover-green">
-                <button class="w3-button w3-hover-green">Language</button>
-                <div class="w3-dropdown-content w3-bar-block w3-card-4">
-                    <a href="../ko/index.html" class="w3-bar-item w3-button w3-hover-green">한국어</a>
-                    <a href="../en/index.html" class="w3-bar-item w3-button w3-hover-green">English</a>
-                    <a href="../fr/index.html" class="w3-bar-item w3-button w3-hover-green">Français (β)</a>
-                </div>
-            </div>
+
+<!-- Navbar (sit on top) -->
+<div class="w3-top">
+  <div class="w3-bar w3-white w3-card" id="myNavbar">
+    <a href="../en/index.html" class="w3-bar-item w3-button w3-wide"><img src="img/img_logo.png" style="width:30px"></a>
+    <!-- Right-sided navbar links -->
+    <div class="w3-right w3-hide-small">
+      <a href="../ko/changelog.html" onclick="window.open('../ko/changelog.html'); return false;" class="w3-bar-item w3-button">무엇이 달라졌나요?</a>
+      <a href="../ko/partsranking.html" class="w3-bar-item w3-button">부품 순위</a>
+      <a href="../ko/calculator.html" class="w3-bar-item w3-button">계산기</a>
+      <div class="w3-dropdown-hover w3-hover-green">
+        <button class="w3-bar-item w3-button">LANGUAGE</button>
+        <div class="w3-dropdown-content w3-bar-block w3-card-4">
+            <a href="../ko/index.html" class="w3-bar-item w3-button">한국어</a>
+            <a href="../en/index.html" class="w3-bar-item w3-button">English</a>
         </div>
+      </div>
+     <a href="../ko/support.html" class="w3-bar-item w3-button">지원</a>
     </div>
+    <!-- Hide right-floated links on small screens and replace them with a menu icon -->
+    <a href="javascript:void(0)" class="w3-bar-item w3-button w3-right w3-hide-large w3-hide-medium" onclick="w3_open()">
+      <i class="fa fa-bars"></i>
+    </a>
+  </div>
+</div>
 
-    <!-- PCBS Image -->
-    <section>
-        <div align="center"><img src="img/img_main.jpg" style="width:100%"></div>
-    </section>
+<!-- Header with full-height image -->
+<img src="img/img_main.jpg" style="width:100%">
 
-    <!-- Main content: shift it to the right by 250 pixels when the sidebar is visible -->
-    <div class="w3-main w3-center w3-content" style="max-width:1200px">
-        <div class="w3-row w3-padding-64">
-            <div class="w3-container">
-                <h1 class="w3-text-teal">PCBSTools - PC Building Simulator를 위한 고오급지고 유용한 도구.</h1>
-                <p>PC Building Simulator에서 3DMark 점수를 계산하거나 또는 예상하거나 좋은 부품 찾기에 지치셨나요?</p>
-                <p>이 도구들은 여러분의 문제를 모두 없애버립니다!</p>
-                <p>이 웹사이트는 PC Building Simulator에서 대부분의 커리어 작업들을 해결해 줄 부품 순위, 점수 계산기, 조립PC 만들기, 조립PC 업그레이드를 포함한 4개의 도구들을 포함하고 있습니다.</p>
-                <p></p>
-                <p>주의: 이 웹사이트는 PC Building Simulator 게임을 플레이하는 유저들을 위한 사이트입니다. 만약 그 게임이 없다면 <a href="https://store.steampowered.com/app/621060/PC_Building_Simulator/">Steam 상점</a>에서 구매하는 것을 고려해보세요!</p>
-                <p></p>
-                <p>저희 도구가 마음에 드셨나요? 여기에서 기부해주세요!</p>
-                <p><button href="https://www.paypal.me/AhRoon" class="w3-button w3-black w3-hover-green w3-round-large" onclick="window.open('https://www.paypal.me/AhRoon'); return false;">PayPal로 기부하기!</button></p>
-            </div>
-        </div>
-
-        <section class="w3-row-padding w3-align-left">
-            <div class="w3-left relative1">
-                <p>
-                    <font size="6">최근 변경사항 (v1.5.1)</font>
-                </p>
-                <ul style="list-style-type:disc;">
-                    <li>[추가] 프랑스어 번역이 추가되었습니다 (베타,<br>만약 버그나 번역 오류를 발견하셨으면 GitHub에 이슈를 전송하거나<br>디스코드에서 티켓을 생성하세요)</li>
-                    <li>[추가] 디스코드 서버 - 정식 출시!</li>
-                    <li>[추가] 하단에 디스코드 서버 링크가 추가되었습니다</li>
-                    <li>[추가] 하단에 Mystic Prism Studio 웹사이트 링크가 추가되었습니다</li>
-                    <li>[변경] Ah_Roon에서 Mystic Prism Studio로 크레딧이 변경되었습니다</li>
-                    <li>[변경] 정책이 변경되었습니다 - 이제 여러분은 저희 디스코드 서버에서 이슈를 보고하기 위해 티켓을 생성하실 수 있습니다.<br>그러나, 스팀 그룹에서 이슈를 보고 하는 것은 여전히 허용되지 않습니다.</li>
-                    <li>[제거] 네비게이션 바에서 프랑스어 미지원 메시지가 삭제되었습니다</li>
-                    <li>[버그수정] 한국어 번역에서 언어를 변경하면 계산기 페이지로 이동되는 버그가 수정되었습니다</li>
-                </ul>
-            </div>
-            <div class="w3-right relative2">
-                <p>
-                    <font size="6">곧 선보이는 기능 (v1.6~)</font>
-                </p>
-                <ul style="list-style-type:disc;">
-                    <li>출시되면 PCBS v1.6 업데이트</li>
-                    <li>오버클럭 계산기 추가</li>
-                    <li>수냉 그래픽 추가</li>
-                    <li>더 많은 번역 지원 및 개선<br>(만약 번역에 관심 있으시면 <a
-                            href="https://forms.gle/XGi4gHozazezm3aj8" title="Apply for Translator"
-                            onclick="window.open('https://forms.gle/XGi4gHozazezm3aj8; return false;">여기</a>에서 신청하세요)</li>
-                </ul>
-            </div>
-        </section>
-
-        <!-- Credits -->
-        <section class="w3-row-padding w3-center w3-light-grey">
-            <p>
-                <font size="6">제작</font>
-            </p>
-            <article class="w3-third">
-                <p>Ah_Roon</p>
-                <a href="https://steamcommunity.com/id/AhRoonPlayz" title="Steam Profile Ah_Roon"
-                    onclick="window.open('https://steamcommunity.com/id/AhRoonPlayz'); return false;"><img
-                        src="img/img_profile_ahroon.jpg" style="width:20%"></a>
-                <p>PC 제작자를 위해 이 웹사이트를 만듬.</p>
-            </article>
-            <article class="w3-third">
-                <p>biubiu</p>
-                <a href="https://steamcommunity.com/id/kawaiinvshen" title="Steam Profile biubiu"
-                    onclick="window.open('https://steamcommunity.com/id/kawaiinvshen'); return false;"><img
-                        src="img/img_profile_biubiu.jpg" style="width:20%"></a>
-                <p><a href="https://steamcommunity.com/app/621060/discussions/0/3216031607491943889/">계산기</a>를 위한 소스 코드 제공.</p>
-            </article>
-            <article class="w3-third">
-                <p>BeyondPower</p>
-                <a href="https://steamcommunity.com/id/skbeyondpower" title="Steam Profile BeyondPower"
-                    onclick="window.open('https://steamcommunity.com/id/skbeyondpower'); return false;"><img
-                        src="img/img_profile_beyondpower.jpg" style="width:20%"></a>
-                <p>Parts Ranking HTML 버전 제작에 기여.</p>
-            </article>
-        </section>
-
-        <footer id="myFooter" class="w3-center">
-            <div class="w3-container w3-theme-l2 w3-padding-32">
-                <h4><a href="https://steamcommunity.com/groups/PCBSTools" title="PCBSTools 공식 스팀 그룹" onclick="window.open('https://steamcommunity.com/groups/PCBSTools'); return false;"><img src="img/img_steam.jpg" style="width:30px"></a> | <a href="https://twitter.com/Ah_Roon_" title="공식 트위터" onclick="window.open('https://twitter.com/Ah_Roon_'); return false;"><img src="img/img_twitter.jpg" style=" width:30px"></a> | <a href="https://discord.io/pcbstools" title="공식 디스코드 서버" onclick="window.open('https://discord.io/pcbstools'); return false;"><img src="img/img_discord.jpg" style="width:30px"></a> | <a href="https://www.paypal.me/AhRoon" title="피자 한 판 사주세요!" onclick="window.open('https://www.paypal.me/AhRoon'); return false;"><img src="img/img_paypal.jpg" style="width:100px"></a> | <a href="https://ahroon2979.wixsite.com/mysticprismblog" title="Mystic Prism Studio 공식 웹사이트 방문하기!" onclick="window.open('https://ahroon2979.wixsite.com/mysticprismblog'); return false;"><img src="img/img_mps.png" style="width:200px"></a></h4>
-            </div>
-
-            <div class="w3-container w3-theme-l1">
-                <p>사이트 제작 - 2018 - 2019<a href="https://ahroon2979.wixsite.com/mysticprismblog" title="Mystic Prism Studio 공식 웹사이트"
-                    onclick="window.open('https://ahroon2979.wixsite.com/mysticprismblog'); return false;">Mystic Prism Studio</a>
-                &copy; 2018 - 2019<br />
-                벤치마크 계산기 스크립트 원작자 - <a href="https://steamcommunity.com/id/kawaiinvshen" title="Steam Profile biubiu" onclick="window.open('https://steamcommunity.com/id/kawaiinvshen'); return false;">biubiu</a> &copy;
-                2018 - 2019 <br />
-                부품 순위 스크립트 원작자 - <a href="https://steamcommunity.com/id/skbeyondpower"
-                    title="Steam Profile BeyondPower"
-                    onclick="window.open('https://steamcommunity.com/id/skbeyondpower'); return false;">BeyondPower</a>
-                &copy; 2018 - 2019 <br />
-                소스 코드 제공 - <a href="https://www.w3schools.com/" title="w3schools Website"
-                    onclick="window.open('https://www.w3schools.com/'); return false;">w3schools</a>와 <a href="https://steamcommunity.com/id/shona1337" title="Steam Profile Shona"
-                    onclick="window.open('https://steamcommunity.com/id/shona1337'); return false;">Shona</a>
-                &copy; 2019<br />
-                <br />
-                이런 최고의 게임을 만들어 주신 Claudiu Kiss님과 <a href="https://theirregularcorporation.com" title="The Irregular Corporation Website"
-                    onclick="window.open('https://theirregularcorporation.com'); return false;">Irregular Corporation</a>에게 감사드립니다!<br /></p>
-                <p></p>
-            </div>
-        </footer>
-
-        <!-- END MAIN -->
+<!-- About Section -->
+<div class="w3-center w3-container" style="padding:128px 16px" id="about">
+    <h1>PCBSTools - PC Building Simulator를 위한 고급지고 유용한 도구.</h1>
+    <p>3DMark를 계산하거나 예측하는데 지치셨거나 최고의 부품을 찾는 데 지치셨나요?</p>
+    <p>이 도구들은 여러분의 모든 걱정을 없애줍니다!</p>
+    <p>이 웹사이트는 흔한 커리어 작업을 해결해 줄 부품 순위, 점수 계산기, PC조립 제작, PC조립 업그레이드를 포함한 4개의 도구가 포함되어 있습니다.</p>
+    <p></p>
+    <p>경고: 이 웹사이트는 PC Building Simulator 게임을 가지고 있는 사람들을 위한 웹사이트입니다. 만약 그 게임이 없다면 <a href="https://store.steampowered.com/app/621060/PC_Building_Simulator/">스팀 상점</a>에서 해당 게임을 구매하는 것을 고려해보세요!</p>
+    <p></p>
+    <p>저희 도구가 마음에 드셨나요? 커피나 피자를 사주세요!</p>
+    <p><button href="https://www.paypal.me/AhRoon" class="w3-button w3-light-gray w3-round-large" onclick="window.open('https://www.paypal.me/AhRoon'); return false;">Donate via PayPal!</button>  <button href="https://ko-fi.com/mysticprismstudio" class="w3-button w3-light-gray w3-round-large" onclick="window.open('https://ko-fi.com/mysticprismstudio'); return false;">Donate via Ko-fi!</button></p>
+</div>
+  <div class="w3-row-padding w3-center" style="margin-top:64px">
+    <h1>누가 이 웹사이트를 만들었나요?</h1>
+    <div class="w3-third">
+        <a href="https://steamcommunity.com/id/AhRoonGamingNDev" title="Steam Profile Ah_Roon" onclick="window.open('https://steamcommunity.com/id/AhRoonGamingNDev'); return false;"><img src="img/img_profile_ahroon.jpg" style="width:20%"></a>
+        <p class="w3-large">Ah_Roon(아룬)</p>
+        <p>PCBSTools 메인 개발자</p>
     </div>
+    <div class="w3-third">
+        <a href="https://steamcommunity.com/id/skbeyondpower" title="Steam Profile BeyondPower" onclick="window.open('https://steamcommunity.com/id/skbeyondpower'); return false;"><img src="img/img_profile_beyondpower.jpg" style="width:20%"></a>
+      <p class="w3-large">BeyondPower</p>
+      <p>부품 순위 소스 코드 제공</p>
+    </div>
+    <div class="w3-third">
+        <a href="https://steamcommunity.com/id/kawaiinvshen" title="Steam Profile biubiu" onclick="window.open('https://steamcommunity.com/id/kawaiinvshen'); return false;"><img src="img/img_profile_biubiu.jpg" style="width:20%"></a>
+      <p class="w3-large">biubiu</p>
+      <p>계산기 소스 코드 제공</p>
+    </div>
+  </div>
+</div>
 
+<footer id="myFooter" class="w3-center">
+<div class="w3-container w3-black w3-padding-32">
+  <h4><a href="https://github.com/pcbstools/PCBSTools.github.io" title="PCBSTools 레포지토리" onclick="window.open('https://github.com/pcbstools/PCBSTools.github.io'); return false;"><img src="img/img_github.png" style="width:30px"></a> | <a href="https://steamcommunity.com/groups/PCBSTools" title="PCBSTools 공식 스팀 그룹" onclick="window.open('https://steamcommunity.com/groups/PCBSTools'); return false;"><img src="img/img_steam.jpg" style="width:30px"></a> | <a href="https://twitter.com/MPSOfficial_" title="Mystic Prism Studio 공식 트위터" onclick="window.open('https://twitter.com/MPSOfficial_'); return false;"><img src="img/img_twitter.jpg" style=" width:30px"></a> | <a href="https://discord.gg/HRRdFvn" title="공식 디스코드 서버" onclick="window.open('https://discord.gg/HRRdFvn'); return false;"><img src="img/img_discord.jpg" style="width:30px"></a> | <a href="https://www.paypal.me/AhRoon" title="저희에게 피자를 사주세요!" onclick="window.open('https://www.paypal.me/AhRoon'); return false;"><img src="img/img_paypal.jpg" style="width:100px"></a> | <a href="https://ko-fi.com/mysticprismstudio" title="저희에게 커피를 사주세요!" onclick="window.open('https://ko-fi.com/mysticprismstudio'); return false;"><img src="img/img_ko_fi.png" style="width:100px"></a> | <a href="https://ahroon2979.wixsite.com/mysticprismstudio" title="Mystic Prism Studio 공식 웹사이트 방문하기!" onclick="window.open('https://ahroon2979.wixsite.com/mysticprismstudio'); return false;"><img src="img/img_mps.png" style="width:50px"></a></h4>
+  <p><h6>Copyright &copy; 2019 <a href="https://ahroon2979.wixsite.com/mysticprismstudio" title="Mystic Prism Studio Official Website" onclick="window.open('https://ahroon2979.wixsite.com/mysticprismstudio'); return false;">Mystic Prism Studio</a>. All Rights Reserved.</h6></p>
 </body>
-
 </html>

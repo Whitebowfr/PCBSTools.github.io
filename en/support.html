@@ -1,112 +1,76 @@
 <!DOCTYPE html>
 <html lang="en">
-<title>PCBSTools - Support</title>
+<title>PCBSTools - Advanced & Useful Tools for PC Building Simulator.</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
-<link rel="stylesheet" href="https://www.w3schools.com/lib/w3-theme-black.css">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Raleway">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<link rel="icon" href="https://i.imgur.com/LFfUniB.png">
 <style>
-    html,
-    body,
-    h1,
-    h2,
-    h3,
-    h4,
-    h5,
-    h6 {
-        font-family: "Roboto", sans-serif;
-    }
+body,h1,h2,h3,h4,h5,h6 {font-family: "Raleway", sans-serif}
 
-    .w3-sidebar {
-        z-index: 3;
-        width: 250px;
-        top: 43px;
-        bottom: 0;
-        height: inherit;
-    }
+body, html {
+  height: 100%;
+  line-height: 1.8;
+}
+
+.w3-bar .w3-button {
+  padding: 16px;
+}
 </style>
-
 <body>
 
-    <!-- Navbar -->
-    <div class="w3-top">
-        <div class="w3-bar w3-theme w3-large">
-            <a class="w3-bar-item w3-button w3-right w3-hide-large w3-hover-white w3-large w3-theme-l1"
-                href="javascript:void(0)" onclick="w3_open()"><i class="fa fa-bars"></i></a>
-            <a href="../en/index.html" class="w3-bar-item w3-button w3-hover-green w3-theme-l1">PCBSTools</a>
-            <div class="w3-dropdown-hover w3-hover-green">
-                <button class="w3-button w3-hover-green">List of Tools</button>
-                <div class="w3-dropdown-content w3-bar-block w3-card-4">
-                    <a href="../en/partsranking.html" class="w3-bar-item w3-button w3-hover-green">Parts Ranking</a>
-                    <a href="../en/calculator.html" class="w3-bar-item w3-button w3-hover-green">Calculator</a>
-                </div>
-            </div>
-            <a href="../en/support.html" class="w3-bar-item w3-button w3-hide-small w3-hover-green">Support</a>
-            <div class="w3-dropdown-hover w3-hover-green">
-                <button class="w3-button w3-hover-green">Language</button>
-                <div class="w3-dropdown-content w3-bar-block w3-card-4">
-                    <a href="../ko/support.html" class="w3-bar-item w3-button w3-hover-green">한국어</a>
-                    <a href="../en/support.html" class="w3-bar-item w3-button w3-hover-green">English</a>
-                    <a href="../fr/support.html" class="w3-bar-item w3-button w3-hover-green">Français (β)</a>
-                </div>
-            </div>
+<!-- Navbar (sit on top) -->
+<div class="w3-top">
+  <div class="w3-bar w3-white w3-card" id="myNavbar">
+    <a href="../en/index.html" class="w3-bar-item w3-button w3-wide"><img src="img/img_logo.png" style="width:30px"></a>
+    <!-- Right-sided navbar links -->
+    <div class="w3-right w3-hide-small">
+      <a href="../en/changelog.html" onclick="window.open('../en/changelog.html'); return false;" class="w3-bar-item w3-button">WHAT'S NEW?</a>
+      <a href="../en/partsranking.html" class="w3-bar-item w3-button">PARTS RANKING</a>
+      <a href="../en/calculator.html" class="w3-bar-item w3-button">CALCULATOR</a>
+      <div class="w3-dropdown-hover w3-hover-green">
+        <button class="w3-bar-item w3-button">LANGUAGE</button>
+        <div class="w3-dropdown-content w3-bar-block w3-card-4">
+            <a href="../ko/calculator.html" class="w3-bar-item w3-button">한국어</a>
+            <a href="../en/calculator.html" class="w3-bar-item w3-button">English</a>
         </div>
+      </div>
+     <a href="../en/support.html" class="w3-bar-item w3-button">SUPPORT</a>
     </div>
+    <!-- Hide right-floated links on small screens and replace them with a menu icon -->
+    <a href="javascript:void(0)" class="w3-bar-item w3-button w3-right w3-hide-large w3-hide-medium" onclick="w3_open()">
+      <i class="fa fa-bars"></i>
+    </a>
+</div>
 
-    <!-- PCBS Image -->
-    <section>
-        <div align="center"><img src="img/img_support.jpg" style="width:100%"></div>
-    </section>
+<!-- Header with full-height image -->
+<img src="img/img_support.jpg" style="width:100%">
 
-    <!-- Main content: shift it to the right by 250 pixels when the sidebar is visible -->
-    <div class="w3-main w3-center w3-content" style="max-width:1200px">
-        <div class="w3-row w3-padding-64">
-            <div class="w3-container">
-                <h1 class="w3-text-teal">Support</h1>
-                <p>Did you encounter any bugs or do you have any suggestions when using our website? Please let us know!</p>
-				<p></p>
-				<h1 class="w3-text-teal">Where do I report bugs or make suggestion?</h1>
-                <p><a href="https://github.com/pcbstools/issuetracker" class="w3-button w3-bar-item" onclick="window.open('https://github.com/pcbstools/issuetracker'); return false;">Create issue on GitHub</a><a href="https://discord.io/pcbstools" class="w3-button w3-bar-item" onclick="window.open('https://discord.io/pcbstools'); return false;">Create ticket on our Discord Server</a></p>
-                <h1 class="w3-text-teal">Known Issues</h1>
-                <p>Button Texture not displaying properly in Parts Ranking - Might be hard to fix, but I will try. Temporarily forced to 'Any' until it's fixed</p>
-                <p>Bugs and translation errors in French Translation - If you found any bugs/translation errors please submit issues on GitHub or Create a ticket on Discord Server</p>
-			</article>
-            </div>
-        </div>
-        <footer id="myFooter" class="w3-center">
-            <div class="w3-container w3-theme-l2 w3-padding-32">
-                <h4><a href="https://steamcommunity.com/groups/PCBSTools" title="PCBSTools Official Steam Group" onclick="window.open('https://steamcommunity.com/groups/PCBSTools'); return false;"><img src="img/img_steam.jpg" style="width:30px"></a> | <a href="https://twitter.com/Ah_Roon_" title="Official Twitter" onclick="window.open('https://twitter.com/Ah_Roon_'); return false;"><img src="img/img_twitter.jpg" style=" width:30px"></a> | <a href="https://discord.io/pcbstools" title="Official Discord Server" onclick="window.open('https://discord.io/pcbstools'); return false;"><img src="img/img_discord.jpg" style="width:30px"></a> | <a href="https://www.paypal.me/AhRoon" title="Buy me a pizza!" onclick="window.open('https://www.paypal.me/AhRoon'); return false;"><img src="img/img_paypal.jpg" style="width:100px"></a> | <a href="https://ahroon2979.wixsite.com/mysticprismblog" title="Visit Mystic Prism Studio Official Website!" onclick="window.open('https://ahroon2979.wixsite.com/mysticprismblog'); return false;"><img src="img/img_mps.png" style="width:200px"></a></h4>
-            </div>
-
-            <div class="w3-container w3-theme-l1">
-                <p>Site created by <a href="https://ahroon2979.wixsite.com/mysticprismblog" title="Mystic Prism Studio Official Website"
-                    onclick="window.open('https://ahroon2979.wixsite.com/mysticprismblog'); return false;">Mystic Prism Studio</a>
-                &copy; 2018 - 2019<br />
-                Original Benchmark Calculator Script Author - <a href="https://steamcommunity.com/id/kawaiinvshen"
-                    title="Steam Profile biubiu"
-                    onclick="window.open('https://steamcommunity.com/id/kawaiinvshen'); return false;">biubiu</a> &copy;
-                2018 - 2019 <br />
-                Original Parts Ranking Script Author - <a href="https://steamcommunity.com/id/skbeyondpower"
-                    title="Steam Profile BeyondPower"
-                    onclick="window.open('https://steamcommunity.com/id/skbeyondpower'); return false;">BeyondPower</a>
-                &copy; 2018 - 2019 <br />
-                Source Code Provided by <a href="https://www.w3schools.com/" title="w3schools Website"
-                    onclick="window.open('https://www.w3schools.com/'); return false;">w3schools</a>
-                and <a href="https://steamcommunity.com/id/shona1337" title="Steam Profile Shona"
-                    onclick="window.open('https://steamcommunity.com/id/shona1337'); return false;">Shona</a>
-                &copy; 2019<br />
-                <br />
-                Special Thanks to Claudiu Kiss & <a href="https://theirregularcorporation.com" title="The Irregular Corporation Website"
-                    onclick="window.open('https://theirregularcorporation.com'); return false;">Irregular Corporation</a> for Making this awesome game!<br /></p>
-                <p></p>
-            </div>
-        </footer>
-
-        <!-- END MAIN -->
+<!-- About Section -->
+<div class="w3-center w3-container" style="padding:128px 16px" id="about">
+    <h1>Support</h1>
+    <p>Report errors or Suggest features</p>
+</div>
+  <div class="w3-row-padding w3-center" style="margin-top:64px">
+    <h1>Where to request support</h1>
+    <div class="w3-third">
+      <a href="https://github.com/pcbstools/issuetracker" title="PCBSTools Issue Tracker" onclick="window.open('https://github.com/pcbstools/issuetracker'); return false;"><img src="img/img_github.png" style="width:30px"></a>
+        <p class="w3-large">GitHub</p>
+        <button href="https://github.com/pcbstools/issuetracker" class="w3-button w3-light-gray w3-round-large" onclick="window.open('https://github.com/pcbstools/issuetracker'); return false;">Submit issue on GitHub</button>
     </div>
+    <div class="w3-third">
+      <a href="https://discord.gg/HRRdFvn" title="PCBSTools Discord" onclick="window.open('https://discord.gg/HRRdFvn'); return false;"><img src="img/img_discord.jpg" style="width:30px"></a>
+        <p class="w3-large">Discord</p>
+        <button href="https://discord.gg/HRRdFvn" class="w3-button w3-light-gray w3-round-large" onclick="window.open('https://discord.gg/HRRdFvn'); return false;">Create a Ticket on Discord Server</button>
+    </div>
+  </div>
+</div>
 
+<footer id="myFooter" class="w3-center">
+<div class="w3-container w3-black w3-padding-32">
+  <h4><a href="https://github.com/pcbstools/PCBSTools.github.io" title="PCBSTools Repository" onclick="window.open('https://github.com/pcbstools/PCBSTools.github.io'); return false;"><img src="img/img_github.png" style="width:30px"></a> | <a href="https://steamcommunity.com/groups/PCBSTools" title="PCBSTools Official Steam Group" onclick="window.open('https://steamcommunity.com/groups/PCBSTools'); return false;"><img src="img/img_steam.jpg" style="width:30px"></a> | <a href="https://twitter.com/MPSOfficial_" title="Mystic Prism Studio Official Twitter" onclick="window.open('https://twitter.com/MPSOfficial_'); return false;"><img src="img/img_twitter.jpg" style=" width:30px"></a> | <a href="https://discord.gg/HRRdFvn" title="Official Discord Server" onclick="window.open('https://discord.gg/HRRdFvn'); return false;"><img src="img/img_discord.jpg" style="width:30px"></a> | <a href="https://www.paypal.me/AhRoon" title="Buy us a pizza!" onclick="window.open('https://www.paypal.me/AhRoon'); return false;"><img src="img/img_paypal.jpg" style="width:100px"></a> | <a href="https://ko-fi.com/mysticprismstudio" title="Buy us a Coffee!" onclick="window.open('https://ko-fi.com/mysticprismstudio'); return false;"><img src="img/img_ko_fi.png" style="width:100px"></a> | <a href="https://ahroon2979.wixsite.com/mysticprismstudio" title="Visit Mystic Prism Studio Official Website!" onclick="window.open('https://ahroon2979.wixsite.com/mysticprismstudio'); return false;"><img src="img/img_mps.png" style="width:50px"></a></h4>
+    <p><h6>Copyright &copy; 2019 <a href="https://ahroon2979.wixsite.com/mysticprismstudio" title="Mystic Prism Studio Official Website" onclick="window.open('https://ahroon2979.wixsite.com/mysticprismstudio'); return false;">Mystic Prism Studio</a>. All Rights Reserved.</h6></p>
 </body>
-
 </html>

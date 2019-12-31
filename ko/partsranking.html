@@ -1,76 +1,61 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <title>PCBSTools - 부품 순위</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
-<link rel="stylesheet" href="https://www.w3schools.com/lib/w3-theme-black.css">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Raleway">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<link rel="icon" href="https://i.imgur.com/LFfUniB.png">
 <style>
-    html,
-    body,
-    h1,
-    h2,
-    h3,
-    h4,
-    h5,
-    h6 {
-        font-family: "Roboto", sans-serif;
-    }
+body,h1,h2,h3,h4,h5,h6 {font-family: "Raleway", sans-serif}
 
-    .w3-sidebar {
-        z-index: 3;
-        width: 250px;
-        top: 43px;
-        bottom: 0;
-        height: inherit;
-    }
+body, html {
+  height: 100%;
+  line-height: 1.8;
+}
+
+.w3-bar .w3-button {
+  padding: 16px;
+}
 </style>
-
 <body>
-    <!-- Navbar -->
-    <div class="w3-top">
-        <div class="w3-bar w3-theme w3-large">
-            <a class="w3-bar-item w3-button w3-right w3-hide-large w3-hover-white w3-large w3-theme-l1"
-                href="javascript:void(0)" onclick="w3_open()"><i class="fa fa-bars"></i></a>
-            <a href="../ko/index.html" class="w3-bar-item w3-button w3-hover-green w3-theme-l1">PCBSTools</a>
-            <div class="w3-dropdown-hover w3-hover-green">
-                <button class="w3-button w3-hover-green">도구 목록</button>
-                <div class="w3-dropdown-content w3-bar-block w3-card-4">
-                    <a href="../ko/partsranking.html" class="w3-bar-item w3-button w3-hover-green">부품 순위</a>
-                    <a href="../ko/calculator.html" class="w3-bar-item w3-button w3-hover-green">계산기</a>
-                </div>
-            </div>
-            <a href="../ko/support.html" class="w3-bar-item w3-button w3-hide-small w3-hover-green">지원</a>
-            <div class="w3-dropdown-hover w3-hover-green">
-                <button class="w3-button w3-hover-green">Language</button>
-                <div class="w3-dropdown-content w3-bar-block w3-card-4">
-                    <a href="../ko/partsranking.html" class="w3-bar-item w3-button w3-hover-green">한국어</a>
-                    <a href="../en/partsranking.html" class="w3-bar-item w3-button w3-hover-green">English</a>
-                    <a href="../fr/partsranking.html" class="w3-bar-item w3-button w3-hover-green">Français (β)</a>
-                </div>
-            </div>
+
+<!-- Navbar (sit on top) -->
+<div class="w3-top">
+  <div class="w3-bar w3-white w3-card" id="myNavbar">
+    <a href="../en/index.html" class="w3-bar-item w3-button w3-wide"><img src="img/img_logo.png" style="width:30px"></a>
+    <!-- Right-sided navbar links -->
+    <div class="w3-right w3-hide-small">
+      <a href="../ko/changelog.html" onclick="window.open('../ko/changelog.html'); return false;" class="w3-bar-item w3-button">무엇이 달라졌나요?</a>
+      <a href="../ko/partsranking.html" class="w3-bar-item w3-button">부품 순위</a>
+      <a href="../ko/calculator.html" class="w3-bar-item w3-button">계산기</a>
+      <div class="w3-dropdown-hover w3-hover-green">
+        <button class="w3-bar-item w3-button">LANGUAGE</button>
+        <div class="w3-dropdown-content w3-bar-block w3-card-4">
+            <a href="../ko/partsranking.html" class="w3-bar-item w3-button">한국어</a>
+            <a href="../en/partsranking.html" class="w3-bar-item w3-button">English</a>
         </div>
+      </div>
+     <a href="../ko/support.html" class="w3-bar-item w3-button">지원</a>
     </div>
+    <!-- Hide right-floated links on small screens and replace them with a menu icon -->
+    <a href="javascript:void(0)" class="w3-bar-item w3-button w3-right w3-hide-large w3-hide-medium" onclick="w3_open()">
+      <i class="fa fa-bars"></i>
+    </a>
+  </div>
+</div>
 
-    <!-- PCBS Image -->
-    <section>
-        <div align="center"><img src="img/img_partsranking.jpg" style="width:100%"></div>
-    </section>
+<!-- Header with full-height image -->
+<img src="img/img_partsranking.jpg" style="width:100%">
 
-    <!-- Main content: shift it to the right by 250 pixels when the sidebar is visible -->
-    <div class="w3-main w3-center w3-content" style="max-width:2000px">
-        <div class="w3-row w3-padding-64">
-            <div class="w3-container">
-                <h1 class="w3-text-teal">부품 순위</h1>
-                <p>거의 정확한 부품 순위입니다.</p>
-                <p>버튼(e.g. 점수, 3DMark 점수, 등등.)을 누르면 목록을 정렬할 수 있습니다.</p>
-                <p>제대로 표시하기 위해선 크롬(혹은 Chromium 기반 브라우저) 또는 파이어폭스를 설치해야 할 수 있습니다.</p>
-            </div>
-        </div>
-        <section class="w3-row-padding w3-center w3-light-grey">
-            <h1>CPU 부품 순위</h1>
+<!-- About Section -->
+<div class="w3-center w3-container" style="padding:128px 16px" id="about">
+    <h1>부품 순위</h1>
+    <p>정상적으로 표시되려면 여러분은 크롬(혹은 크로미움 기반 브라우저)이나 파이어폭스를 설치해야 할 수 있습니다!</p>
+</div>
+<div class="w3-row-padding w3-center" style="margin-top:0px">
+    <h1>CPU 부품 순위</h1>
             <table id="cpuDataTable" class="display cell-border">
                 <thead>
                     <tr>
@@ -82,7 +67,7 @@
                         <th>3DMark 점수 (오버클럭 없음)</th>
                         <th>3DMark 점수 (오버클럭)</th>
                         <th>필요 레벨</th>
-                        <th>오버클럭 CPU 점수 증가 수치</th>
+                        <th>오버클럭 CPU 점수 향상률</th>
                     </tr>
                 </thead>
             </table>
@@ -98,16 +83,16 @@
                         <th>점수</th>
                         <th>3DMark 점수 (싱글)</th>
                         <th>3DMark 점수 (듀얼)</th>
-                        <th>목표 레벨</th>
-                        <th>듀얼 GPU 성능 향상 수치</th>
+                        <th>필요 레벨</th>
+                        <th>듀얼 GPU 성능 향상률</th>
                     </tr>
                 </thead>
             </table>
         
-            <h1>CPU 부품 순위 - 수평 막대 그래프</h1>
+            <h1>CPU 부품 순위 - 가로 막대표</h1>
             <canvas id="cpuChart" width="300" height="250"></canvas>
         
-            <h1>GPU 부품 순위 - 수평 막대 그래프</h1>
+            <h1>GPU 부품 순위 - 가로 막대표</h1>
             <canvas id="gpuChart" width="200" height="300"></canvas>
         
             <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
@@ -115,8 +100,8 @@
             <script type="text/javascript"
                 src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
             <script>
-                var cpuDataUrl = "https://api.myjson.com/bins/b168s";
-                var gpuDataUrl = "https://api.myjson.com/bins/1hd3cs";
+                var cpuDataUrl = "https://api.myjson.com/bins/1e3nwg";
+                var gpuDataUrl = "https://api.myjson.com/bins/yme68";
 
                 var cpuData = [], gpuData = [], motherboardData = [], ramData = [];
 
@@ -136,7 +121,7 @@
                 $("#cpuDataTable").DataTable({
                     data: cpuData,
                     dataSrc: "",
-                    lengthMenu: [[-1], ["전체"]],
+                    lengthMenu: [[-1], ["All"]],
                     iDisplayLength: -1,
                     columns: [
                         { data: "Manufacterer" },
@@ -166,7 +151,7 @@
                 $("#gpuDataTable").DataTable({
                     data: gpuData,
                     dataSrc: "",
-                    lengthMenu: [[-1], ["전체"]],
+                    lengthMenu: [[-1], ["All"]],
                     iDisplayLength: -1,
                     columns: [
                         { data: "Manufacterer" },
@@ -209,7 +194,7 @@
                     labels: getCpuData("names"),
                     datasets: [
                     {
-                        label: "3DMark Score (No Overclock)",
+                        label: "3DMark 점수 (오버클럭 없음)",
                         data: getCpuData("scores")["cpuScoresNoOverclock"],
                         backgroundColor: "rgba(150, 150, 150, 0.3)",
                         borderColor: "rgba(0, 0, 0, 1)",
@@ -217,7 +202,7 @@
                         borderWidth: 1
                     },
                     {
-                        label: "3DMark Score (Overclock)",
+                        label: "3DMark 점수 (오버클럭)",
                         data: getCpuData("scores")["cpuScoresOverclock"],
                         backgroundColor: "rgba(200, 100, 100, 0.3)",
                         borderColor: "rgba(0, 0, 0, 0.3)",
@@ -252,7 +237,7 @@
             labels: getGpuData("names"),
         datasets: [
             {
-                label: "3DMark Score (Single)",
+                label: "3DMark 점수 (싱글)",
                 data: getGpuData("scores")["gpuScoresSingle"],
                 backgroundColor: "rgba(150, 150, 150, 0.3)",
                 borderColor: "rgba(0, 0, 0, 1)",
@@ -260,7 +245,7 @@
                 borderWidth: 1
             },
             {
-                label: "3DMark Score (Dual)",
+                label: "3DMark 점수 (듀얼)",
                 data: getGpuData("scores")["gpuScoresDual"],
                 backgroundColor: "rgba(200, 100, 100, 0.3)",
                 borderColor: "rgba(0, 0, 0, 0.3)",
@@ -326,37 +311,13 @@ function getGpuData(dataSrc) {
     }
 }
 
-        </script>
-        </section>
-        <footer id="myFooter" class="w3-center">
-            <div class="w3-container w3-theme-l2 w3-padding-32">
-                <h4><a href="https://steamcommunity.com/groups/PCBSTools" title="PCBSTools 공식 스팀 그룹" onclick="window.open('https://steamcommunity.com/groups/PCBSTools'); return false;"><img src="img/img_steam.jpg" style="width:30px"></a> | <a href="https://twitter.com/Ah_Roon_" title="공식 트위터" onclick="window.open('https://twitter.com/Ah_Roon_'); return false;"><img src="img/img_twitter.jpg" style=" width:30px"></a> | <a href="https://discord.io/pcbstools" title="공식 디스코드 서버" onclick="window.open('https://discord.io/pcbstools'); return false;"><img src="img/img_discord.jpg" style="width:30px"></a> | <a href="https://www.paypal.me/AhRoon" title="피자 한 판 사주세요!" onclick="window.open('https://www.paypal.me/AhRoon'); return false;"><img src="img/img_paypal.jpg" style="width:100px"></a> | <a href="https://ahroon2979.wixsite.com/mysticprismblog" title="Mystic Prism Studio 공식 웹사이트 방문하기!" onclick="window.open('https://ahroon2979.wixsite.com/mysticprismblog'); return false;"><img src="img/img_mps.png" style="width:200px"></a></h4>
-            </div>
+</script>
+  </div>
+</div>
 
-            <div class="w3-container w3-theme-l1">
-                <p>사이트 제작 - 2018 - 2019<a href="https://ahroon2979.wixsite.com/mysticprismblog" title="Mystic Prism Studio 공식 웹사이트"
-                    onclick="window.open('https://ahroon2979.wixsite.com/mysticprismblog'); return false;">Mystic Prism Studio</a>
-                &copy; 2018 - 2019<br />
-                벤치마크 계산기 스크립트 원작자 - <a href="https://steamcommunity.com/id/kawaiinvshen" title="Steam Profile biubiu" onclick="window.open('https://steamcommunity.com/id/kawaiinvshen'); return false;">biubiu</a> &copy;
-                2018 - 2019 <br />
-                부품 순위 스크립트 원작자 - <a href="https://steamcommunity.com/id/skbeyondpower"
-                    title="Steam Profile BeyondPower"
-                    onclick="window.open('https://steamcommunity.com/id/skbeyondpower'); return false;">BeyondPower</a>
-                &copy; 2018 - 2019 <br />
-                소스 코드 제공 - <a href="https://www.w3schools.com/" title="w3schools Website"
-                    onclick="window.open('https://www.w3schools.com/'); return false;">w3schools</a>와 <a href="https://steamcommunity.com/id/shona1337" title="Steam Profile Shona"
-                    onclick="window.open('https://steamcommunity.com/id/shona1337'); return false;">Shona</a>
-                &copy; 2019<br />
-                <br />
-                이런 최고의 게임을 만들어 주신 Claudiu Kiss님과 <a href="https://theirregularcorporation.com" title="The Irregular Corporation Website"
-                    onclick="window.open('https://theirregularcorporation.com'); return false;">Irregular Corporation</a>에게 감사드립니다!<br /></p>
-                <p></p>
-            </div>
-        </footer>
-
-        <!-- END MAIN -->
-    </div>
-
+<footer id="myFooter" class="w3-center">
+    <div class="w3-container w3-black w3-padding-32">
+        <h4><a href="https://github.com/pcbstools/PCBSTools.github.io" title="PCBSTools 레포지토리" onclick="window.open('https://github.com/pcbstools/PCBSTools.github.io'); return false;"><img src="img/img_github.png" style="width:30px"></a> | <a href="https://steamcommunity.com/groups/PCBSTools" title="PCBSTools 공식 스팀 그룹" onclick="window.open('https://steamcommunity.com/groups/PCBSTools'); return false;"><img src="img/img_steam.jpg" style="width:30px"></a> | <a href="https://twitter.com/MPSOfficial_" title="Mystic Prism Studio 공식 트위터" onclick="window.open('https://twitter.com/MPSOfficial_'); return false;"><img src="img/img_twitter.jpg" style=" width:30px"></a> | <a href="https://discord.gg/HRRdFvn" title="공식 디스코드 서버" onclick="window.open('https://discord.gg/HRRdFvn'); return false;"><img src="img/img_discord.jpg" style="width:30px"></a> | <a href="https://www.paypal.me/AhRoon" title="저희에게 피자를 사주세요!" onclick="window.open('https://www.paypal.me/AhRoon'); return false;"><img src="img/img_paypal.jpg" style="width:100px"></a> | <a href="https://ko-fi.com/mysticprismstudio" title="저희에게 커피를 사주세요!" onclick="window.open('https://ko-fi.com/mysticprismstudio'); return false;"><img src="img/img_ko_fi.png" style="width:100px"></a> | <a href="https://ahroon2979.wixsite.com/mysticprismstudio" title="Mystic Prism Studio 공식 웹사이트 방문하기!" onclick="window.open('https://ahroon2979.wixsite.com/mysticprismstudio'); return false;"><img src="img/img_mps.png" style="width:50px"></a></h4>
+        <p><h6>Copyright &copy; 2019 <a href="https://ahroon2979.wixsite.com/mysticprismstudio" title="Mystic Prism Studio Official Website" onclick="window.open('https://ahroon2979.wixsite.com/mysticprismstudio'); return false;">Mystic Prism Studio</a>. All Rights Reserved.</h6></p>
 </body>
-
 </html>
