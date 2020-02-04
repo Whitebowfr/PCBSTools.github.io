@@ -386,7 +386,7 @@ function upgradeBuild() {
         continue
       }
       var cost = data.gpus[gpu][sf].price
-      if (sf == "2" && (data.motherboards[currentMobo].multigpu != null) && (data.motherboards[currentMobo].multigpu.includes(data.gpus[gpu].multigpu) == false)) {
+      if (sf == "2" && ((data.motherboards[currentMobo].multigpu == null) || (data.motherboards[currentMobo].multigpu.includes(data.gpus[gpu].multigpu) == false))) {
         continue
       }
       if (cost > (budget - resbudget)) {

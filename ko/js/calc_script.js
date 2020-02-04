@@ -74,7 +74,7 @@ function scoreCalculatorCal() {
   } else if (!data.gpus[gpu]) {
     alert("GPU를 찾을 수 없습니다!")
   } else if (!data.gpus[gpu][slicf]) {
-    alert("선택한 GPU는 SLI/CrossFire를 사용할 수 없습니다!")
+    alert("해당 GPU는 SLI/CrossFire를 지원하지 않습니다!")
   } else {
     var score = getScore(data.procs[cpu][ramc][rams], data.gpus[gpu][slicf].score)
     var wattage = getWattage(data.gpus[gpu][slicf].wattage, data.procs[cpu].wattage, 50)
@@ -360,7 +360,7 @@ function upgradeBuild() {
   }
   var currentScore = getScore(data.procs[currentProc][currentRamChannel][currentRamSpeed], data.gpus[currentGpu][currentSlicf].score)
   if (currentScore > score) {
-    alert("업그레이드할 필요가 없습니다!")
+    alert("업그레이드가 필요 없습니다!")
     return false
   }
   for (cpu in data.procs) {
@@ -386,7 +386,7 @@ function upgradeBuild() {
         continue
       }
       var cost = data.gpus[gpu][sf].price
-      if (sf == "2" && (data.motherboards[currentMobo].multigpu != null) && (data.motherboards[currentMobo].multigpu.includes(data.gpus[gpu].multigpu) == false)) {
+      if (sf == "2" && ((data.motherboards[currentMobo].multigpu == null) || (data.motherboards[currentMobo].multigpu.includes(data.gpus[gpu].multigpu) == false))) {
         continue
       }
       if (cost > (budget - resbudget)) {
