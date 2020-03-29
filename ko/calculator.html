@@ -23,39 +23,14 @@ body, html {
   padding: 16px;
 }
 
-body {
-	background-color: #ffffff;
-}
-			
-#nav {
-	width: 100%;
-	height: 40px;
-	background-color: #ffffff;
-	position: fixed;
-	top: 0;
-	left: 0;
-	text-align: center;
-}
-
-.navBarItem{
-	list-style: none;
-	display: inline-block;
-	padding: 11px 5px;
-	cursor: hand;
-	border-left: 1px solid;
-	border-right: 1px solid;
-	margin-left: -5px;
-}
-
 #content {
 	margin-top: 50px;
 	height: 100%;
 	width: 100%;
 	text-align: center;
 }
-
+			
 #scoreCalculator {
-	background-color: #eeeeee;
 	width: 500px;
 	margin: auto;
 	padding: 15 20px;
@@ -66,7 +41,7 @@ input {
 	height: 25px;
 	width: 350px;
 }
-
+			
 caption {
 	font-size: 25px;
 	font-weight: bold;
@@ -95,17 +70,15 @@ select {
 }
 			
 #buildMaker {
-	background-color: #eeeeee;
 	width: 500px;
 	margin: auto;
 	padding: 15 20px;
 	margin-bottom: 20px;
 }
-			
+
 #buildUpgrader {
 	margin: auto;
 	width: 500px;
-	background-color: #eeeeee;
 	padding: 15 20px;
 	margin-bottom: 20px;
 }
@@ -114,61 +87,61 @@ select {
 	border: 1px solid;
 	padding: 8px;
 }
-			
+    
 #buildMakerTable {
 	border: none;
 	padding: 8px;
 	border-collapse: collapse;
 	margin: auto;
 }
-			
-#buildMakerHistoryTable td{
+
+#buildMakerHistoryTable td {
 	border: 1px solid;
 	padding: 8px;
 }
 
-#scoreCalculatorHistoryTable td{
-	border: 1px solid;
-	padding: 8px;
+#scoreCalculatorHistoryTable td {
+    border: 1px solid;
+    padding: 8px;
 }
 
 #buildMakerHistoryTable {
-	border: none;
-	padding: 8px;
-	border-collapse: collapse;
-	margin: auto;
+    border: none;
+    padding: 8px;
+    border-collapse: collapse;
+    margin: auto;
+}
+    
+#scoreCalculatorHistoryTable {
+    border: none;
+    padding: 8px;
+    border-collapse: collapse;
+    margin: auto;
 }
 
-#scoreCalculatorHistoryTable {
-	border: none;
-	padding: 8px;
-	border-collapse: collapse;
-	margin: auto;
-}
-			
 #buildUpgraderTable td {
-	border: 1px solid;
-	padding: 8px;
+    border: 1px solid;
+    padding: 8px;
 }
-			
+
 #buildUpgraderTable {
-	border: none;
-	padding: 8px;
-	border-collapse: collapse;
-	margin: auto;
+    border: none;
+    padding: 8px;
+    border-collapse: collapse;
+    margin: auto;
 }
 			
 #saveBuildBackground {
-	top: 40%;
-	left: 40%;
-	position: absolute;
-	background-color: #aaaaaa;
-	z-index: 2;
-	border: 5px 5px 5px 5px;
-	height: 100px;
-	width: 350px;
-	padding: 20px 20px;
-	display: none;
+    top: 40%;
+    left: 40%;
+    position: absolute;
+    background-color: white;
+    z-index: 2;
+    border: 5px 5px 5px 5px;
+    height: 100px;
+    width: 350px;
+    padding: 20px 20px;
+    display: none;
 }
 </style>
 <body>
@@ -179,7 +152,7 @@ select {
 	  <a href="../ko/index.html" class="w3-bar-item w3-button w3-wide"><img src="img/pcbstools_icon.png" style="width:30px"></a>
 	  <!-- Right-sided navbar links -->
 	  <div class="w3-right w3-hide-small">
-		<a href="../ko/changelog.html" onclick="window.open('../ko/changelog.html'); return false;" class="w3-bar-item w3-button"><i class="fas fa-file-contract"></i>   변경사항</a>
+		<a href="../ko/changelog.html" onclick="window.open('../en/changelog.html'); return false;" class="w3-bar-item w3-button"><i class="fas fa-file-contract"></i>   변경사항</a>
 		<a href="../ko/partsranking.html" class="w3-bar-item w3-button"><i class="fas fa-chart-bar"></i>   부품 순위</a>
 		<a href="../ko/calculator.html" class="w3-bar-item w3-button"><i class="fas fa-calculator"></i>   계산기</a>
 		<div class="w3-dropdown-hover w3-hover-green">
@@ -621,7 +594,7 @@ select {
 						<td id="gpuScoreResult1"></td>
 					</tr>
 					<tr>
-						<td>최종 점수 :</td>
+						<td>총 점수 :</td>
 						<td id="totalScoreResult1"></td>
 					</tr>
 					<tr>
@@ -714,7 +687,7 @@ select {
 									<option value="coffeelake">커피레이크</option>
 									<option value="xseries">X-시리즈</option>
 									<option value="ryzen">RYZEN</option>
-									<option value="threadripper">쓰레드리퍼</option>
+									<option value="threadripper">스레드리퍼</option>
 								</select>
 							</td>
 						</tr>
@@ -792,7 +765,7 @@ select {
 									<option value="1" selected>싱글</option>
 									<option value="2">듀얼</option>
 									<option value="3">트리오</option>
-									<option value="4">쿼드</option>
+									<option value="4"쿼드</option>
 								</select>
 							</td>
 						</tr>
@@ -956,7 +929,7 @@ select {
 							<td><input name="results2" placeholder="10"/></td>
 						</tr>
 						<tr>
-							<td><button onclick="upgradeBuild()" type="button">업그레이드하기</button></td>
+							<td><button onclick="upgradeBuild()" type="button">업그레이드</button></td>
 						</tr>
 					</form>
 				</table>
@@ -981,7 +954,7 @@ select {
 		</div>
 		<div id="forth">
 			<div id="scoreCalculatorHistory">
-				<h1>점수 계산기 기록</h1>
+				<h1>점수 계산기 역사</h1>
 				<table id="scoreCalculatorHistoryTable">
 					<tr>
 						<td>CPU</td>
@@ -1000,10 +973,10 @@ select {
 				</table>
 			</div>
 			<div id="buildMakerHistory">
-				<h1>조립PC 만들기 기록</h1>
+				<h1>조립PC 만들기 역사</h1>
 				<table id="buildMakerHistoryTable">
 					<tr>
-						<td>CPU</td>
+                        <td>CPU</td>
 						<td>RAM 채널</td>
 						<td>RAM 속도</td>
 						<td>GPU</td>
@@ -1025,11 +998,10 @@ select {
 
 <footer id="myFooter" class="w3-center">
 	<div class="w3-container w3-black w3-padding-32">
-	  <h2><a href="https://github.com/pcbstools/PCBSTools.github.io" title="PCBSTools 레포지토리" onclick="window.open('https://github.com/pcbstools/PCBSTools.github.io'); return false;"><i class="fab fa-github"></i></a> | <a href="https://steamcommunity.com/groups/PCBSTools" title="PCBSTools 공식 스팀 그룹" onclick="window.open('https://steamcommunity.com/groups/PCBSTools'); return false;"><i class="fab fa-steam"></i></a> | <a href="https://twitter.com/MPSOfficial_" title="Mystic Prism Studio 공식 트위터" onclick="window.open('https://twitter.com/MPSOfficial_'); return false;"><i class="fab fa-twitter"></i></a> | <a href="https://discord.gg/HRRdFvn" title="공식 디스코드 서버" onclick="window.open('https://discord.gg/HRRdFvn'); return false;"><i class="fab fa-discord"></i></a> | <a href="https://patreon.com/mysticprismstudio" title="후원하기!" onclick="window.open('https://patreon.com/mysticprismstudio'); return false;"><i class="fab fa-patreon"></i></a> | <a href="https://ahroon2979.wixsite.com/mysticprismstudio" title="Mystic Prism Studio 공식 웹사이트" onclick="window.open('https://ahroon2979.wixsite.com/mysticprismstudio'); return false;"><img src="img/img_mps.png" style="width:50px"></a></h2>
-	  <p>&copy; 2020 <a href="https://ahroon2979.wixsite.com/mysticprismstudio" title="Mystic Prism Studio 공식 웹사이트" onclick="window.open('https://ahroon2979.wixsite.com/mysticprismstudio'); return false;">Mystic Prism Studio</a> & Community Contributors</p>
+	  <h2><a href="https://github.com/pcbstools/PCBSTools.github.io" title="PCBSTools 레포지토리" onclick="window.open('https://github.com/pcbstools/PCBSTools.github.io'); return false;"><i class="fab fa-github"></i></a> | <a href="https://steamcommunity.com/groups/PCBSTools" title="PCBSTools 공식 스팀 그룹" onclick="window.open('https://steamcommunity.com/groups/PCBSTools'); return false;"><i class="fab fa-steam"></i></a> | <a href="https://twitter.com/MPSOfficial_" title="Mystic Prism Studio 공식 트위터" onclick="window.open('https://twitter.com/MPSOfficial_'); return false;"><i class="fab fa-twitter"></i></a> | <a href="https://discord.gg/HRRdFvn" title="공식 디스코드 서버" onclick="window.open('https://discord.gg/HRRdFvn'); return false;"><i class="fab fa-discord"></i></a> | <a href="https://patreon.com/mysticprismstudio" title="후원하기!" onclick="window.open('https://patreon.com/mysticprismstudio'); return false;"><i class="fab fa-patreon"></i></a> | <a href="https://mysticprismstudio.home.blog/" title="Mystic Prism Studio 공식 웹사이트" onclick="window.open('https://mysticprismstudio.home.blog/'); return false;"><img src="img/img_mps.png" style="width:50px"></a></h2>
+	  <p>&copy; 2020 <a href="https://mysticprismstudio.home.blog/" title="Mystic Prism Studio 공식 웹사이트" onclick="window.open('https://mysticprismstudio.home.blog/'); return false;">Mystic Prism Studio</a> & Community Contributors</p>
 	  <p>PC Building Simulator, PC Building Simulator logos are trademarks and/or registered trademarks of Irregular Corporation.<br>We are not affiliated with Irregular Corporation. All rights belong to Irregular Corporation.</p>
 	</div>
-  </footer>
-</body>  
+</footer> 
+</body>
 </html>
-  

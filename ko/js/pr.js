@@ -1,5 +1,5 @@
 var cpuDataUrl = "https://api.myjson.com/bins/1e3nwg";
-var gpuDataUrl = "https://api.myjson.com/bins/qhass";
+var gpuDataUrl = "https://api.myjson.com/bins/yoc40";
 
 var cpuData = [], gpuData = [], motherboardData = [], ramData = [];
 
