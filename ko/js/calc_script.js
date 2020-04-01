@@ -75,11 +75,11 @@ function showThisCal(idToShow, hide1, hide2, hide3) {
 				var gpu = document.getElementById('scoreCForm').gpu1.value
 				var slicf = document.getElementById('scoreCForm').slicf1.value
 				if (!data.procs[cpu] || data.procs[cpu][ramc][rams] == "") {
-					alert("CPU를 찾을 수 없습니다!")
+					alert("CPU를 찾을 수 없어요!")
 				} else if (!data.gpus[gpu]) {
-					alert("GPU를 찾을 수 없습니다!")
+					alert("GPU를 찾을 수 없어요!")
 				} else if (!data.gpus[gpu][slicf]) {
-					alert("선택한 GPU는 SLI/CrossFire가 호환되지 않습니다!")
+					alert("선택한 GPU는 SLI/CrossFire가 호환되지 않아요!")
 				} else {
 					var score = getScore(data.procs[cpu][ramc][rams], data.gpus[gpu][slicf].score)
 					var wattage = getWattage(data.gpus[gpu][slicf].wattage, data.procs[cpu].wattage, 50)
@@ -365,7 +365,7 @@ function showThisCal(idToShow, hide1, hide2, hide3) {
 				}
 				var currentScore = getScore(data.procs[currentProc][currentRamChannel][currentRamSpeed], data.gpus[currentGpu][currentSlicf].score)
 				if (currentScore > score) {
-					alert("업그레이드가 필요 없습니다!")
+					alert("업그레이드가 필요 없어요!")
 					return false
 				}
 				for (cpu in data.procs) {
