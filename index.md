@@ -1,7 +1,7 @@
 ---
 layout: page
 title: PCBSTools project is now discontinued
-permalink: /shutdown/
+permalink: /
 ---
 
 # What happened?

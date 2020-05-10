@@ -3,5 +3,4 @@ markdown: kramdown
 highlighter: rouge
 language: 'en-us'
 url: https://pcbstools.github.io
-baseurl: /shutdown/
 production_url: https://pcbstools.github.io/
