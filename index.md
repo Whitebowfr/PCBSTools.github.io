@@ -1,3 +1,9 @@
+---
+layout: page
+title: PCBSTools project is now discontinued
+permalink: /shutdown/
+---
+
 # What happened?
 Unfortunately, PCBSTools development will be discontinued due to lack of developer and our coding skills.
 
