@@ -22,15 +22,15 @@ We will back with great content :)
 # Will you remove Steam Group and Discord Server after discontinuation?
 Nope, we are not going to remove it. We decided to keep it, since they want to talk about former PCBSTools. However, rules still apply. Do not mess up the community or you will get restriction from our community.
 
-# Thanks to
-Ah_Roon - For making great community
-biubiu - For maintaining and supporting the Calculator
-BeyondPower - For providing ideas and codes for recreating Parts Ranking into HTML
-Shona - Providing some of Source Codes
-Fairydx - Providing Portguese translation and working for our website
-w3school - Providing w3.css for free
-Bootstrap - Providing Bootstrap for our website
-Fonts Awesome - Providing best icon packs for our website
+# Special Thanks to
+* Ah_Roon - For making PCBSTools
+* biubiu - For maintaining and supporting the Calculator
+* BeyondPower - For providing ideas and codes for recreating Parts Ranking into HTML
+* Shona - Providing some of Source Codes
+* Fairydx - Providing Portguese translation and working for our website
+* w3school - Providing w3.css for free
+* Bootstrap - Providing Bootstrap for our website
+* Fonts Awesome - Providing best icon packs for our website
 
 ----
-Copyright ⓒ Mystic Prism Studio & Community Contributors.
+Copyright 2020 ⓒ Mystic Prism Studio & Community Contributors.
